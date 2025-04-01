@@ -1,3 +1,6 @@
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #include "raylib.h"
 
 class Player {
@@ -20,3 +23,5 @@ class Player {
     void applyGravity(float gravity);
     void checkGroundCollision(float groundLevel);
 };
+
+#endif

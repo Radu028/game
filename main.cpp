@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "inputFunctions.h"
 #include "raylib.h"
 
 int main() {
@@ -27,11 +28,7 @@ int main() {
     Player player1;
 
     while (!WindowShouldClose()) {
-        if (IsKeyDown(KEY_W)) player1.moveForward(0.1f);
-        if (IsKeyDown(KEY_S)) player1.moveBackwards(0.1f);
-        if (IsKeyDown(KEY_A)) player1.moveLeft(0.1f);
-        if (IsKeyDown(KEY_D)) player1.moveRight(0.1f);
-        if (IsKeyPressed(KEY_SPACE)) player1.jump(jumpForce);
+        handleInput(player1, 0.1f, jumpForce);
 
         player1.applyGravity(gravity);
         player1.checkGroundCollision(0.5f);
