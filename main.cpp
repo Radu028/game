@@ -1,3 +1,4 @@
+#include "Player.h"
 #include "raylib.h"
 
 int main() {
@@ -23,16 +24,15 @@ int main() {
     Model ground = LoadModelFromMesh(GenMeshPlane(20.0f, 20.0f, 1, 1));
     ground.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
 
-    while (!WindowShouldClose()) {
-        if (IsKeyDown(KEY_W)) playerPosition.z -= 0.1f;
-        if (IsKeyDown(KEY_S)) playerPosition.z += 0.1f;
-        if (IsKeyDown(KEY_A)) playerPosition.x -= 0.1f;
-        if (IsKeyDown(KEY_D)) playerPosition.x += 0.1f;
+    Player player1;
 
-        if (IsKeyPressed(KEY_SPACE) && isOnGround) {
-            playerVelocity.y = jumpForce;
-            isOnGround = false;
-        }
+    while (!WindowShouldClose()) {
+        if (IsKeyDown(KEY_W)) player1.moveForward(0.1f);
+        if (IsKeyDown(KEY_S)) player1.moveBackwards(0.1f);
+        if (IsKeyDown(KEY_A)) player1.moveLeft(0.1f);
+        if (IsKeyDown(KEY_D)) player1.moveRight(0.1f);
+
+        if (IsKeyPressed(KEY_SPACE) && isOnGround) player1.jump(jumpForce);
 
         // Graivty
         playerVelocity.y += gravity;
@@ -54,7 +54,7 @@ int main() {
         DrawCube((Vector3){0, 0.5f, 0}, 1, 1, 1, RED);
 
         // Player
-        DrawCube(playerPosition, 1.0f, 1.0f, 1.0f, BLUE);
+        DrawCube(player1.getPosition(), 1.0f, 1.0f, 1.0f, BLUE);
 
         // Floor
         DrawModel(ground, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);

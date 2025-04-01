@@ -11,5 +11,7 @@ class Player {
     void moveLeft(float byValue) {};
     void moveForward(float byValue) {};
     void moveBackwards(float byValue) {};
-    void jump(float byValue) {};
+    void jump(float jumpForce) {};
+
+    Vector3 getPosition() { return position; }
 };

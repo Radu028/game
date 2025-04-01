@@ -2,5 +2,14 @@
 
 #include "raylib.h"
 
-void Player::moveForward(float byValue) { this->position.z -= 0.1f; }
-void Player::moveBackwards(float byValue) { this->position.z += 0.1f; }
+Player::Player() {}
+
+void Player::moveForward(float byValue) { this->position.z -= byValue; }
+void Player::moveBackwards(float byValue) { this->position.z += byValue; }
+void Player::moveLeft(float byValue) { this->position.x -= byValue; }
+void Player::moveRight(float byValue) { this->position.x += byValue; }
+
+void Player::jump(float jumpForce) {
+    if (this->position.y > 0.5f) return;
+    this->velocity.y = jumpForce;
+}
