@@ -32,11 +32,9 @@ int main() {
         if (IsKeyDown(KEY_A)) player1.moveLeft(0.1f);
         if (IsKeyDown(KEY_D)) player1.moveRight(0.1f);
 
-        if (IsKeyPressed(KEY_SPACE) && isOnGround) player1.jump(jumpForce);
+        if (IsKeyPressed(KEY_SPACE)) player1.jump(jumpForce);
 
-        // Graivty
-        playerVelocity.y += gravity;
-        playerPosition.y += playerVelocity.y;
+        player1.applyGravity(gravity);
 
         if (playerPosition.y <= 0.5f) {
             playerPosition.y = 0.5f;

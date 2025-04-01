@@ -14,4 +14,6 @@ class Player {
     void jump(float jumpForce) {};
 
     Vector3 getPosition() { return position; }
+
+    void applyGravity(float gravity) {}
 };

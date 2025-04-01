@@ -13,3 +13,8 @@ void Player::jump(float jumpForce) {
     if (this->position.y > 0.5f) return;
     this->velocity.y = jumpForce;
 }
+
+void Player::applyGravity(float gravity) {
+    this->velocity.y += gravity;
+    this->position.y += this->velocity.y;
+}
