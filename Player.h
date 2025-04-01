@@ -7,13 +7,16 @@ class Player {
     bool isOnGround;
 
    public:
-    void moveRight(float byValue) {};
-    void moveLeft(float byValue) {};
-    void moveForward(float byValue) {};
-    void moveBackwards(float byValue) {};
-    void jump(float jumpForce) {};
+    Player();
+
+    void moveRight(float byValue);
+    void moveLeft(float byValue);
+    void moveForward(float byValue);
+    void moveBackwards(float byValue);
+    void jump(float jumpForce);
 
     Vector3 getPosition() { return position; }
 
-    void applyGravity(float gravity) {}
+    void applyGravity(float gravity);
+    void checkGroundCollision(float groundLevel);
 };

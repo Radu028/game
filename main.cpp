@@ -35,12 +35,7 @@ int main() {
         if (IsKeyPressed(KEY_SPACE)) player1.jump(jumpForce);
 
         player1.applyGravity(gravity);
-
-        if (playerPosition.y <= 0.5f) {
-            playerPosition.y = 0.5f;
-            playerVelocity.y = 0;
-            isOnGround = true;
-        }
+        player1.checkGroundCollision(0.5f);
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
