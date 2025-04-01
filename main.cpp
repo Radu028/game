@@ -20,7 +20,7 @@ int main() {
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 
-    Texture2D grass = LoadTexture("resources/forrest_ground_01_diff_4k.jpg");
+    Texture2D grass = LoadTexture("../resources/forrest_ground_01_diff_4k.jpg");
     Model ground = LoadModelFromMesh(GenMeshPlane(20.0f, 20.0f, 1, 1));
     ground.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
 
@@ -31,7 +31,6 @@ int main() {
         if (IsKeyDown(KEY_S)) player1.moveBackwards(0.1f);
         if (IsKeyDown(KEY_A)) player1.moveLeft(0.1f);
         if (IsKeyDown(KEY_D)) player1.moveRight(0.1f);
-
         if (IsKeyPressed(KEY_SPACE)) player1.jump(jumpForce);
 
         player1.applyGravity(gravity);
