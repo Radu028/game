@@ -1,1 +1,0 @@
-/usr/bin/clang++ -g -arch arm64 -Wl,-search_paths_first -Wl,-headerpad_max_install_names CMakeFiles/GameExecutable.dir/main.cpp.o CMakeFiles/GameExecutable.dir/src/Player.cpp.o CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o -o GameExecutable  /opt/homebrew/lib/libraylib.dylib
