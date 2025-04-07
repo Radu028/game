@@ -11,6 +11,7 @@ include_directories(include)
 add_executable(GameExecutable 
     main.cpp
     src/Player.cpp
+    src/inputFunctions.cpp
 )
 
 target_link_libraries(GameExecutable raylib)

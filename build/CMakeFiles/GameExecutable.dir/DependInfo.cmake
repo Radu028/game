@@ -10,6 +10,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/Users/radupopa/Documents/FMI/POO/game/main.cpp" "CMakeFiles/GameExecutable.dir/main.cpp.o" "gcc" "CMakeFiles/GameExecutable.dir/main.cpp.o.d"
   "/Users/radupopa/Documents/FMI/POO/game/src/Player.cpp" "CMakeFiles/GameExecutable.dir/src/Player.cpp.o" "gcc" "CMakeFiles/GameExecutable.dir/src/Player.cpp.o.d"
+  "/Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp" "CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o" "gcc" "CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

@@ -2,17 +2,14 @@
 #include "inputFunctions.h"
 #include "raylib.h"
 
+const float GRAVITY = -0.01f;
+const float JUMP_FORCE = 0.2f;
+
 int main() {
     InitWindow(1280, 720, "Joc 3D");
     SetTargetFPS(120);
 
     DisableCursor();
-
-    Vector3 playerPosition = {0.0f, 0.5f, 0.0f};
-    Vector3 playerVelocity = {0.0f, 0.0f, 0.0f};
-    bool isOnGround = false;
-    const float gravity = -0.01f;
-    const float jumpForce = 0.2f;
 
     Camera3D camera = {0};
     camera.position = (Vector3){0.0f, 5.0f, 15.0f};
@@ -28,22 +25,20 @@ int main() {
     Player player1;
 
     while (!WindowShouldClose()) {
-        handleInput(player1, 0.1f, jumpForce);
+        handleInput(player1, 0.1f, JUMP_FORCE);
 
-        player1.applyGravity(gravity);
+        player1.applyGravity(GRAVITY);
         player1.checkGroundCollision(0.5f);
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         BeginMode3D(camera);
-        // DrawGrid(20, 1.0f);
+        // Player
+        DrawCube(player1.getPosition(), 1.0f, 1.0f, 1.0f, BLUE);
 
         // Random cube
         DrawCube((Vector3){0, 0.5f, 0}, 1, 1, 1, RED);
-
-        // Player
-        DrawCube(player1.getPosition(), 1.0f, 1.0f, 1.0f, BLUE);
 
         // Floor
         DrawModel(ground, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);

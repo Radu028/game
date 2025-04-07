@@ -1,5 +1,6 @@
-CMakeFiles/GameExecutable.dir/src/Player.cpp.o: \
-  /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp \
+CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o: \
+  /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp \
+  /Users/radupopa/Documents/FMI/POO/game/src/../include/inputFunctions.h \
   /Users/radupopa/Documents/FMI/POO/game/src/../include/Player.h \
   /opt/homebrew/include/raylib.h \
   /Library/Developer/CommandLineTools/usr/lib/clang/17/include/stdarg.h \

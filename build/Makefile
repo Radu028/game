@@ -177,6 +177,30 @@ src/Player.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/src/Player.cpp.s
 .PHONY : src/Player.cpp.s
 
+src/inputFunctions.o: src/inputFunctions.cpp.o
+.PHONY : src/inputFunctions.o
+
+# target to build an object file
+src/inputFunctions.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o
+.PHONY : src/inputFunctions.cpp.o
+
+src/inputFunctions.i: src/inputFunctions.cpp.i
+.PHONY : src/inputFunctions.i
+
+# target to preprocess a source file
+src/inputFunctions.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.i
+.PHONY : src/inputFunctions.cpp.i
+
+src/inputFunctions.s: src/inputFunctions.cpp.s
+.PHONY : src/inputFunctions.s
+
+# target to generate assembly for a file
+src/inputFunctions.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.s
+.PHONY : src/inputFunctions.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -192,6 +216,9 @@ help:
 	@echo "... src/Player.o"
 	@echo "... src/Player.i"
 	@echo "... src/Player.s"
+	@echo "... src/inputFunctions.o"
+	@echo "... src/inputFunctions.i"
+	@echo "... src/inputFunctions.s"
 .PHONY : help
 
 

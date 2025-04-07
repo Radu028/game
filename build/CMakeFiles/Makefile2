@@ -85,12 +85,12 @@ clean: CMakeFiles/GameExecutable.dir/clean
 CMakeFiles/GameExecutable.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=1,2,3 "Built target GameExecutable"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=1,2,3,4 "Built target GameExecutable"
 .PHONY : CMakeFiles/GameExecutable.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/GameExecutable.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles 4
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/GameExecutable.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles 0
 .PHONY : CMakeFiles/GameExecutable.dir/rule
@@ -102,7 +102,7 @@ GameExecutable: CMakeFiles/GameExecutable.dir/rule
 # codegen rule for target.
 CMakeFiles/GameExecutable.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/GameExecutable.dir/build.make CMakeFiles/GameExecutable.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=1,2,3 "Finished codegen for target GameExecutable"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=1,2,3,4 "Finished codegen for target GameExecutable"
 .PHONY : CMakeFiles/GameExecutable.dir/codegen
 
 # clean rule for target.
