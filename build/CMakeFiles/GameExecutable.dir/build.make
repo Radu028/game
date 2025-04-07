@@ -76,43 +76,43 @@ CMakeFiles/GameExecutable.dir/main.cpp.o: CMakeFiles/GameExecutable.dir/flags.ma
 CMakeFiles/GameExecutable.dir/main.cpp.o: /Users/radupopa/Documents/FMI/POO/game/main.cpp
 CMakeFiles/GameExecutable.dir/main.cpp.o: CMakeFiles/GameExecutable.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/GameExecutable.dir/main.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GameExecutable.dir/main.cpp.o -MF CMakeFiles/GameExecutable.dir/main.cpp.o.d -o CMakeFiles/GameExecutable.dir/main.cpp.o -c /Users/radupopa/Documents/FMI/POO/game/main.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GameExecutable.dir/main.cpp.o -MF CMakeFiles/GameExecutable.dir/main.cpp.o.d -o CMakeFiles/GameExecutable.dir/main.cpp.o -c /Users/radupopa/Documents/FMI/POO/game/main.cpp
 
 CMakeFiles/GameExecutable.dir/main.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/GameExecutable.dir/main.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/radupopa/Documents/FMI/POO/game/main.cpp > CMakeFiles/GameExecutable.dir/main.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/radupopa/Documents/FMI/POO/game/main.cpp > CMakeFiles/GameExecutable.dir/main.cpp.i
 
 CMakeFiles/GameExecutable.dir/main.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GameExecutable.dir/main.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/radupopa/Documents/FMI/POO/game/main.cpp -o CMakeFiles/GameExecutable.dir/main.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/radupopa/Documents/FMI/POO/game/main.cpp -o CMakeFiles/GameExecutable.dir/main.cpp.s
 
 CMakeFiles/GameExecutable.dir/src/Player.cpp.o: CMakeFiles/GameExecutable.dir/flags.make
 CMakeFiles/GameExecutable.dir/src/Player.cpp.o: /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp
 CMakeFiles/GameExecutable.dir/src/Player.cpp.o: CMakeFiles/GameExecutable.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/GameExecutable.dir/src/Player.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GameExecutable.dir/src/Player.cpp.o -MF CMakeFiles/GameExecutable.dir/src/Player.cpp.o.d -o CMakeFiles/GameExecutable.dir/src/Player.cpp.o -c /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GameExecutable.dir/src/Player.cpp.o -MF CMakeFiles/GameExecutable.dir/src/Player.cpp.o.d -o CMakeFiles/GameExecutable.dir/src/Player.cpp.o -c /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp
 
 CMakeFiles/GameExecutable.dir/src/Player.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/GameExecutable.dir/src/Player.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp > CMakeFiles/GameExecutable.dir/src/Player.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp > CMakeFiles/GameExecutable.dir/src/Player.cpp.i
 
 CMakeFiles/GameExecutable.dir/src/Player.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GameExecutable.dir/src/Player.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp -o CMakeFiles/GameExecutable.dir/src/Player.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/radupopa/Documents/FMI/POO/game/src/Player.cpp -o CMakeFiles/GameExecutable.dir/src/Player.cpp.s
 
 CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o: CMakeFiles/GameExecutable.dir/flags.make
 CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o: /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp
 CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o: CMakeFiles/GameExecutable.dir/compiler_depend.ts
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/radupopa/Documents/FMI/POO/game/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o -MF CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o.d -o CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o -c /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o -MF CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o.d -o CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.o -c /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp
 
 CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.i: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp > CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.i
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp > CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.i
 
 CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp -o CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.s
+	/usr/bin/clang++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/radupopa/Documents/FMI/POO/game/src/inputFunctions.cpp -o CMakeFiles/GameExecutable.dir/src/inputFunctions.cpp.s
 
 # Object files for target GameExecutable
 GameExecutable_OBJECTS = \

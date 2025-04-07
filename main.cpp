@@ -19,10 +19,16 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
 
     Texture2D grass = LoadTexture("../resources/forrest_ground_01_diff_4k.jpg");
-    Model ground = LoadModelFromMesh(GenMeshPlane(20.0f, 20.0f, 1, 1));
+    Model ground = LoadModelFromMesh(GenMeshPlane(50.0f, 50.0f, 1, 1));
     ground.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
 
     Player player1;
+
+    Vector3 boxPos = {0, 0.5f, 0};
+    Vector3 boxSize = {1.0f, 1.0f, 1.0f};
+    BoundingBox box = {
+        (Vector3){boxPos.x - boxSize.x / 2, boxPos.y - boxSize.y / 2, boxPos.z - boxSize.z / 2},
+        (Vector3){boxPos.x + boxSize.x / 2, boxPos.y + boxSize.y / 2, boxPos.z + boxSize.z / 2}};
 
     while (!WindowShouldClose()) {
         handleInput(player1, 0.1f, JUMP_FORCE);
@@ -38,7 +44,7 @@ int main() {
         DrawCube(player1.getPosition(), 1.0f, 1.0f, 1.0f, BLUE);
 
         // Random cube
-        DrawCube((Vector3){0, 0.5f, 0}, 1, 1, 1, RED);
+        DrawCube(boxPos, boxSize.x, boxSize.y, boxSize.z, RED);
 
         // Floor
         DrawModel(ground, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
