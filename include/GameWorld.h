@@ -5,7 +5,8 @@
 #include <vector>
 
 #include "GameObject.h"
-#include "Player.h"
+
+class Player;
 
 class GameWorld {
    private:
@@ -19,6 +20,8 @@ class GameWorld {
     void update(float deltaTime);
     void draw() const;
     void checkCollisions();
+
+    const std::vector<std::shared_ptr<GameObject>>& getObjects() const { return this->objects; }
 };
 
 #endif

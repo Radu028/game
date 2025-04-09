@@ -21,12 +21,24 @@ void GameWorld::draw() const {
 }
 
 void GameWorld::checkCollisions() {
-    Vector3 prevPosition = player->getPosition();
+    Vector3 prevPlayerPosition = this->player->getPosition();
 
-    for (const auto& obj : objects) {
-        if (player->checkCollision(*obj)) {
-            player->setPosition(prevPosition);
+    for (const auto& obj : this->objects) {
+        if (this->player->checkCollision(*obj)) {
+            this->player->setPosition(prevPlayerPosition);
             break;
         }
     }
+
+    // for (size_t i = 0; i < this->objects.size(); i++) {
+    //     Vector3 prevObjectPosition = this->objects[i]->getPosition();
+
+    //     for (size_t j = 0; j < this->objects.size(); j++) {
+    //         if (i != j && this->objects[i]->checkCollision(*objects[j])) {
+    //             this->objects[i]->setPosition(prevObjectPosition);
+    //             // this->objects[i]->handleCollision(*this->objects[j]);
+    //             break;
+    //         }
+    //     }
+    // }
 }

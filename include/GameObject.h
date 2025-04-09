@@ -26,6 +26,7 @@ class GameObject {
     virtual void draw() const;
 
     bool checkCollision(const GameObject& other) const;
+    // virtual void handleCollision(GameObject& other);
 };
 
 #endif
