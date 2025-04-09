@@ -2,11 +2,10 @@
 
 #include "raylib.h"
 
-Player::Player() {
-    this->position = (Vector3){0.0f, 0.0f, 0.0f};
-    this->velocity = (Vector3){0.0f, 0.0f, 0.0f};
-    this->isOnGround = false;
-}
+Player::Player()
+    : GameObject((Vector3){0.0f, 0.0f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, BLUE),
+      velocity((Vector3){0.0f, 0.0f, 0.0f}),
+      isOnGround(true) {}
 
 void Player::moveForward(float byValue) { this->position.z -= byValue; }
 void Player::moveBackwards(float byValue) { this->position.z += byValue; }
@@ -32,4 +31,9 @@ void Player::checkGroundCollision(float groundLevel) {
     } else {
         this->isOnGround = false;
     }
+}
+
+void Player::update(float deltaTime) {
+    applyGravity(-0.01f);
+    checkGroundCollision(0.5f);
 }

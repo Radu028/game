@@ -1,11 +1,11 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include "GameObject.h"
 #include "raylib.h"
 
-class Player {
+class Player : public GameObject {
    private:
-    Vector3 position;
     Vector3 velocity;
     bool isOnGround;
 
@@ -18,10 +18,10 @@ class Player {
     void moveBackwards(float byValue);
     void jump(float jumpForce);
 
-    Vector3 getPosition() { return position; }
-
     void applyGravity(float gravity);
     void checkGroundCollision(float groundLevel);
+
+    void update(float deltaTime) override;
 };
 
 #endif
