@@ -1,3 +1,5 @@
+#include "GameObject.h"
+#include "GameWorld.h"
 #include "Player.h"
 #include "inputFunctions.h"
 #include "raylib.h"
@@ -23,28 +25,27 @@ int main() {
     ground.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
 
     Player player1;
+    GameWorld world(&player1);
 
-    Vector3 boxPos = {0, 0.5f, 0};
-    Vector3 boxSize = {1.0f, 1.0f, 1.0f};
-    BoundingBox box = {
-        (Vector3){boxPos.x - boxSize.x / 2, boxPos.y - boxSize.y / 2, boxPos.z - boxSize.z / 2},
-        (Vector3){boxPos.x + boxSize.x / 2, boxPos.y + boxSize.y / 2, boxPos.z + boxSize.z / 2}};
+    world.addObject(std::make_shared<GameObject>((Vector3){0.0f, 0.5f, 0.0f},
+                                                 (Vector3){1.0f, 1.0f, 1.0f}, RED));
+
+    world.addObject(std::make_shared<GameObject>((Vector3){-2.0f, 0.5f, -3.0f},
+                                                 (Vector3){2.0f, 1.0f, 1.0f}, YELLOW));
 
     while (!WindowShouldClose()) {
         handleInput(player1, 0.1f, JUMP_FORCE);
 
-        player1.applyGravity(GRAVITY);
-        player1.checkGroundCollision(0.5f);
+        world.update(GetFrameTime());
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         BeginMode3D(camera);
         // Player
-        DrawCube(player1.getPosition(), 1.0f, 1.0f, 1.0f, BLUE);
+        player1.draw();
 
-        // Random cube
-        DrawCube(boxPos, boxSize.x, boxSize.y, boxSize.z, RED);
+        world.draw();
 
         // Floor
         DrawModel(ground, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
