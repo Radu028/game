@@ -4,14 +4,10 @@ project(GameProject)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(raylib REQUIRED)
+add_subdirectory(lib/raylib)
 
 include_directories(include)
 
-add_executable(GameExecutable 
-    main.cpp
-    src/Player.cpp
-    src/inputFunctions.cpp
-)
-
-target_link_libraries(GameExecutable raylib)
+file(GLOB SOURCES "src/*.cpp")
+add_executable(${PROJECT_NAME} ${SOURCES})
+target_link_libraries(${PROJECT_NAME} raylib)
