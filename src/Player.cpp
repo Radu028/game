@@ -9,22 +9,17 @@ Player::Player()
       isOnGround(true),
       world(nullptr) {}
 
-void Player::moveForward(float byValue) { this->position.z -= byValue; }
-void Player::moveBackwards(float byValue) { this->position.z += byValue; }
-void Player::moveLeft(float byValue) { this->position.x -= byValue; }
-void Player::moveRight(float byValue) { this->position.x += byValue; }
-
 void Player::move(std::string direction, float byValue) {
     Vector3 oldPosition = this->position;
 
     if (direction == "forward") {
-        this->moveForward(byValue);
+        this->position.z -= byValue;
     } else if (direction == "backward") {
-        this->moveBackwards(byValue);
+        this->position.z += byValue;
     } else if (direction == "left") {
-        this->moveLeft(byValue);
+        this->position.x -= byValue;
     } else if (direction == "right") {
-        this->moveRight(byValue);
+        this->position.x += byValue;
     } else {
         return;
     }

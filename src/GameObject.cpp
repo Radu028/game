@@ -1,6 +1,6 @@
 #include "GameObject.h"
 
-GameObject::GameObject(Vector3 position, Vector3 size, Color color, bool hasCollison = true)
+GameObject::GameObject(Vector3 position, Vector3 size, Color color, bool hasCollison)
     : position(position), size(size), color(color), hasCollision(hasCollision) {}
 
 BoundingBox GameObject::getBoundingBox() const {
@@ -11,7 +11,7 @@ BoundingBox GameObject::getBoundingBox() const {
 }
 
 void GameObject::draw() const {
-    DrawCube(this->position, this->size.x, this->size.y, this->size.y, this->color);
+    DrawCube(this->position, this->size.x, this->size.y, this->size.z, this->color);
 }
 
 bool GameObject::checkCollision(const GameObject& other) const {

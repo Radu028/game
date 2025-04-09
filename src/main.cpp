@@ -26,9 +26,10 @@ int main() {
 
     Player player1;
     GameWorld world(&player1);
+    player1.setWorld(&world);
 
     world.addObject(std::make_shared<GameObject>(
-        (Vector3){0.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, RED));
+        (Vector3){0.0f, 0.5f, 1.0f}, (Vector3){1.0f, 1.0f, 1.0f}, RED));
 
     while (!WindowShouldClose()) {
         handleInput(player1, 0.1f, JUMP_FORCE);
