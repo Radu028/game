@@ -4,7 +4,7 @@ project(GameProject)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_subdirectory(lib/raylib)
+find_package(raylib REQUIRED)
 
 include_directories(include)
 
