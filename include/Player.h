@@ -8,7 +8,7 @@
 
 class GameWorld;
 
-enum Direction { FORWARD, BACKWARD, LEFT, RIGHT };
+enum Direction { FORWARD, BACKWARD, LEFT, RIGHT, UPWARD };
 
 class Player : public GameObject {
    private:
@@ -16,13 +16,14 @@ class Player : public GameObject {
     bool isOnGround;
     GameWorld* world;
 
+    void move(Direction direction, float byValue);
+
    public:
     Player();
 
     void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
 
-    void move(Direction direction, float byValue);
-    void jump(float jumpForce);
+    void handleInput(float movementSpeed, float jumpForce);
 
     void applyGravity(float gravity);
     void checkGroundCollision(float groundLevel);

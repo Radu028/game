@@ -1,7 +1,5 @@
 #include "Player.h"
 
-#include <iostream>
-
 #include "GameWorld.h"
 #include "raylib.h"
 
@@ -10,6 +8,14 @@ Player::Player()
       velocity((Vector3){0.0f, 0.0f, 0.0f}),
       isOnGround(true),
       world(nullptr) {}
+
+void Player::handleInput(float movementSpeed, float jumpForce) {
+    if (IsKeyDown(KEY_W)) this->move(FORWARD, movementSpeed);
+    if (IsKeyDown(KEY_S)) this->move(BACKWARD, movementSpeed);
+    if (IsKeyDown(KEY_A)) this->move(LEFT, movementSpeed);
+    if (IsKeyDown(KEY_D)) this->move(RIGHT, movementSpeed);
+    if (IsKeyPressed(KEY_SPACE)) this->move(UPWARD, jumpForce);
+}
 
 void Player::move(Direction direction, float byValue) {
     if (!this->world) return;
@@ -24,6 +30,9 @@ void Player::move(Direction direction, float byValue) {
         newPosition.x -= byValue;
     } else if (direction == RIGHT) {
         newPosition.x += byValue;
+    } else if (direction == UPWARD && this->isOnGround) {
+        this->velocity.y = byValue;
+        this->isOnGround = false;
     } else {
         return;
     }
@@ -35,12 +44,6 @@ void Player::move(Direction direction, float byValue) {
             return;
         }
     }
-}
-
-void Player::jump(float jumpForce) {
-    if (!this->isOnGround) return;
-    this->velocity.y = jumpForce;
-    this->isOnGround = false;
 }
 
 void Player::applyGravity(float gravity) {

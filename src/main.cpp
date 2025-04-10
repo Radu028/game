@@ -1,7 +1,6 @@
 #include "GameObject.h"
 #include "GameWorld.h"
 #include "Player.h"
-#include "inputFunctions.h"
 #include "raylib.h"
 
 const float GRAVITY = -0.01f;
@@ -32,7 +31,7 @@ int main() {
         (Vector3){3.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, RED));
 
     while (!WindowShouldClose()) {
-        handleInput(player1, 0.1f, JUMP_FORCE);
+        player1.handleInput(0.1f, JUMP_FORCE);
 
         world.update(GetFrameTime());
 
