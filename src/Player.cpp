@@ -35,14 +35,69 @@ void Player::move(Direction direction, float byValue) {
         this->isOnGround = false;
     }
 
-    this->position = newPosition;
+    // Move along X axis with sliding collision
+    if (newPosition.x != oldPosition.x) {
+        moveWithSliding(oldPosition.x, newPosition.x, &this->position.x);
+    }
+
+    // Move along Z axis with sliding collision
+    if (newPosition.z != oldPosition.z) {
+        moveWithSliding(oldPosition.z, newPosition.z, &this->position.z);
+    }
+}
+
+bool Player::checkCollisionWithWorld() const {
     for (const auto& obj : this->world->getObjects()) {
         if (this->checkCollision(*obj)) {
-            this->position = oldPosition;
-
-            float distance = this->getDistance(*obj);
-            return;
+            return true;
         }
+    }
+    return false;
+}
+
+float Player::findMaxSafePosition(float start, float end, float* positionComponent) {
+    const int MAX_ITERATIONS = 10;  // Maximum number of binary search iterations
+    float moveFactor = 0.0f;        // How much of the full movement to apply
+    float step = 0.5f;              // Binary search step size
+    float originalPosition = *positionComponent;
+
+    // Binary search for maximum safe distance
+    for (int i = 0; i < MAX_ITERATIONS; i++) {
+        float testPosition = start + (end - start) * (moveFactor + step);
+
+        // Try the test position
+        *positionComponent = testPosition;
+        bool hasCollision = checkCollisionWithWorld();
+
+        if (hasCollision) {
+            // Too far, try a smaller step
+            step *= 0.5f;
+        } else {
+            // Can move further, increase moveFactor
+            moveFactor += step;
+            step *= 0.5f;
+        }
+    }
+
+    // Reset position component before returning
+    *positionComponent = originalPosition;
+    return moveFactor;
+}
+
+void Player::moveWithSliding(float start, float end, float* positionComponent) {
+    float originalValue = *positionComponent;
+
+    // Try full movement first
+    *positionComponent = end;
+
+    // Check if we have a collision
+    if (checkCollisionWithWorld()) {
+        // Reset position and find maximum safe position
+        *positionComponent = start;
+        float moveFactor = findMaxSafePosition(start, end, positionComponent);
+
+        // Apply the final safe position
+        *positionComponent = start + (end - start) * moveFactor;
     }
 }
 

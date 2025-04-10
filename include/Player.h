@@ -17,6 +17,9 @@ class Player : public GameObject {
     GameWorld* world;
 
     void move(Direction direction, float byValue);
+    bool checkCollisionWithWorld() const;
+    float findMaxSafePosition(float start, float end, float* positionComponent);
+    void moveWithSliding(float start, float end, float* positionComponent);
 
    public:
     Player();
