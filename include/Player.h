@@ -22,14 +22,14 @@ class Player : public GameObject {
     void moveWithSliding(float start, float end, float* positionComponent);
 
    public:
-    Player();
+    Player(Vector3 position = (Vector3){0.0f, 0.0f, 0.0f},
+           Vector3 size = (Vector3){1.0f, 1.0f, 1.0f}, Color color = BLUE);
 
     void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
 
     void handleInput(float movementSpeed, float jumpForce);
 
     void applyGravity(float gravity);
-    void checkGroundCollision(float groundLevel);
 
     void update(float deltaTime) override;
 };

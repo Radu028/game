@@ -3,8 +3,10 @@
 #include "GameWorld.h"
 #include "raylib.h"
 
-Player::Player()
-    : GameObject((Vector3){0.0f, 0.0f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, BLUE, true),
+extern const float GRAVITY;
+
+Player::Player(Vector3 position, Vector3 size, Color color)
+    : GameObject(position, size, color, true),
       velocity((Vector3){0.0f, 0.0f, 0.0f}),
       isOnGround(true),
       world(nullptr) {}
@@ -102,39 +104,45 @@ void Player::moveWithSliding(float start, float end, float* positionComponent) {
 }
 
 void Player::applyGravity(float gravity) {
+    if (!this->world) return;
     Vector3 oldPosition = this->position;
 
     this->velocity.y += gravity;
     this->position.y += this->velocity.y;
 
-    if (this->world) {
-        for (const auto& obj : this->world->getObjects()) {
-            if (this->checkCollision(*obj)) {
-                this->position = oldPosition;
-                this->velocity.y = 0;
-                return;
-            }
-        }
-    }
-}
-
-void Player::checkGroundCollision(float groundLevel) {
-    if (this->position.y <= groundLevel) {
-        this->position.y = groundLevel;
+    if (checkCollisionWithWorld()) {
+        this->position = oldPosition;
         this->velocity.y = 0;
-        this->isOnGround = true;
-    } else {
-        this->isOnGround = false;
+        return;
     }
 }
 
 void Player::update(float deltaTime) {
-    applyGravity(-0.01f);
-    if (this->position.y <= 0.5f) {
-        this->position.y = 0.5f;
-        this->velocity.y = 0;
-        this->isOnGround = true;
-    } else {
-        this->isOnGround = false;
+    if (!this->world) return;
+
+    Vector3 feetPosition = this->position;
+    feetPosition.y -= this->size.y / 2.0f + 0.1f;
+
+    bool onObject = false;
+    for (const auto& obj : this->world->getObjects()) {
+        if (obj.get() == this || !obj->getHasCollision()) continue;
+
+        BoundingBox objectBox = obj->getBoundingBox();
+        float objectTopY = objectBox.max.y;
+
+        if (feetPosition.y <= objectTopY + 0.1f && feetPosition.x >= objectBox.min.x &&
+            feetPosition.x <= objectBox.max.x && feetPosition.z >= objectBox.min.z &&
+            feetPosition.z <= objectBox.max.z) {
+            onObject = true;
+            break;
+        }
     }
+
+    this->isOnGround = onObject;
+
+    if (onObject && this->velocity.y <= 0) {
+        this->velocity.y = 0;
+    }
+
+    applyGravity(GRAVITY);
 }

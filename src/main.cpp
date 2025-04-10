@@ -3,7 +3,7 @@
 #include "Player.h"
 #include "raylib.h"
 
-const float GRAVITY = -0.01f;
+extern const float GRAVITY = -0.01f;
 const float JUMP_FORCE = 0.2f;
 
 int main() {
@@ -20,15 +20,18 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
 
     Texture2D grass = LoadTexture("../resources/forrest_ground_01_diff_4k.jpg");
-    Model ground = LoadModelFromMesh(GenMeshPlane(50.0f, 50.0f, 1, 1));
-    ground.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
+    Model groundModel = LoadModelFromMesh(GenMeshPlane(50.0f, 50.0f, 1, 1));
+    groundModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
 
-    Player player1;
+    Player player1((Vector3){0.0f, 2.0f, 0.0f});
     GameWorld world(&player1);
     player1.setWorld(&world);
 
     world.addObject(std::make_shared<GameObject>(
         (Vector3){2.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, PINK));
+
+    world.addObject(std::make_shared<GameObject>(
+        (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){5.0f, 0.0f, 5.0f}, YELLOW));
 
     while (!WindowShouldClose()) {
         player1.handleInput(0.1f, JUMP_FORCE);
@@ -45,7 +48,7 @@ int main() {
         world.draw();
 
         // Floor
-        DrawModel(ground, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
+        // DrawModel(groundModel, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
         EndMode3D();
 
         DrawText("Hello World!", 350, 280, 20, DARKGRAY);
