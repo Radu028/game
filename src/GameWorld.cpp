@@ -7,7 +7,7 @@ GameWorld::GameWorld(Player* player) : player(player) {}
 void GameWorld::addObject(std::shared_ptr<GameObject> object) { objects.push_back(object); }
 
 void GameWorld::update(float deltaTime) {
-    player->update(deltaTime);
+    this->player->update(deltaTime);
 
     for (auto& obj : objects) {
         obj->update(deltaTime);
@@ -30,6 +30,17 @@ void GameWorld::checkCollisions() {
             if (i != j && this->objects[i]->checkCollision(*objects[j])) {
                 this->objects[i]->setPosition(prevObjectPosition);
                 // this->objects[i]->handleCollision(*this->objects[j]);
+                break;
+            }
+        }
+    }
+
+    if (player) {
+        Vector3 prevPlayerPosition = this->player->getPosition();
+
+        for (const auto& obj : objects) {
+            if (this->player->checkCollision(*obj)) {
+                this->player->setPosition(prevPlayerPosition);
                 break;
             }
         }
