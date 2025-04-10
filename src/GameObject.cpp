@@ -6,7 +6,7 @@ GameObject::GameObject(Vector3 position, Vector3 size, Color color, bool hasColl
     : position(position), size(size), color(color), hasCollision(hasCollision) {}
 
 BoundingBox GameObject::getBoundingBox() const {
-    float expansionFactor = 0.1f;
+    float expansionFactor = 0.0f;
 
     return (BoundingBox){
         (Vector3){position.x - size.x / 2 - expansionFactor,

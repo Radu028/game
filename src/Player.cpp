@@ -12,6 +12,9 @@ Player::Player()
       world(nullptr) {}
 
 void Player::move(Direction direction, float byValue) {
+    if (!this->world) return;
+    Vector3 oldPosition = this->position;
+
     Vector3 newPosition = this->position;
     if (direction == FORWARD) {
         newPosition.z -= byValue;
@@ -25,15 +28,13 @@ void Player::move(Direction direction, float byValue) {
         return;
     }
 
-    if (!this->world) return;
-
+    this->position = newPosition;
     for (const auto& obj : this->world->getObjects()) {
         if (this->checkCollision(*obj)) {
+            this->position = oldPosition;
             return;
         }
     }
-
-    this->position = newPosition;
 }
 
 void Player::jump(float jumpForce) {
