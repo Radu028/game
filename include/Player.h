@@ -8,6 +8,8 @@
 
 class GameWorld;
 
+enum Direction { FORWARD, BACKWARD, LEFT, RIGHT };
+
 class Player : public GameObject {
    private:
     Vector3 velocity;
@@ -19,12 +21,7 @@ class Player : public GameObject {
 
     void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
 
-    void move(std::string direction, float byValue);
-
-    void moveRight(float byValue);
-    void moveLeft(float byValue);
-    void moveForward(float byValue);
-    void moveBackwards(float byValue);
+    void move(Direction direction, float byValue);
     void jump(float jumpForce);
 
     void applyGravity(float gravity);

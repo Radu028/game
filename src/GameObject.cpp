@@ -38,13 +38,14 @@ bool GameObject::checkCollision(const GameObject& other) const {
 
     bool result = CheckCollisionBoxes(box1, box2);
 
-    if (result) {
-        std::cout << "COLIZIUNE DETECTATĂ între obiectele la pozițiile:" << std::endl;
-        std::cout << "  (" << position.x << "," << position.y << "," << position.z << ") și"
-                  << std::endl;
-        std::cout << "  (" << other.position.x << "," << other.position.y << "," << other.position.z
-                  << ")" << std::endl;
-    }
+    // if (result) {
+    //     std::cout << "COLIZIUNE DETECTATĂ între obiectele la pozițiile:" << std::endl;
+    //     std::cout << "  (" << position.x << "," << position.y << "," << position.z << ") și"
+    //               << std::endl;
+    //     std::cout << "  (" << other.position.x << "," << other.position.y << "," <<
+    //     other.position.z
+    //               << ")" << std::endl;
+    // }
 
     return result;
 }

@@ -11,44 +11,29 @@ Player::Player()
       isOnGround(true),
       world(nullptr) {}
 
-void Player::move(std::string direction, float byValue) {
-    Vector3 oldPosition = this->position;
-
+void Player::move(Direction direction, float byValue) {
     Vector3 newPosition = this->position;
-    if (direction == "forward") {
+    if (direction == FORWARD) {
         newPosition.z -= byValue;
-    } else if (direction == "backward") {
+    } else if (direction == BACKWARD) {
         newPosition.z += byValue;
-    } else if (direction == "left") {
+    } else if (direction == LEFT) {
         newPosition.x -= byValue;
-    } else if (direction == "right") {
+    } else if (direction == RIGHT) {
         newPosition.x += byValue;
     } else {
         return;
     }
 
-    this->position = newPosition;
+    if (!this->world) return;
 
-    bool collision = false;
-    if (this->world) {
-        for (const auto& obj : this->world->getObjects()) {
-            if (this->checkCollision(*obj)) {
-                collision = true;
-                return;
-            }
+    for (const auto& obj : this->world->getObjects()) {
+        if (this->checkCollision(*obj)) {
+            return;
         }
     }
 
-    if (collision) {
-        this->position = oldPosition;
-    }
-
-    if (collision) {
-        std::cout << "Collision detected! Position reset." << std::endl;
-    } else {
-        std::cout << "No collision, new position: " << this->position.x << ", " << this->position.y
-                  << ", " << this->position.z << std::endl;
-    }
+    this->position = newPosition;
 }
 
 void Player::jump(float jumpForce) {
