@@ -28,10 +28,10 @@ int main() {
     player1.setWorld(&world);
 
     world.addObject(std::make_shared<GameObject>(
-        (Vector3){3.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, RED));
+        (Vector3){2.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, RED));
 
     while (!WindowShouldClose()) {
-        player1.handleInput(0.1f, JUMP_FORCE);
+        player1.handleInput(0.01f, JUMP_FORCE);
 
         world.update(GetFrameTime());
 

@@ -33,14 +33,14 @@ void Player::move(Direction direction, float byValue) {
     } else if (direction == UPWARD && this->isOnGround) {
         this->velocity.y = byValue;
         this->isOnGround = false;
-    } else {
-        return;
     }
 
     this->position = newPosition;
     for (const auto& obj : this->world->getObjects()) {
         if (this->checkCollision(*obj)) {
             this->position = oldPosition;
+
+            float distance = this->getDistance(*obj);
             return;
         }
     }

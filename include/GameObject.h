@@ -22,11 +22,13 @@ class GameObject {
     void setPosition(Vector3 newPosition) { this->position = newPosition; }
 
     BoundingBox getBoundingBox() const;
-    virtual void update(float deltaTime) {}
+    virtual void update(float deltaTime);
     virtual void draw() const;
 
     bool checkCollision(const GameObject& other) const;
     // virtual void handleCollision(GameObject& other);
+
+    float getDistance(const GameObject& other) const;
 };
 
 #endif
