@@ -2,25 +2,28 @@
 
 #include <cmath>
 
-GameObject::GameObject(Vector3 position, Vector3 size, Color color, bool hasCollision)
-    : position(position), size(size), color(color), hasCollision(hasCollision) {}
+// GameObject::GameObject(Vector3 position, Vector3 size, Color color, bool hasCollision)
+//     : position(position), size(size), color(color), hasCollision(hasCollision) {}
 
-BoundingBox GameObject::getBoundingBox() const {
-    return (BoundingBox){
-        (Vector3){position.x - size.x / 2, position.y - size.y / 2, position.z - size.z / 2},
-        (Vector3){position.x + size.x / 2, position.y + size.y / 2, position.z + size.z / 2},
-    };
-}
+GameObject::GameObject(Vector3 position, bool hasCollision)
+    : position(position), hasCollision(hasCollision) {}
 
-void GameObject::draw() const {
-    DrawCube(this->position, this->size.x, this->size.y, this->size.z, this->color);
+// BoundingBox GameObject::getBoundingBox() const {
+//     return (BoundingBox){
+//         (Vector3){position.x - size.x / 2, position.y - size.y / 2, position.z - size.z / 2},
+//         (Vector3){position.x + size.x / 2, position.y + size.y / 2, position.z + size.z / 2},
+//     };
+// }
 
-    Color wireColor = RED;
-    if (this->color.r == 255) wireColor = GREEN;
+// void GameObject::draw() const {
+//     DrawCube(this->position, this->size.x, this->size.y, this->size.z, this->color);
 
-    BoundingBox box = this->getBoundingBox();
-    DrawBoundingBox(box, wireColor);
-}
+//     Color wireColor = RED;
+//     if (this->color.r == 255) wireColor = GREEN;
+
+//     BoundingBox box = this->getBoundingBox();
+//     DrawBoundingBox(box, wireColor);
+// }
 
 bool GameObject::checkCollision(const GameObject& other) const {
     if (!this->hasCollision || !other.getHasCollision()) {
