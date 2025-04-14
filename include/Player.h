@@ -4,13 +4,14 @@
 #include <string>
 
 #include "GameObject.h"
+#include "CubeObject.h"
 #include "raylib.h"
 
 class GameWorld;
 
 enum Direction { FORWARD, BACKWARD, LEFT, RIGHT, UPWARD };
 
-class Player : public GameObject {
+class Player : public CubeObject {
    private:
     Vector3 velocity;
     bool isOnGround;

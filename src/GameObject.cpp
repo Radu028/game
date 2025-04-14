@@ -25,17 +25,17 @@ GameObject::GameObject(Vector3 position, bool hasCollision)
 //     DrawBoundingBox(box, wireColor);
 // }
 
-bool GameObject::checkCollision(const GameObject& other) const {
-    if (!this->hasCollision || !other.getHasCollision()) {
-        return false;
-    }
+// bool GameObject::checkCollision(const GameObject& other) const {
+//     if (!this->hasCollision || !other.getHasCollision()) {
+//         return false;
+//     }
 
-    BoundingBox box1 = this->getBoundingBox();
-    BoundingBox box2 = other.getBoundingBox();
+//     BoundingBox box1 = this->getBoundingBox();
+//     BoundingBox box2 = other.getBoundingBox();
 
-    bool result = CheckCollisionBoxes(box1, box2);
-    return result;
-}
+//     bool result = CheckCollisionBoxes(box1, box2);
+//     return result;
+// }
 
 float GameObject::getDistance(const GameObject& other) const {
     return sqrtf((other.position.x - this->position.x) * (other.position.x - this->position.x) +

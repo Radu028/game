@@ -2,11 +2,12 @@
 
 #include "GameWorld.h"
 #include "raylib.h"
+#include "CubeObject.h"
 
 extern const float GRAVITY;
 
 Player::Player(Vector3 position, Vector3 size, Color color)
-    : GameObject(position, size, color, true),
+    : CubeObject(position, size.x, size.y, size.z, color, true),
       velocity((Vector3){0.0f, 0.0f, 0.0f}),
       isOnGround(true),
       world(nullptr) {}
@@ -20,10 +21,10 @@ void Player::handleInput(float movementSpeed, float jumpForce) {
 }
 
 void Player::move(Direction direction, float byValue) {
-    if (!this->world) return;
-    Vector3 oldPosition = this->position;
+    if (!world) return;
+    Vector3 oldPosition = position;
 
-    Vector3 newPosition = this->position;
+    Vector3 newPosition = position;
     if (direction == FORWARD) {
         newPosition.z -= byValue;
     } else if (direction == BACKWARD) {
@@ -32,25 +33,25 @@ void Player::move(Direction direction, float byValue) {
         newPosition.x -= byValue;
     } else if (direction == RIGHT) {
         newPosition.x += byValue;
-    } else if (direction == UPWARD && this->isOnGround) {
-        this->velocity.y = byValue;
-        this->isOnGround = false;
+    } else if (direction == UPWARD && isOnGround) {
+        velocity.y = byValue;
+        isOnGround = false;
     }
 
     // Move along X axis with sliding collision
     if (newPosition.x != oldPosition.x) {
-        moveWithSliding(oldPosition.x, newPosition.x, &this->position.x);
+        moveWithSliding(oldPosition.x, newPosition.x, &position.x);
     }
 
     // Move along Z axis with sliding collision
     if (newPosition.z != oldPosition.z) {
-        moveWithSliding(oldPosition.z, newPosition.z, &this->position.z);
+        moveWithSliding(oldPosition.z, newPosition.z, &position.z);
     }
 }
 
 bool Player::checkCollisionWithWorld() const {
-    for (const auto& obj : this->world->getObjects()) {
-        if (this->checkCollision(*obj)) {
+    for (const auto& obj : world->getObjects()) {
+        if (checkCollision(*obj)) {
             return true;
         }
     }
@@ -104,27 +105,27 @@ void Player::moveWithSliding(float start, float end, float* positionComponent) {
 }
 
 void Player::applyGravity(float gravity) {
-    if (!this->world) return;
-    Vector3 oldPosition = this->position;
+    if (!world) return;
+    Vector3 oldPosition = position;
 
-    this->velocity.y += gravity;
-    this->position.y += this->velocity.y;
+    velocity.y += gravity;
+    position.y += velocity.y;
 
     if (checkCollisionWithWorld()) {
-        this->position = oldPosition;
-        this->velocity.y = 0;
+        position = oldPosition;
+        velocity.y = 0;
         return;
     }
 }
 
 void Player::update(float deltaTime) {
-    if (!this->world) return;
+    if (!world) return;
 
-    Vector3 feetPosition = this->position;
-    feetPosition.y -= this->size.y / 2.0f + 0.1f;
+    Vector3 feetPosition = position;
+    feetPosition.y -= height / 2.0f + 0.1f;
 
     bool onObject = false;
-    for (const auto& obj : this->world->getObjects()) {
+    for (const auto& obj : world->getObjects()) {
         if (obj.get() == this || !obj->getHasCollision()) continue;
 
         BoundingBox objectBox = obj->getBoundingBox();
@@ -138,10 +139,10 @@ void Player::update(float deltaTime) {
         }
     }
 
-    this->isOnGround = onObject;
+    isOnGround = onObject;
 
-    if (onObject && this->velocity.y <= 0) {
-        this->velocity.y = 0;
+    if (onObject && velocity.y <= 0) {
+        velocity.y = 0;
     }
 
     applyGravity(GRAVITY);

@@ -4,7 +4,7 @@
 
 GameWorld::GameWorld(Player* player) : player(player) {}
 
-void GameWorld::addObject(std::shared_ptr<GameObject> object) { objects.push_back(object); }
+void GameWorld::addObject(std::shared_ptr<CubeObject> object) { objects.push_back(object); }
 
 void GameWorld::update(float deltaTime) {
     this->player->update(deltaTime);
