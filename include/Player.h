@@ -3,8 +3,8 @@
 
 #include <string>
 
-#include "GameObject.h"
 #include "CubeObject.h"
+#include "GameObject.h"
 #include "raylib.h"
 
 class GameWorld;
@@ -12,9 +12,11 @@ class GameWorld;
 enum Direction { FORWARD, BACKWARD, LEFT, RIGHT, UPWARD };
 
 class Player : public CubeObject {
-   private:
+   protected:
     Vector3 velocity;
     bool isOnGround;
+
+   private:
     GameWorld* world;
 
     void move(Direction direction, float byValue);
