@@ -2,6 +2,15 @@
 
 #include "Player.h"
 
+GameWorld* GameWorld::instance = nullptr;
+
+GameWorld* GameWorld::getInstance(Player* player) {
+    if (instance == nullptr) {
+        instance = new GameWorld(player);
+    }
+    return instance;
+}
+
 GameWorld::GameWorld(Player* player) : player(player) {}
 
 void GameWorld::addObject(std::shared_ptr<CubeObject> object) { objects.push_back(object); }

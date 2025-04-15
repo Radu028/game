@@ -4,18 +4,25 @@
 #include <memory>
 #include <vector>
 
-#include "GameObject.h"
 #include "CubeObject.h"
+#include "GameObject.h"
 
 class Player;
 
 class GameWorld {
    private:
+    static GameWorld* instance;
+
     std::vector<std::shared_ptr<CubeObject>> objects;
     Player* player;
 
-   public:
     GameWorld(Player* player);
+
+    GameWorld(const GameWorld&) = delete;
+    GameWorld& operator=(const GameWorld&) = delete;
+
+   public:
+    static GameWorld* getInstance(Player* player);
 
     void addObject(std::shared_ptr<CubeObject> object);
     void update(float deltaTime);

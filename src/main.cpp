@@ -18,37 +18,34 @@ int main() {
     camera.projection = CAMERA_PERSPECTIVE;
 
     Player player1((Vector3){0.0f, 2.0f, 0.0f});
-    GameWorld world(&player1);
-    player1.setWorld(&world);
+    GameWorld* world = GameWorld::getInstance(&player1);
+    player1.setWorld(world);
 
-    world.addObject(
+    world->addObject(
         std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f}, 1.0f, 1.0f, 1.0f, PINK, true));
 
     // Add ground as a CubeObject with texture and collision
-    world.addObject(std::make_shared<CubeObject>((Vector3){0.0f, -0.05f, 0.0f},
-                                                 50.0f,
-                                                 0.1f,
-                                                 50.0f,
-                                                 GREEN,
-                                                 true,
-                                                 "../resources/forrest_ground_01_diff_4k.jpg"));
+    world->addObject(std::make_shared<CubeObject>((Vector3){0.0f, -0.05f, 0.0f},
+                                                  50.0f,
+                                                  0.1f,
+                                                  50.0f,
+                                                  GREEN,
+                                                  true,
+                                                  "../resources/forrest_ground_01_diff_4k.jpg"));
 
     while (!WindowShouldClose()) {
         player1.handleInput(0.1f);
 
-        world.update(GetFrameTime());
+        world->update(GetFrameTime());
 
         BeginDrawing();
         ClearBackground(RAYWHITE);
 
         BeginMode3D(camera);
-        // Player
         player1.draw();
-
-        world.draw();
+        world->draw();
         EndMode3D();
 
-        DrawText("Hello World!", 350, 280, 20, DARKGRAY);
         EndDrawing();
     }
 
