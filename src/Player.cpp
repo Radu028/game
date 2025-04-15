@@ -1,8 +1,8 @@
 #include "Player.h"
 
+#include "CubeObject.h"
 #include "GameWorld.h"
 #include "raylib.h"
-#include "CubeObject.h"
 
 extern const float GRAVITY;
 
@@ -121,22 +121,40 @@ void Player::applyGravity(float gravity) {
 void Player::update(float deltaTime) {
     if (!world) return;
 
-    Vector3 feetPosition = position;
-    feetPosition.y -= height / 2.0f + 0.1f;
+    // Calculate dimensions for ground check
+    float halfWidth = width / 2.0f;
+    float halfLength = length / 2.0f;
+    float feetY = position.y - height / 2.0f - 0.1f;
 
+    // Define a grid of points to check on the player's base
+    const int GRID_SIZE = 3;  // 3x3 grid (9 puncte)
     bool onObject = false;
+
     for (const auto& obj : world->getObjects()) {
         if (obj.get() == this || !obj->getHasCollision()) continue;
 
         BoundingBox objectBox = obj->getBoundingBox();
         float objectTopY = objectBox.max.y;
 
-        if (feetPosition.y <= objectTopY + 0.1f && feetPosition.x >= objectBox.min.x &&
-            feetPosition.x <= objectBox.max.x && feetPosition.z >= objectBox.min.z &&
-            feetPosition.z <= objectBox.max.z) {
-            onObject = true;
-            break;
+        // Check grid of points across the entire base of the player
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                // Calculate position for this grid point (evenly distributed)
+                float xOffset = -halfWidth + (width * i / (GRID_SIZE - 1));
+                float zOffset = -halfLength + (length * j / (GRID_SIZE - 1));
+
+                Vector3 checkPoint = {position.x + xOffset, feetY, position.z + zOffset};
+
+                if (checkPoint.y <= objectTopY + 0.1f && checkPoint.x >= objectBox.min.x &&
+                    checkPoint.x <= objectBox.max.x && checkPoint.z >= objectBox.min.z &&
+                    checkPoint.z <= objectBox.max.z) {
+                    onObject = true;
+                    break;
+                }
+            }
+            if (onObject) break;
         }
+        if (onObject) break;
     }
 
     isOnGround = onObject;

@@ -19,10 +19,6 @@ int main() {
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 
-    Texture2D grass = LoadTexture("../resources/forrest_ground_01_diff_4k.jpg");
-    Model groundModel = LoadModelFromMesh(GenMeshPlane(50.0f, 50.0f, 1, 1));
-    groundModel.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = grass;
-
     Player player1((Vector3){0.0f, 2.0f, 0.0f});
     GameWorld world(&player1);
     player1.setWorld(&world);
@@ -30,8 +26,14 @@ int main() {
     world.addObject(
         std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f}, 1.0f, 1.0f, 1.0f, PINK, true));
 
-    world.addObject(
-        std::make_shared<CubeObject>((Vector3){0.0f, 0.0f, 0.0f}, 5.0f, 0.1f, 5.0f, YELLOW, true));
+    // Add ground as a CubeObject with texture and collision
+    world.addObject(std::make_shared<CubeObject>((Vector3){0.0f, -0.05f, 0.0f},
+                                                 50.0f,
+                                                 0.1f,
+                                                 50.0f,
+                                                 GREEN,
+                                                 true,
+                                                 "../resources/forrest_ground_01_diff_4k.jpg"));
 
     while (!WindowShouldClose()) {
         player1.handleInput(0.1f, JUMP_FORCE);
@@ -46,9 +48,6 @@ int main() {
         player1.draw();
 
         world.draw();
-
-        // Floor
-        // DrawModel(groundModel, (Vector3){0.0f, 0.0f, 0.0f}, 1.0f, WHITE);
         EndMode3D();
 
         DrawText("Hello World!", 350, 280, 20, DARKGRAY);
