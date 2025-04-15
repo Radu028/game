@@ -106,25 +106,53 @@ void Player::moveWithSliding(float start, float end, float* positionComponent) {
 
 void Player::applyGravity(float gravity) {
     if (!world) return;
-    Vector3 oldPosition = position;
 
     velocity.y += gravity;
-    position.y += velocity.y;
 
-    if (checkCollisionWithWorld()) {
-        position = oldPosition;
-        velocity.y = 0;
+    float initialY = position.y;
+    float targetY = initialY + velocity.y;
+
+    position.y = targetY;
+    bool collisionDetected = checkCollisionWithWorld();
+    position.y = initialY;
+
+    if (!collisionDetected) {
+        position.y = targetY;
         return;
     }
+
+    float t0 = 0.0f;
+    float t1 = 1.0f;
+    float tMid;
+
+    const int MAX_ITERATIONS = 32;
+    const float EPSILON = 0.001f;
+
+    for (int i = 0; i < MAX_ITERATIONS && (t1 - t0) > EPSILON; i++) {
+        tMid = (t0 + t1) / 2.0f;
+
+        position.y = initialY + (targetY - initialY) * tMid;
+
+        if (checkCollisionWithWorld()) {
+            t1 = tMid;
+        } else {
+            t0 = tMid;
+        }
+    }
+
+    position.y = initialY + (targetY - initialY) * t0;
+    velocity.y = 0;
 }
 
 void Player::update(float deltaTime) {
     if (!world) return;
 
+    applyGravity(GRAVITY);
+
     // Calculate dimensions for ground check
     float halfWidth = width / 2.0f;
     float halfLength = length / 2.0f;
-    float feetY = position.y - height / 2.0f - 0.1f;
+    float feetY = position.y - height / 2.0f - 0.01f;
 
     // Define a grid of points to check on the player's base
     const int GRID_SIZE = 3;  // 3x3 grid (9 puncte)
@@ -145,7 +173,7 @@ void Player::update(float deltaTime) {
 
                 Vector3 checkPoint = {position.x + xOffset, feetY, position.z + zOffset};
 
-                if (checkPoint.y <= objectTopY + 0.1f && checkPoint.x >= objectBox.min.x &&
+                if (checkPoint.y <= objectTopY + 0.01f && checkPoint.x >= objectBox.min.x &&
                     checkPoint.x <= objectBox.max.x && checkPoint.z >= objectBox.min.z &&
                     checkPoint.z <= objectBox.max.z) {
                     onObject = true;
@@ -162,6 +190,4 @@ void Player::update(float deltaTime) {
     if (onObject && velocity.y <= 0) {
         velocity.y = 0;
     }
-
-    applyGravity(GRAVITY);
 }
