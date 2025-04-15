@@ -1,10 +1,8 @@
 #include "GameObject.h"
 #include "GameWorld.h"
+#include "Physics.h"
 #include "Player.h"
 #include "raylib.h"
-
-extern const float GRAVITY = -0.01f;
-const float JUMP_FORCE = 0.2f;
 
 int main() {
     InitWindow(1280, 720, "Joc 3D");
@@ -36,7 +34,7 @@ int main() {
                                                  "../resources/forrest_ground_01_diff_4k.jpg"));
 
     while (!WindowShouldClose()) {
-        player1.handleInput(0.1f, JUMP_FORCE);
+        player1.handleInput(0.1f);
 
         world.update(GetFrameTime());
 

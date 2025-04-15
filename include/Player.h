@@ -3,13 +3,13 @@
 
 #include <string>
 
-#include "GameObject.h"
 #include "CubeObject.h"
+#include "GameObject.h"
 #include "raylib.h"
 
 class GameWorld;
 
-enum Direction { FORWARD, BACKWARD, LEFT, RIGHT, UPWARD };
+enum Direction { FORWARD, BACKWARD, LEFT, RIGHT };
 
 class Player : public CubeObject {
    private:
@@ -18,6 +18,7 @@ class Player : public CubeObject {
     GameWorld* world;
 
     void move(Direction direction, float byValue);
+    void jump();
     bool checkCollisionWithWorld() const;
     float findMaxSafePosition(float start, float end, float* positionComponent);
     void moveWithSliding(float start, float end, float* positionComponent);
@@ -28,9 +29,9 @@ class Player : public CubeObject {
 
     void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
 
-    void handleInput(float movementSpeed, float jumpForce);
+    void handleInput(float movementSpeed);
 
-    void applyGravity(float gravity);
+    void applyGravity(float deltaTime);
 
     void update(float deltaTime) override;
 };

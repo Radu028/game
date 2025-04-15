@@ -2,9 +2,8 @@
 
 #include "CubeObject.h"
 #include "GameWorld.h"
+#include "Physics.h"
 #include "raylib.h"
-
-extern const float GRAVITY;
 
 Player::Player(Vector3 position, Vector3 size, Color color)
     : CubeObject(position, size.x, size.y, size.z, color, true),
@@ -12,12 +11,12 @@ Player::Player(Vector3 position, Vector3 size, Color color)
       isOnGround(true),
       world(nullptr) {}
 
-void Player::handleInput(float movementSpeed, float jumpForce) {
-    if (IsKeyDown(KEY_W)) this->move(FORWARD, movementSpeed);
-    if (IsKeyDown(KEY_S)) this->move(BACKWARD, movementSpeed);
-    if (IsKeyDown(KEY_A)) this->move(LEFT, movementSpeed);
-    if (IsKeyDown(KEY_D)) this->move(RIGHT, movementSpeed);
-    if (IsKeyPressed(KEY_SPACE)) this->move(UPWARD, jumpForce);
+void Player::handleInput(float movementSpeed) {
+    if (IsKeyDown(KEY_W)) move(FORWARD, movementSpeed);
+    if (IsKeyDown(KEY_S)) move(BACKWARD, movementSpeed);
+    if (IsKeyDown(KEY_A)) move(LEFT, movementSpeed);
+    if (IsKeyDown(KEY_D)) move(RIGHT, movementSpeed);
+    if (IsKeyPressed(KEY_SPACE)) jump();
 }
 
 void Player::move(Direction direction, float byValue) {
@@ -33,9 +32,6 @@ void Player::move(Direction direction, float byValue) {
         newPosition.x -= byValue;
     } else if (direction == RIGHT) {
         newPosition.x += byValue;
-    } else if (direction == UPWARD && isOnGround) {
-        velocity.y = byValue;
-        isOnGround = false;
     }
 
     // Move along X axis with sliding collision
@@ -47,6 +43,12 @@ void Player::move(Direction direction, float byValue) {
     if (newPosition.z != oldPosition.z) {
         moveWithSliding(oldPosition.z, newPosition.z, &position.z);
     }
+}
+
+void Player::jump() {
+    if (!isOnGround) return;
+    velocity.y = PhysicsSettings::JUMP_VELOCITY;
+    isOnGround = false;
 }
 
 bool Player::checkCollisionWithWorld() const {
@@ -104,13 +106,24 @@ void Player::moveWithSliding(float start, float end, float* positionComponent) {
     }
 }
 
-void Player::applyGravity(float gravity) {
+void Player::applyGravity(float deltaTime) {
     if (!world) return;
 
-    velocity.y += gravity;
+    float clampedDelta = deltaTime;
+    if (clampedDelta < PhysicsSettings::MIN_DELTA_TIME)
+        clampedDelta = PhysicsSettings::MIN_DELTA_TIME;
+    if (clampedDelta > PhysicsSettings::MAX_DELTA_TIME)
+        clampedDelta = PhysicsSettings::MAX_DELTA_TIME;
+
+    float scaledDelta = clampedDelta * PhysicsSettings::TIME_SCALE;
+    velocity.y += PhysicsSettings::GRAVITY_ACCELERATION * scaledDelta;
+
+    if (velocity.y < PhysicsSettings::MAX_FALL_SPEED) {
+        velocity.y = PhysicsSettings::MAX_FALL_SPEED;
+    }
 
     float initialY = position.y;
-    float targetY = initialY + velocity.y;
+    float targetY = initialY + velocity.y * scaledDelta;
 
     position.y = targetY;
     bool collisionDetected = checkCollisionWithWorld();
@@ -147,7 +160,7 @@ void Player::applyGravity(float gravity) {
 void Player::update(float deltaTime) {
     if (!world) return;
 
-    applyGravity(GRAVITY);
+    applyGravity(deltaTime);
 
     // Calculate dimensions for ground check
     float halfWidth = width / 2.0f;
