@@ -1,7 +1,7 @@
 #include "GameObject.h"
 #include "GameWorld.h"
 #include "Physics.h"
-#include "Player.h"
+#include "entities/Player.h"
 #include "raylib.h"
 
 int main() {

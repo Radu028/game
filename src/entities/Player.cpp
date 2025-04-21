@@ -1,10 +1,11 @@
-#include "Player.h"
+#include "entities/Player.h"
 
 #include <cmath>
 
 #include "GameWorld.h"
 #include "Physics.h"
 #include "raylib.h"
+#include "systems/InputSystem.h"
 
 Player::Player(Vector3 position)
     : GameObject(position, true),
@@ -19,11 +20,14 @@ Player::Player(Vector3 position)
       world(nullptr) {}
 
 void Player::handleInput(float movementSpeed) {
-  if (IsKeyDown(KEY_W)) move(FORWARD, movementSpeed);
-  if (IsKeyDown(KEY_S)) move(BACKWARD, movementSpeed);
-  if (IsKeyDown(KEY_A)) move(LEFT, movementSpeed);
-  if (IsKeyDown(KEY_D)) move(RIGHT, movementSpeed);
-  if (IsKeyPressed(KEY_SPACE)) jump();
+  Vector2 moveAxis = InputSystem::getMovementAxis();
+
+  if (moveAxis.y > 0.0f) move(FORWARD, movementSpeed);
+  if (moveAxis.y < 0.0f) move(BACKWARD, movementSpeed);
+  if (moveAxis.x < 0.0f) move(LEFT, movementSpeed);
+  if (moveAxis.x > 0.0f) move(RIGHT, movementSpeed);
+
+  if (InputSystem::isJumpPressed()) jump();
 }
 
 void Player::move(Direction direction, float byValue) {
