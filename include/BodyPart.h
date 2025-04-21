@@ -13,7 +13,7 @@ class BodyPart : public CubeObject {
            bool hasCollision = false);
 
   void setRotation(const Vector3& axis, float angle);
-
+  void setPosition(Vector3 newPos) const;
   void draw() const override;
 };
 

@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "CubeObject.h"
+#include "BodyPart.h"
 #include "GameObject.h"
 #include "raylib.h"
 
@@ -11,29 +11,31 @@ class GameWorld;
 
 enum Direction { FORWARD, BACKWARD, LEFT, RIGHT };
 
-class Player : public CubeObject {
-   private:
-    Vector3 velocity;
-    bool isOnGround;
-    GameWorld* world;
+class Player : public GameObject {
+ private:
+  BodyPart torso;
+  BodyPart head;
+  BodyPart leftArm, rightArm;
+  BodyPart leftLeg, rightLeg;
 
-    void move(Direction direction, float byValue);
-    void jump();
-    bool checkCollisionWithWorld() const;
-    float findMaxSafePosition(float start, float end, float* positionComponent);
-    void moveWithSliding(float start, float end, float* positionComponent);
+  Vector3 velocity;
+  bool isOnGround;
+  GameWorld* world;
 
-   public:
-    Player(Vector3 position = (Vector3){0.0f, 0.0f, 0.0f},
-           Vector3 size = (Vector3){1.0f, 1.0f, 1.0f}, Color color = BLUE);
+  void move(Direction direction, float byValue);
+  void jump();
+  bool checkCollisionWithWorld() const;
+  float findMaxSafePosition(float start, float end, float* positionComponent);
+  void moveWithSliding(float start, float end, float* positionComponent);
 
-    void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
+ public:
+  Player(Vector3 position = (Vector3){0.0f, 0.0f, 0.0f});
 
-    void handleInput(float movementSpeed);
-
-    void applyGravity(float deltaTime);
-
-    void update(float deltaTime) override;
+  void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
+  void handleInput(float movementSpeed);
+  void applyGravity(float deltaTime);
+  void update(float deltaTime) override;
+  void draw() const override;
 };
 
 #endif

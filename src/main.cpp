@@ -11,7 +11,7 @@ int main() {
   DisableCursor();
 
   Camera3D camera = {0};
-  camera.position = (Vector3){0.0f, 5.0f, 15.0f};
+  camera.position = (Vector3){0.0f, 5.0f, 10.0f};
   camera.target = (Vector3){0.0f, 1.0f, 0.0f};
   camera.up = (Vector3){0.0f, 1.0f, 0.0f};
   camera.fovy = 45.0f;
@@ -24,7 +24,12 @@ int main() {
   world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f},
                                                 1.0f, 1.0f, 1.0f, PINK, true));
 
-  // Add ground as a CubeObject with texture and collision
+  world->addObject(std::make_shared<CubeObject>(
+      (Vector3){-2.0f, 0.5f, 0.0f}, 1.0f, 1.0f, 1.0f, SKYBLUE, true));
+
+  world->addObject(std::make_shared<CubeObject>(
+      (Vector3){0.0f, 0.5f, 2.0f}, 1.0f, 1.0f, 1.0f, ORANGE, true));
+
   world->addObject(std::make_shared<CubeObject>(
       (Vector3){0.0f, -0.05f, 0.0f}, 50.0f, 0.1f, 50.0f, GREEN, true,
       "../resources/forrest_ground_01_diff_4k.jpg"));
@@ -34,6 +39,11 @@ int main() {
 
     world->update(GetFrameTime());
 
+    Vector3 playerPos = player1.getPosition();
+    camera.target = playerPos;
+    camera.position =
+        (Vector3){playerPos.x, playerPos.y + 5.0f, playerPos.z + 10.0f};
+
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
@@ -41,6 +51,8 @@ int main() {
     player1.draw();
     world->draw();
     EndMode3D();
+
+    DrawFPS(10, 40);
 
     EndDrawing();
   }
