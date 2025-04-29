@@ -1,38 +1,45 @@
 #ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
+#include <memory>
+
 #include "raylib.h"
 
 class GameObject {
-   protected:
-    Vector3 position;
-    // Vector3 size;
+ protected:
+  Vector3 position;
+  // Vector3 size;
 
-    // Color color;
-    // Model model;
+  // Color color;
+  // Model model;
 
-    bool hasCollision;
+  bool hasCollision;
 
-   public:
-    // GameObject(Vector3 position, Vector3 size, Color color, bool hasCollision = true);
-    GameObject(Vector3 position, bool hasCollision = true);
-    virtual ~GameObject() = default;
+ public:
+  // GameObject(Vector3 position, Vector3 size, Color color, bool hasCollision =
+  // true);
+  GameObject(Vector3 position, bool hasCollision = true);
+  virtual ~GameObject() = default;
 
-    Vector3 getPosition() const { return position; }
-    // Vector3 getSize() const { return size; }
-    // Color getColor() const { return color; }
-    bool getHasCollision() const { return hasCollision; }
+  // Virtual clone constructor
+  virtual std::shared_ptr<GameObject> clone() const = 0;
 
-    void setPosition(Vector3 newPosition) { this->position = newPosition; }
+  Vector3 getPosition() const { return position; }
+  // Vector3 getSize() const { return size; }
+  // Color getColor() const { return color; }
+  bool getHasCollision() const { return hasCollision; }
 
-    // BoundingBox getBoundingBox() const;
-    virtual void update(float deltaTime) {};
-    virtual void draw() const = 0;
+  void setPosition(Vector3 newPosition) { this->position = newPosition; }
 
-    bool checkCollision(const GameObject& other) const;
-    // virtual void handleCollision(GameObject& other);
+  virtual void update(float deltaTime) {};
+  virtual void draw() const = 0;
+  virtual void interact() = 0;
+  virtual BoundingBox getBoundingBox() const = 0;
 
-    float getDistance(const GameObject& other) const;
+  bool checkCollision(const GameObject& other) const;
+  // virtual void handleCollision(GameObject& other);
+
+  float getDistance(const GameObject& other) const;
 };
 
 #endif
