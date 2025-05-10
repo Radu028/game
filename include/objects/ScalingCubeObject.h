@@ -1,6 +1,8 @@
 #ifndef SCALING_CUBE_OBJECT_H
 #define SCALING_CUBE_OBJECT_H
 
+#include <memory>  // For std::shared_ptr
+
 #include "CubeObject.h"
 
 class ScalingCubeObject : public CubeObject {

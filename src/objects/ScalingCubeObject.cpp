@@ -1,5 +1,10 @@
 #include "objects/ScalingCubeObject.h"
 
+#include <memory>  // For std::shared_ptr
+
+#include "raylib.h"
+#include "rlgl.h"
+
 ScalingCubeObject::ScalingCubeObject(Vector3 position, float width,
                                      float height, float length, Color color,
                                      bool hasCollision, float minScale,
@@ -45,8 +50,11 @@ void ScalingCubeObject::update(float deltaTime) {
 void ScalingCubeObject::draw() const {
   if (hasTexture) {
     // Draw with texture and scale
-    DrawCubeTexture(texture, position, width * currentScale,
-                    height * currentScale, length * currentScale, color);
+    rlPushMatrix();
+    rlTranslatef(position.x, position.y, position.z);
+    rlScalef(currentScale, currentScale, currentScale);
+    DrawModel(model, (Vector3){0, 0, 0}, 1.0f, color);
+    rlPopMatrix();
   } else {
     // Draw with scale
     DrawCube(position, width * currentScale, height * currentScale,
@@ -58,8 +66,8 @@ void ScalingCubeObject::interact() {
   // Reverse scaling direction
   growingPhase = !growingPhase;
 
-  // Also change color like parent
-  CubeObject::interact();
+  // Change color on interaction
+  color = GREEN;  // Change color instead of calling non-existent parent method
 }
 
 BoundingBox ScalingCubeObject::getBoundingBox() const {

@@ -1,5 +1,10 @@
 #include "objects/RotatingCubeObject.h"
 
+#include <memory>  // For std::shared_ptr
+
+#include "raylib.h"
+#include "rlgl.h"
+
 RotatingCubeObject::RotatingCubeObject(Vector3 position, float width,
                                        float height, float length, Color color,
                                        bool hasCollision, float rotationSpeedX,
@@ -54,7 +59,8 @@ void RotatingCubeObject::draw() const {
 
   // Draw the cube at the origin (since we've already translated)
   if (hasTexture) {
-    DrawCubeTexture(texture, (Vector3){0, 0, 0}, width, height, length, color);
+    // For textured cubes, draw with the model
+    DrawModel(model, (Vector3){0, 0, 0}, 1.0f, color);
   } else {
     DrawCube((Vector3){0, 0, 0}, width, height, length, color);
   }
@@ -69,6 +75,6 @@ void RotatingCubeObject::interact() {
   rotationSpeedY = -rotationSpeedY;
   rotationSpeedZ = -rotationSpeedZ;
 
-  // Also change color like parent
-  CubeObject::interact();
+  // Change color on interaction
+  color = BLUE;  // Change color instead of calling non-existent parent method
 }

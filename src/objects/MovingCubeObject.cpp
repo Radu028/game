@@ -1,6 +1,7 @@
 #include "objects/MovingCubeObject.h"
 
 #include <cmath>
+#include <memory>
 
 MovingCubeObject::MovingCubeObject(Vector3 position, float width, float height,
                                    float length, Color color, bool hasCollision,
@@ -50,6 +51,7 @@ void MovingCubeObject::interact() {
   velocity.x = -velocity.x;
   velocity.z = -velocity.z;
 
-  // Also change color like the parent class
-  CubeObject::interact();
+  // Change color on interaction
+  color =
+      RED;  // Instead of calling the parent class's interact that doesn't exist
 }

@@ -1,6 +1,7 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
+#include <memory>
 #include <string>
 
 #include "BodyPart.h"
@@ -36,6 +37,9 @@ class Player : public GameObject {
   void applyGravity(float deltaTime);
   void update(float deltaTime) override;
   void draw() const override;
+
+  // Clone method implementation
+  std::shared_ptr<GameObject> clone() const override;
 };
 
 #endif

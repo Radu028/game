@@ -1,6 +1,8 @@
 #ifndef MOVING_CUBE_OBJECT_H
 #define MOVING_CUBE_OBJECT_H
 
+#include <memory>  // For std::shared_ptr
+
 #include "CubeObject.h"
 
 class MovingCubeObject : public CubeObject {
@@ -24,7 +26,7 @@ class MovingCubeObject : public CubeObject {
   // Update method to handle movement
   void update(float deltaTime) override;
 
-  // Override interact to change velocity instead
+  // Interact method definition
   void interact() override;
 };
 

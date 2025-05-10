@@ -1,6 +1,7 @@
 #include "entities/Player.h"
 
 #include <cmath>
+#include <memory>
 
 #include "GameWorld.h"
 #include "Physics.h"
@@ -18,6 +19,10 @@ Player::Player(Vector3 position)
       velocity({0.0f, 0.0f, 0.0f}),
       isOnGround(true),
       world(nullptr) {}
+
+std::shared_ptr<GameObject> Player::clone() const {
+  return std::make_shared<Player>(position);
+}
 
 void Player::handleInput(float movementSpeed) {
   Vector2 moveAxis = InputSystem::getMovementAxis();

@@ -1,5 +1,7 @@
 #include "CubeObject.h"
 
+#include <memory>
+
 CubeObject::CubeObject(Vector3 position, float width, float height,
                        float length, Color color, bool hasCollision,
                        const char* texturePath)
@@ -17,6 +19,29 @@ CubeObject::CubeObject(Vector3 position, float width, float height,
   } else {
     hasTexture = false;
   }
+}
+
+CubeObject::CubeObject(const CubeObject& other)
+    : GameObject(other.position, other.hasCollision),
+      width(other.width),
+      height(other.height),
+      length(other.length),
+      color(other.color),
+      hasTexture(other.hasTexture) {
+  // Create new model instance
+  model = LoadModelFromMesh(GenMeshCube(width, height, length));
+
+  // Handle texture if present
+  if (hasTexture) {
+    // Since we can't directly copy textures in raylib, we'll use the same one
+    // This assumes the texture is still available at runtime
+    texture = other.texture;
+    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+  }
+}
+
+std::shared_ptr<GameObject> CubeObject::clone() const {
+  return std::make_shared<CubeObject>(*this);
 }
 
 CubeObject::~CubeObject() {
