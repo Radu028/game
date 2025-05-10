@@ -29,25 +29,15 @@ GameObject::GameObject(Vector3 position, bool hasCollision)
 //     DrawBoundingBox(box, wireColor);
 // }
 
-bool GameObject::checkCollision(const GameObject& other) const {
-  if (!hasCollision || !other.hasCollision) {
-    return false;
-  }
-
-  BoundingBox boundingBox = getBoundingBox();
-  BoundingBox otherBoundingBox = other.getBoundingBox();
-
-  return CheckCollisionBoxes(boundingBox, otherBoundingBox);
-}
+bool GameObject::checkCollision(const GameObject& other) const { return false; }
 
 float GameObject::getDistance(const GameObject& other) const {
-  Vector3 otherPos = other.getPosition();
-
-  float dx = position.x - otherPos.x;
-  float dy = position.y - otherPos.y;
-  float dz = position.z - otherPos.z;
-
-  return std::sqrt(dx * dx + dy * dy + dz * dz);
+  return sqrtf((other.position.x - this->position.x) *
+                   (other.position.x - this->position.x) +
+               (other.position.y - this->position.y) *
+                   (other.position.y - this->position.y) +
+               (other.position.z - this->position.z) *
+                   (other.position.z - this->position.z));
 }
 
 // void GameObject::handleCollision(GameObject& other) {

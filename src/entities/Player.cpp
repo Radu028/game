@@ -4,7 +4,6 @@
 
 #include "GameWorld.h"
 #include "Physics.h"
-#include "exceptions/CollisionException.h"
 #include "raylib.h"
 #include "systems/InputSystem.h"
 
@@ -19,35 +18,6 @@ Player::Player(Vector3 position)
       velocity({0.0f, 0.0f, 0.0f}),
       isOnGround(true),
       world(nullptr) {}
-
-// Copy constructor
-Player::Player(const Player &other)
-    : GameObject(other.position, other.hasCollision),
-      torso(other.torso),
-      head(other.head),
-      leftArm(other.leftArm),
-      rightArm(other.rightArm),
-      leftLeg(other.leftLeg),
-      rightLeg(other.rightLeg),
-      velocity(other.velocity),
-      isOnGround(other.isOnGround),
-      world(other.world) {}
-
-std::shared_ptr<GameObject> Player::clone() const {
-  return std::make_shared<Player>(*this);
-}
-
-BoundingBox Player::getBoundingBox() const {
-  // Return the torso's bounding box
-  return torso.getBoundingBox();
-}
-
-void Player::interact() {
-  // Simple interaction - player jumps when interacted with
-  if (isOnGround) {
-    const_cast<Player *>(this)->jump();
-  }
-}
 
 void Player::handleInput(float movementSpeed) {
   Vector2 moveAxis = InputSystem::getMovementAxis();

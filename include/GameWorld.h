@@ -4,46 +4,32 @@
 #include <memory>
 #include <vector>
 
+#include "CubeObject.h"
 #include "GameObject.h"
 
 class Player;
 
 class GameWorld {
- private:
-  static GameWorld* instance;
+   private:
+    static GameWorld* instance;
 
-  std::vector<std::shared_ptr<GameObject>> objects;
-  Player* player;
+    std::vector<std::shared_ptr<CubeObject>> objects;
+    Player* player;
 
-  GameWorld(Player* player);
+    GameWorld(Player* player);
 
-  GameWorld(const GameWorld&) = delete;
-  GameWorld& operator=(const GameWorld&) = delete;
+    GameWorld(const GameWorld&) = delete;
+    GameWorld& operator=(const GameWorld&) = delete;
 
- public:
-  static GameWorld* getInstance(Player* player);
+   public:
+    static GameWorld* getInstance(Player* player);
 
-  void addObject(std::shared_ptr<GameObject> object);
-  void update(float deltaTime);
-  void draw() const;
-  void checkCollisions();
-  void interactWithNearestObject();
+    void addObject(std::shared_ptr<CubeObject> object);
+    void update(float deltaTime);
+    void draw() const;
+    void checkCollisions();
 
-  // Find object by type with dynamic_cast
-  template <typename T>
-  std::shared_ptr<T> findObjectOfType() const {
-    for (const auto& obj : objects) {
-      std::shared_ptr<T> castedObj = std::dynamic_pointer_cast<T>(obj);
-      if (castedObj) {
-        return castedObj;
-      }
-    }
-    return nullptr;
-  }
-
-  const std::vector<std::shared_ptr<GameObject>>& getObjects() const {
-    return objects;
-  }
+    const std::vector<std::shared_ptr<CubeObject>>& getObjects() const { return objects; }
 };
 
 #endif

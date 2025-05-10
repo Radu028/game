@@ -1,86 +1,59 @@
 #include "GameWorld.h"
 
-#include <algorithm>
-#include <limits>
-
 #include "entities/Player.h"
-#include "exceptions/CollisionException.h"
-#include "exceptions/GameException.h"
 
 GameWorld* GameWorld::instance = nullptr;
 
-GameWorld::GameWorld(Player* player) : player(player) {}
-
 GameWorld* GameWorld::getInstance(Player* player) {
   if (instance == nullptr) {
-    if (player == nullptr) {
-      throw GameException("Cannot initialize GameWorld with null player");
-    }
     instance = new GameWorld(player);
   }
   return instance;
 }
 
-void GameWorld::addObject(std::shared_ptr<GameObject> object) {
-  if (object == nullptr) {
-    throw GameException("Cannot add null object to GameWorld");
-  }
+GameWorld::GameWorld(Player* player) : player(player) {}
+
+void GameWorld::addObject(std::shared_ptr<CubeObject> object) {
   objects.push_back(object);
 }
 
 void GameWorld::update(float deltaTime) {
-  for (auto& object : objects) {
-    object->update(deltaTime);
+  this->player->update(deltaTime);
+
+  for (auto& obj : objects) {
+    obj->update(deltaTime);
   }
 
-  try {
-    checkCollisions();
-  } catch (const CollisionException& e) {
-    // Log collision error but continue
-    TraceLog(LOG_WARNING, "Collision exception: %s", e.what());
-  }
+  checkCollisions();
 }
 
 void GameWorld::draw() const {
-  for (const auto& object : objects) {
-    object->draw();
+  for (const auto& obj : objects) {
+    obj->draw();
   }
 }
 
 void GameWorld::checkCollisions() {
-  // Simple collision check between all objects (can be optimized)
-  for (size_t i = 0; i < objects.size(); ++i) {
-    for (size_t j = i + 1; j < objects.size(); ++j) {
-      if (objects[i]->checkCollision(*objects[j])) {
-// Handle collision (example: report it, adjust physics, etc.)
-// For now, we just throw an exception if debug mode is on
-#ifdef DEBUG
-        throw CollisionException("Collision detected between objects " +
-                                 std::to_string(i) + " and " +
-                                 std::to_string(j));
-#endif
+  for (size_t i = 0; i < this->objects.size(); i++) {
+    Vector3 prevObjectPosition = this->objects[i]->getPosition();
+
+    for (size_t j = 0; j < this->objects.size(); j++) {
+      if (i != j && this->objects[i]->checkCollision(*objects[j])) {
+        this->objects[i]->setPosition(prevObjectPosition);
+        // this->objects[i]->handleCollision(*this->objects[j]);
+        break;
       }
     }
   }
-}
 
-void GameWorld::interactWithNearestObject() {
-  if (!player) return;
+  if (player) {
+    Vector3 prevPlayerPosition = this->player->getPosition();
 
-  std::shared_ptr<GameObject> nearestObject;
-  float minDistance = std::numeric_limits<float>::max();
-
-  for (const auto& object : objects) {
-    float distance = player->getDistance(*object);
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestObject = object;
+    for (const auto& obj : objects) {
+      if (this->player->checkCollision(*obj)) {
+        this->player->setPosition(prevPlayerPosition);
+        break;
+      }
     }
-  }
-
-  // Interact with the nearest object if it's within a certain range
-  const float INTERACTION_RANGE = 2.0f;
-  if (nearestObject && minDistance < INTERACTION_RANGE) {
-    nearestObject->interact();
   }
 }

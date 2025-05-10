@@ -1,7 +1,6 @@
 #ifndef PLAYER_H
 #define PLAYER_H
 
-#include <memory>
 #include <string>
 
 #include "BodyPart.h"
@@ -31,16 +30,6 @@ class Player : public GameObject {
 
  public:
   Player(Vector3 position = (Vector3){0.0f, 0.0f, 0.0f});
-
-  // Copy constructor
-  Player(const Player& other);
-
-  // Clone method
-  std::shared_ptr<GameObject> clone() const override;
-
-  // Virtual methods
-  BoundingBox getBoundingBox() const override;
-  void interact() override;
 
   void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
   void handleInput(float movementSpeed);
