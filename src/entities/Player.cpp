@@ -4,51 +4,45 @@
 #include <memory>
 
 #include "GameWorld.h"
-#include "Physics.h"
 #include "raylib.h"
+#include "settings/Physics.h"
 #include "systems/InputSystem.h"
 
 Player::Player(Vector3 position)
-    : GameObject(position, true),
+    : GameObject(position, true, true, false),
       torso(position, {0.5f, 1.5f, 0.3f}, BLUE),
       head({0, 0, 0}, {0.5f, 0.5f, 0.5f}, RED),
       leftArm({0, 0, 0}, {0.3f, 1.0f, 0.3f}, GREEN),
       rightArm({0, 0, 0}, {0.3f, 1.0f, 0.3f}, GREEN),
       leftLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW),
       rightLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW),
-      velocity({0.0f, 0.0f, 0.0f}),
-      isOnGround(true),
       world(nullptr) {}
-
-std::shared_ptr<GameObject> Player::clone() const {
-  return std::make_shared<Player>(position);
-}
 
 void Player::handleInput(float movementSpeed) {
   Vector2 moveAxis = InputSystem::getMovementAxis();
 
-  if (moveAxis.y > 0.0f) move(FORWARD, movementSpeed);
-  if (moveAxis.y < 0.0f) move(BACKWARD, movementSpeed);
-  if (moveAxis.x < 0.0f) move(LEFT, movementSpeed);
-  if (moveAxis.x > 0.0f) move(RIGHT, movementSpeed);
+  if (moveAxis.y > 0.0f) move(FORWARD, movementSpeed * GetFrameTime());
+  if (moveAxis.y < 0.0f) move(BACKWARD, movementSpeed * GetFrameTime());
+  if (moveAxis.x < 0.0f) move(LEFT, movementSpeed * GetFrameTime());
+  if (moveAxis.x > 0.0f) move(RIGHT, movementSpeed * GetFrameTime());
 
   if (InputSystem::isJumpPressed()) jump();
 }
 
 void Player::move(Direction direction, float byValue) {
   if (!world) return;
-  Vector3 oldPosition = position;
 
+  Vector3 oldPosition = position;
   Vector3 newPosition = position;
-  if (direction == FORWARD) {
+
+  if (direction == FORWARD)
     newPosition.z -= byValue;
-  } else if (direction == BACKWARD) {
+  else if (direction == BACKWARD)
     newPosition.z += byValue;
-  } else if (direction == LEFT) {
+  else if (direction == LEFT)
     newPosition.x -= byValue;
-  } else if (direction == RIGHT) {
+  else if (direction == RIGHT)
     newPosition.x += byValue;
-  }
 
   // Move along X axis with sliding collision
   if (newPosition.x != oldPosition.x) {
@@ -63,60 +57,30 @@ void Player::move(Direction direction, float byValue) {
 
 void Player::jump() {
   if (!isOnGround) return;
-  velocity.y = PhysicsSettings::JUMP_VELOCITY;
-  isOnGround = false;
+  Vector3 currentVelocity = getVelocity();
+  currentVelocity.y = PhysicsSettings::JUMP_VELOCITY;
+  setVelocity(currentVelocity);
+  setIsOnGround(false);
 }
 
-bool Player::checkCollisionWithWorld() const {
-  // Asigurăm-ne că torso are poziția actualizată
-  torso.setPosition(position);
+bool Player::checkCollisionWithWorldHorizontal() const {
+  if (!world) return false;
 
-  for (const auto &obj : world->getObjects()) {
-    // Skip player self-collision
-    if (obj.get() == dynamic_cast<CubeObject *>(const_cast<Player *>(this)) ||
-        !obj->getHasCollision()) {
+  BodyPart currentTorso = torso;
+  currentTorso.setPosition(this->position);
+  BoundingBox playerBox = currentTorso.getBoundingBox();
+
+  for (const auto &objSharedPtr : world->getObjects()) {
+    const GameObject *otherObj = objSharedPtr.get();
+    if (!otherObj || otherObj == this || !otherObj->getHasCollision()) {
       continue;
     }
 
-    // Use torso for collision detection
-    BoundingBox playerBox = torso.getBoundingBox();
-    BoundingBox objBox = obj->getBoundingBox();
-
-    if (CheckCollisionBoxes(playerBox, objBox)) {
+    if (CheckCollisionBoxes(playerBox, otherObj->getBoundingBox())) {
       return true;
     }
   }
   return false;
-}
-
-float Player::findMaxSafePosition(float start, float end,
-                                  float *positionComponent) {
-  const int MAX_ITERATIONS = 10;  // Maximum number of binary search iterations
-  float moveFactor = 0.0f;        // How much of the full movement to apply
-  float step = 0.5f;              // Binary search step size
-  float originalPosition = *positionComponent;
-
-  // Binary search for maximum safe distance
-  for (int i = 0; i < MAX_ITERATIONS; i++) {
-    float testPosition = start + (end - start) * (moveFactor + step);
-
-    // Try the test position
-    *positionComponent = testPosition;
-    bool hasCollision = checkCollisionWithWorld();
-
-    if (hasCollision) {
-      // Too far, try a smaller step
-      step *= 0.5f;
-    } else {
-      // Can move further, increase moveFactor
-      moveFactor += step;
-      step *= 0.5f;
-    }
-  }
-
-  // Reset position component before returning
-  *positionComponent = originalPosition;
-  return moveFactor;
 }
 
 void Player::moveWithSliding(float start, float end, float *positionComponent) {
@@ -126,178 +90,144 @@ void Player::moveWithSliding(float start, float end, float *positionComponent) {
   *positionComponent = end;
 
   // Check if we have a collision
-  if (checkCollisionWithWorld()) {
+  if (checkCollisionWithWorldHorizontal()) {
     // Reset position and find maximum safe position
-    *positionComponent = start;
-    float moveFactor = findMaxSafePosition(start, end, positionComponent);
+    *positionComponent = originalValue;
 
-    // Apply the final safe position
-    *positionComponent = start + (end - start) * moveFactor;
+    float t0 = 0.0f;
+    float t1 = 1.0f;
+    float tMid;
+    const int MAX_ITERATIONS = 10;
+    const float EPSILON = 0.001f;
+
+    for (int i = 0; i < MAX_ITERATIONS && (t1 - t0) > EPSILON; i++) {
+      tMid = (t0 + t1) / 2.0f;
+      *positionComponent = start + (end - start) * tMid;  // Test this position
+      if (checkCollisionWithWorldHorizontal()) {
+        t1 = tMid;  // Collision, try earlier
+      } else {
+        t0 = tMid;  // No collision, can go at least this far
+      }
+    }
+    *positionComponent =
+        start + (end - start) * t0;  // Apply safest found position
   }
 }
 
-void Player::applyGravity(float deltaTime) {
-  if (!world) return;
-
-  float clampedDelta = deltaTime;
-  if (clampedDelta < PhysicsSettings::MIN_DELTA_TIME)
-    clampedDelta = PhysicsSettings::MIN_DELTA_TIME;
-  if (clampedDelta > PhysicsSettings::MAX_DELTA_TIME)
-    clampedDelta = PhysicsSettings::MAX_DELTA_TIME;
-
-  float scaledDelta = clampedDelta * PhysicsSettings::TIME_SCALE;
-  velocity.y += PhysicsSettings::GRAVITY_ACCELERATION * scaledDelta;
-
-  if (velocity.y < PhysicsSettings::MAX_FALL_SPEED) {
-    velocity.y = PhysicsSettings::MAX_FALL_SPEED;
-  }
-
-  float initialY = position.y;
-  float targetY = initialY + velocity.y * scaledDelta;
-
-  position.y = targetY;
-  bool collisionDetected = checkCollisionWithWorld();
-  position.y = initialY;
-
-  if (!collisionDetected) {
-    position.y = targetY;
+void Player::performDetailedGroundCheck() {
+  if (!world) {
+    setIsOnGround(false);
     return;
   }
 
-  float t0 = 0.0f;
-  float t1 = 1.0f;
-  float tMid;
+  BodyPart currentTorso = torso;
+  currentTorso.setPosition(this->position);
+  BoundingBox playerBaseBox = currentTorso.getBoundingBox();
 
-  const int MAX_ITERATIONS = 32;
-  const float EPSILON = 0.001f;
+  float checkDepth = playerBaseBox.min.y - 0.1f;
 
-  for (int i = 0; i < MAX_ITERATIONS && (t1 - t0) > EPSILON; i++) {
-    tMid = (t0 + t1) / 2.0f;
+  bool foundGround = false;
+  for (const auto &objSharedPtr : world->getObjects()) {
+    const GameObject *otherObj = objSharedPtr.get();
+    if (!otherObj || !otherObj->getHasCollision() ||
+        otherObj->getIsStatic() == false) {
+      // TODO: Check later this.
+      if (!otherObj || !otherObj->getHasCollision()) continue;
+    }
 
-    position.y = initialY + (targetY - initialY) * tMid;
+    BoundingBox otherBox = otherObj->getBoundingBox();
 
-    if (checkCollisionWithWorld()) {
-      t1 = tMid;
-    } else {
-      t0 = tMid;
+    bool yAlign = (playerBaseBox.min.y >= otherBox.max.y - 0.05f) &&
+                  (playerBaseBox.min.y <= otherBox.max.y + 0.2f);
+
+    bool xzOverlap = (playerBaseBox.max.x > otherBox.min.x &&
+                      playerBaseBox.min.x < otherBox.max.x) &&
+                     (playerBaseBox.max.z > otherBox.min.z &&
+                      playerBaseBox.min.z < otherBox.max.z);
+
+    if (yAlign && xzOverlap) {
+      if (std::abs(this->position.y -
+                   (playerBaseBox.max.y - playerBaseBox.min.y) / 2 -
+                   otherBox.max.y) < 0.1f) {
+        foundGround = true;
+        Vector3 pPos = getPosition();
+        float playerFootY =
+            pPos.y - (getBoundingBox().max.y - getBoundingBox().min.y) / 2.0f;
+
+        if (std::abs(playerFootY - otherBox.max.y) < 0.15f) {
+          pPos.y = otherBox.max.y +
+                   (getBoundingBox().max.y - getBoundingBox().min.y) / 2.0f;
+          setPosition(pPos);
+        }
+
+        Vector3 currentVel = getVelocity();
+        if (currentVel.y < 0) {
+          currentVel.y = 0;
+          setVelocity(currentVel);
+        }
+
+        break;  // Found ground
+      }
     }
   }
-
-  position.y = initialY + (targetY - initialY) * t0;
-  velocity.y = 0;
+  setIsOnGround(foundGround);
 }
 
 void Player::update(float deltaTime) {
   if (!world) return;
 
-  applyGravity(deltaTime);
+  performDetailedGroundCheck();
+
+  handleInput(deltaTime);
 
   torso.setPosition(position);
 
-  BoundingBox torsoBox = torso.getBoundingBox();
-  float halfWidth = (torsoBox.max.x - torsoBox.min.x) / 2.0f;
-  float halfLength = (torsoBox.max.z - torsoBox.min.z) / 2.0f;
-  float feetY = torsoBox.min.y - 0.01f;
+  Vector3 torsoPos = torso.getPosition();
+  float torsoHeight = torso.getSize().y;
+  float headHeight = head.getSize().y;
+  head.setPosition({torsoPos.x,
+                    torsoPos.y + torsoHeight / 2.0f + headHeight / 2.0f,
+                    torsoPos.z});
 
-  // Define a grid of points to check on the player's base
-  const int GRID_SIZE = 3;  // 3x3 grid (9 puncte)
-  bool onObject = false;
+  float armOffsetX = torso.getSize().x / 2.0f + leftArm.getSize().x / 2.0f;
+  leftArm.setPosition({torsoPos.x - armOffsetX, torsoPos.y, torsoPos.z});
+  rightArm.setPosition({torsoPos.x + armOffsetX, torsoPos.y, torsoPos.z});
 
-  for (const auto &obj : world->getObjects()) {
-    if (obj.get() == dynamic_cast<CubeObject *>(this) ||
-        !obj->getHasCollision())
-      continue;
-
-    BoundingBox objectBox = obj->getBoundingBox();
-    float objectTopY = objectBox.max.y;
-
-    // Check grid of points across the entire base of the player
-    for (int i = 0; i < GRID_SIZE; i++) {
-      for (int j = 0; j < GRID_SIZE; j++) {
-        // Calculate position for this grid point (evenly distributed)
-        float xOffset = -halfWidth + ((torsoBox.max.x - torsoBox.min.x) * i /
-                                      (GRID_SIZE - 1));
-        float zOffset = -halfLength + ((torsoBox.max.z - torsoBox.min.z) * j /
-                                       (GRID_SIZE - 1));
-
-        Vector3 checkPoint = {position.x + xOffset, feetY,
-                              position.z + zOffset};
-
-        if (checkPoint.y <= objectTopY + 0.01f &&
-            checkPoint.x >= objectBox.min.x &&
-            checkPoint.x <= objectBox.max.x &&
-            checkPoint.z >= objectBox.min.z &&
-            checkPoint.z <= objectBox.max.z) {
-          onObject = true;
-          break;
-        }
-      }
-      if (onObject) break;
-    }
-    if (onObject) break;
-  }
-
-  isOnGround = onObject;
-
-  if (onObject && velocity.y <= 0) {
-    velocity.y = 0;
-  }
+  float legOffsetY = torsoHeight / 2.0f + leftLeg.getSize().y / 2.0f;
+  leftLeg.setPosition({torsoPos.x - torso.getSize().x / 4.0f,
+                       torsoPos.y - legOffsetY, torsoPos.z});
+  rightLeg.setPosition({torsoPos.x + torso.getSize().x / 4.0f,
+                        torsoPos.y - legOffsetY, torsoPos.z});
 
   static float animTime = 0.0f;
   if (IsKeyDown(KEY_W) || IsKeyDown(KEY_S) || IsKeyDown(KEY_A) ||
       IsKeyDown(KEY_D)) {
-    animTime += deltaTime * 5.0f;
+    animTime += deltaTime * 10.0f;
+    float animOffset = sin(animTime) * 0.2f;
 
-    float swingAngle = sin(animTime) * 30.0f;
+    // Vector3 leftArmPos = leftArm.getPosition();
+    // leftArmPos.y += animOffset;
+    // leftArm.setPosition(leftArmPos);
 
-    leftArm.setRotation((Vector3){1, 0, 0}, -swingAngle);
-    rightArm.setRotation((Vector3){1, 0, 0}, swingAngle);
-    leftLeg.setRotation((Vector3){1, 0, 0}, swingAngle);
-    rightLeg.setRotation((Vector3){1, 0, 0}, -swingAngle);
-  } else {
-    leftArm.setRotation((Vector3){1, 0, 0}, 0);
-    rightArm.setRotation((Vector3){1, 0, 0}, 0);
-    leftLeg.setRotation((Vector3){1, 0, 0}, 0);
-    rightLeg.setRotation((Vector3){1, 0, 0}, 0);
-    animTime = 0.0f;
+    // Vector3 rightArmPos = rightArm.getPosition();
+    // rightArmPos.y -= animOffset;
+    // rightArm.setPosition(rightArmPos);
+
+    // Vector3 leftLegPos = leftLeg.getPosition();
+    // leftLegPos.y -= animOffset;
+    // leftLeg.setPosition(leftLegPos);
+
+    // Vector3 rightLegPos = rightLeg.getPosition();
+    // rightLegPos.y += animOffset;
+    // rightLeg.setPosition(rightLegPos);
   }
 }
 
 void Player::draw() const {
-  Vector3 torsoPos = position;
-  torso.setPosition(torsoPos);
-
-  BoundingBox torsoBox = torso.getBoundingBox();
-  float torsoHeight = torsoBox.max.y - torsoBox.min.y;
-
   torso.draw();
-
-  Vector3 headPos = position;
-  headPos.y += torsoHeight / 2 + 0.25f;
-  head.setPosition(headPos);
   head.draw();
-
-  float shoulderY = position.y + torsoHeight / 3;
-  float shoulderX = torsoBox.max.x - torsoBox.min.x;
-
-  Vector3 leftArmPos = {position.x - shoulderX / 1.5f, shoulderY, position.z};
-  Vector3 rightArmPos = {position.x + shoulderX / 1.5f, shoulderY, position.z};
-
-  leftArm.setPosition(leftArmPos);
-  rightArm.setPosition(rightArmPos);
-
   leftArm.draw();
   rightArm.draw();
-
-  float hipY = position.y - torsoHeight / 2;
-  float hipX = shoulderX / 2;
-
-  Vector3 leftLegPos = {position.x - hipX / 2, hipY, position.z};
-  Vector3 rightLegPos = {position.x + hipX / 2, hipY, position.z};
-
-  leftLeg.setPosition(leftLegPos);
-  rightLeg.setPosition(rightLegPos);
-
   leftLeg.draw();
   rightLeg.draw();
 }

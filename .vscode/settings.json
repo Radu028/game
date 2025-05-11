@@ -48,7 +48,17 @@
     "vector": "cpp",
     "complex": "cpp",
     "sstream": "cpp",
-    "algorithm": "cpp"
+    "algorithm": "cpp",
+    "__tree": "cpp",
+    "iterator": "cpp",
+    "forward_list": "cpp",
+    "fstream": "cpp",
+    "list": "cpp",
+    "map": "cpp",
+    "regex": "cpp",
+    "set": "cpp",
+    "unordered_set": "cpp",
+    "valarray": "cpp"
   },
   "github.copilot.enable": {
     "*": true,

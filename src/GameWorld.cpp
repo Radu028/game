@@ -1,6 +1,9 @@
 #include "GameWorld.h"
 
+#include <algorithm>  // For std::remove
+
 #include "entities/Player.h"
+#include "systems/PhysicsSystem.h"
 
 GameWorld* GameWorld::instance = nullptr;
 
@@ -11,49 +14,55 @@ GameWorld* GameWorld::getInstance(Player* player) {
   return instance;
 }
 
-GameWorld::GameWorld(Player* player) : player(player) {}
+GameWorld::GameWorld(Player* player) : player(player) {
+  physicsSystem = std::make_unique<PhysicsSystem>(this);
+
+  if (this->player) {
+    physicsSystem->addObject(static_cast<GameObject*>(this->player));
+  }
+}
+
+GameWorld::~GameWorld() {
+  if (instance == this) {
+    instance = nullptr;
+  }
+}
 
 void GameWorld::addObject(std::shared_ptr<GameObject> object) {
-  objects.push_back(object);
+  if (object) {
+    objects.push_back(object);
+    if (physicsSystem) {
+      physicsSystem->addObject(object.get());
+    }
+  }
+}
+
+void GameWorld::removeObject(std::shared_ptr<GameObject> object) {
+  if (object && physicsSystem) {
+    physicsSystem->removeObject(object.get());
+  }
+  objects.erase(std::remove(objects.begin(), objects.end(), object),
+                objects.end());
 }
 
 void GameWorld::update(float deltaTime) {
-  this->player->update(deltaTime);
-
-  for (auto& obj : objects) {
-    obj->update(deltaTime);
+  if (physicsSystem) {
+    physicsSystem->update(deltaTime);
   }
 
-  checkCollisions();
+  if (player) {
+    player->update(deltaTime);
+  }
+
+  for (auto& obj : objects) {
+    if (obj && obj.get() != player) {
+      obj->update(deltaTime);
+    }
+  }
 }
 
 void GameWorld::draw() const {
   for (const auto& obj : objects) {
     obj->draw();
-  }
-}
-
-void GameWorld::checkCollisions() {
-  for (size_t i = 0; i < this->objects.size(); i++) {
-    Vector3 prevObjectPosition = this->objects[i]->getPosition();
-
-    for (size_t j = 0; j < this->objects.size(); j++) {
-      if (i != j && this->objects[i]->checkCollision(*objects[j])) {
-        this->objects[i]->setPosition(prevObjectPosition);
-        // this->objects[i]->handleCollision(*this->objects[j]);
-        break;
-      }
-    }
-  }
-
-  if (player) {
-    Vector3 prevPlayerPosition = this->player->getPosition();
-
-    for (const auto& obj : objects) {
-      if (this->player->checkCollision(*obj)) {
-        this->player->setPosition(prevPlayerPosition);
-        break;
-      }
-    }
   }
 }

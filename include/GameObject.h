@@ -8,35 +8,39 @@
 class GameObject {
  protected:
   Vector3 position;
-  // Vector3 size;
-
-  // Color color;
-  // Model model;
+  Vector3 velocity;
+  bool isOnGround;
+  bool affectedByGravity;
+  bool isStatic;
 
   bool hasCollision;
 
  public:
-  // GameObject(Vector3 position, Vector3 size, Color color, bool hasCollision =
-  // true);
-  GameObject(Vector3 position, bool hasCollision = true);
+  // GameObject(Vector3 position, bool hasCollision = true);
+  GameObject(Vector3 position, bool hasCollision = true,
+             bool affectedByGravity = true,
+             bool isStatic = false);  // Updated constructor
   virtual ~GameObject() = default;
 
   Vector3 getPosition() const { return position; }
-  // Vector3 getSize() const { return size; }
-  // Color getColor() const { return color; }
+  Vector3 getVelocity() const { return velocity; }
+  bool getIsOnGround() const { return isOnGround; }
+  bool isAffectedByGravity() const { return affectedByGravity; }
+  bool getIsStatic() const { return isStatic; }
   bool getHasCollision() const { return hasCollision; }
 
-  void setPosition(Vector3 newPosition) { this->position = newPosition; }
+  void setPosition(Vector3 newPosition) { position = newPosition; }
+  void setVelocity(Vector3 newVelocity) { velocity = newVelocity; }
+  void setIsOnGround(bool onGround) { isOnGround = onGround; }
 
   virtual void update(float deltaTime) {};
   virtual void draw() const = 0;
 
-  virtual std::shared_ptr<GameObject> clone() const = 0;
   virtual void interact() {};
   virtual BoundingBox getBoundingBox() const = 0;
 
   bool checkCollision(const GameObject& other) const;
-  // virtual void handleCollision(GameObject& other);
+  virtual bool checkCollisionWith(const BoundingBox& otherBox) const;
 
   float getDistance(const GameObject& other) const;
 };

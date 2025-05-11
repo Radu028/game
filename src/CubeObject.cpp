@@ -2,35 +2,36 @@
 
 #include <iostream>
 #include <memory>
+#include <string>
 
-CubeObject::CubeObject(Vector3 position, float width, float height,
-                       float length, Color color, bool hasCollision,
-                       const char* texturePath)
+CubeObject::CubeObject(Vector3 position, Vector3 size, Color color,
+                       bool hasCollision, const std::string& texturePath,
+                       bool affectedByGravity, bool isStatic)
     : GameObject(position, hasCollision),
-      width(width),
-      height(height),
-      length(length),
-      color(color) {
-  model = LoadModelFromMesh(GenMeshCube(width, height, length));
+      size(size),
+      color(color),
+      textureLoaded(false) {
+  model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
 
-  if (texturePath != nullptr) {
-    texture = LoadTexture(texturePath);
-    model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
-    hasTexture = true;
-  } else {
-    hasTexture = false;
+  if (!texturePath.empty()) {
+    texture = LoadTexture(texturePath.c_str());
+    if (texture.id > 0) {
+      textureLoaded = true;
+      hasTexture = true;
+      model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
+    } else {
+      TraceLog(LOG_WARNING, "Failed to load texture: %s", texturePath.c_str());
+    }
   }
 }
 
 CubeObject::CubeObject(const CubeObject& other)
     : GameObject(other.position, other.hasCollision),
-      width(other.width),
-      height(other.height),
-      length(other.length),
+      size(other.size),
       color(other.color),
       hasTexture(other.hasTexture) {
   // Create new model instance
-  model = LoadModelFromMesh(GenMeshCube(width, height, length));
+  model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
 
   // Handle texture if present
   if (hasTexture) {
@@ -41,10 +42,6 @@ CubeObject::CubeObject(const CubeObject& other)
   }
 }
 
-std::shared_ptr<GameObject> CubeObject::clone() const {
-  return std::make_shared<CubeObject>(*this);
-}
-
 CubeObject::~CubeObject() {
   UnloadModel(model);
 
@@ -53,12 +50,14 @@ CubeObject::~CubeObject() {
   }
 }
 
+Vector3 CubeObject::getSize() const { return size; }
+
 BoundingBox CubeObject::getBoundingBox() const {
   return (BoundingBox){
-      (Vector3){position.x - width / 2, position.y - height / 2,
-                position.z - length / 2},
-      (Vector3){position.x + width / 2, position.y + height / 2,
-                position.z + length / 2},
+      (Vector3){position.x - size.x / 2, position.y - size.y / 2,
+                position.z - size.z / 2},
+      (Vector3){position.x + size.x / 2, position.y + size.y / 2,
+                position.z + size.z / 2},
   };
 }
 
@@ -66,7 +65,7 @@ void CubeObject::draw() const {
   if (hasTexture) {
     DrawModel(model, position, 1.0f, WHITE);
   } else {
-    DrawCube(position, width, height, length, color);
+    DrawCube(position, size.x, size.y, size.z, color);
   }
 
   Color wireColor = RED;

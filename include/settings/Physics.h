@@ -1,3 +1,5 @@
+#pragma once
+
 struct PhysicsSettings {
   static constexpr float GRAVITY_ACCELERATION = -78.4f;
   static constexpr float JUMP_VELOCITY = 18.0f;

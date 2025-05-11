@@ -2,7 +2,7 @@
 
 BodyPart::BodyPart(Vector3 position, Vector3 size, Color color,
                    bool hasCollision)
-    : CubeObject(position, size.x, size.y, size.z, color, hasCollision),
+    : CubeObject(position, size, color, hasCollision),
       rotationAxis({0.0f, 1.0f, 0.0f}),
       rotationAngle(0.0f) {}
 

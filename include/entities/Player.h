@@ -19,14 +19,11 @@ class Player : public GameObject {
   BodyPart leftArm, rightArm;
   BodyPart leftLeg, rightLeg;
 
-  Vector3 velocity;
-  bool isOnGround;
   GameWorld* world;
 
   void move(Direction direction, float byValue);
   void jump();
-  bool checkCollisionWithWorld() const;
-  float findMaxSafePosition(float start, float end, float* positionComponent);
+  bool checkCollisionWithWorldHorizontal() const;
   void moveWithSliding(float start, float end, float* positionComponent);
 
  public:
@@ -34,13 +31,12 @@ class Player : public GameObject {
 
   void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
   void handleInput(float movementSpeed);
-  void applyGravity(float deltaTime);
   void update(float deltaTime) override;
   void draw() const override;
 
-  // Clone method implementation
-  std::shared_ptr<GameObject> clone() const override;
   BoundingBox getBoundingBox() const override;
+
+  void performDetailedGroundCheck();
 };
 
 #endif

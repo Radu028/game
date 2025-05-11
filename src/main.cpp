@@ -1,13 +1,10 @@
-#include <string>
 
+#include "CubeObject.h"
 #include "GameObject.h"
 #include "GameWorld.h"
-#include "Physics.h"
 #include "entities/Player.h"
 #include "raylib.h"
-
-std::string interactionMessage = "";
-Color interactionMessageColor = BLACK;
+#include "settings/Physics.h"
 
 int main() {
   InitWindow(1280, 720, "Joc 3D");
@@ -27,20 +24,25 @@ int main() {
   player1.setWorld(world);
 
   world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f},
-                                                1.0f, 1.0f, 1.0f, PINK, true));
+                                                (Vector3){1.0f, 1.0f, 1.0f},
+                                                PINK, true, "", true, false));
 
   world->addObject(std::make_shared<CubeObject>(
-      (Vector3){-2.0f, 0.5f, 0.0f}, 1.0f, 1.0f, 1.0f, SKYBLUE, true));
+      (Vector3){-2.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, SKYBLUE, true,
+      "", false, true));
+
+  world->addObject(std::make_shared<CubeObject>((Vector3){0.0f, 0.5f, 2.0f},
+                                                (Vector3){1.0f, 1.0f, 1.0f},
+                                                ORANGE, true, "", false, true));
 
   world->addObject(std::make_shared<CubeObject>(
-      (Vector3){0.0f, 0.5f, 2.0f}, 1.0f, 1.0f, 1.0f, ORANGE, true));
-
-  world->addObject(std::make_shared<CubeObject>(
-      (Vector3){0.0f, -0.05f, 0.0f}, 50.0f, 0.1f, 50.0f, GREEN, true,
-      "../resources/forrest_ground_01_diff_4k.jpg"));
+      (Vector3){0.0f, -0.05f, 0.0f}, (Vector3){50.0f, 0.1f, 50.0f}, GREEN, true,
+      "../resources/forrest_ground_01_diff_4k.jpg", false, true));
 
   while (!WindowShouldClose()) {
-    player1.handleInput(0.1f);
+    float deltaTime = GetFrameTime();
+
+    // player1.handleInput(0.1f);
 
     world->update(GetFrameTime());
 
