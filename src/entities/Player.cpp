@@ -301,3 +301,5 @@ void Player::draw() const {
   leftLeg.draw();
   rightLeg.draw();
 }
+
+BoundingBox Player::getBoundingBox() const { return torso.getBoundingBox(); }

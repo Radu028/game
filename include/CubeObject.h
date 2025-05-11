@@ -28,10 +28,12 @@ class CubeObject : public GameObject {
   // Clone method
   std::shared_ptr<GameObject> clone() const override;
 
-  virtual BoundingBox getBoundingBox() const;
+  BoundingBox getBoundingBox() const override;
   void draw() const override;
 
   bool checkCollision(const CubeObject& other) const;
+
+  void interact() override;
 };
 
 #endif

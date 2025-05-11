@@ -40,6 +40,7 @@ class Player : public GameObject {
 
   // Clone method implementation
   std::shared_ptr<GameObject> clone() const override;
+  BoundingBox getBoundingBox() const override;
 };
 
 #endif

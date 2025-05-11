@@ -13,7 +13,7 @@ GameWorld* GameWorld::getInstance(Player* player) {
 
 GameWorld::GameWorld(Player* player) : player(player) {}
 
-void GameWorld::addObject(std::shared_ptr<CubeObject> object) {
+void GameWorld::addObject(std::shared_ptr<GameObject> object) {
   objects.push_back(object);
 }
 

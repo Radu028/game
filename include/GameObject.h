@@ -28,15 +28,12 @@ class GameObject {
 
   void setPosition(Vector3 newPosition) { this->position = newPosition; }
 
-  // BoundingBox getBoundingBox() const;
   virtual void update(float deltaTime) {};
   virtual void draw() const = 0;
 
-  // Virtual clone method for object copying
   virtual std::shared_ptr<GameObject> clone() const = 0;
-
-  // Virtual interact method for object interactions
   virtual void interact() {};
+  virtual BoundingBox getBoundingBox() const = 0;
 
   bool checkCollision(const GameObject& other) const;
   // virtual void handleCollision(GameObject& other);

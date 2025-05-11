@@ -1,5 +1,6 @@
 #include "CubeObject.h"
 
+#include <iostream>
 #include <memory>
 
 CubeObject::CubeObject(Vector3 position, float width, float height,
@@ -86,3 +87,5 @@ bool CubeObject::checkCollision(const CubeObject& other) const {
   bool result = CheckCollisionBoxes(box1, box2);
   return result;
 }
+
+void CubeObject::interact() { std::cout << "Test" << std::endl; }

@@ -1,8 +1,13 @@
+#include <string>
+
 #include "GameObject.h"
 #include "GameWorld.h"
 #include "Physics.h"
 #include "entities/Player.h"
 #include "raylib.h"
+
+std::string interactionMessage = "";
+Color interactionMessageColor = BLACK;
 
 int main() {
   InitWindow(1280, 720, "Joc 3D");
@@ -38,6 +43,14 @@ int main() {
     player1.handleInput(0.1f);
 
     world->update(GetFrameTime());
+
+    if (IsKeyPressed(KEY_E)) {
+      for (const auto& obj : world->getObjects()) {
+        if (obj) {
+          obj->interact();
+        }
+      }
+    }
 
     Vector3 playerPos = player1.getPosition();
     camera.target = playerPos;
