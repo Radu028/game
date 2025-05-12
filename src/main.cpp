@@ -36,9 +36,9 @@ int main() {
                                                 (Vector3){1.0f, 1.0f, 1.0f},
                                                 ORANGE, true, "", false, true));
 
-  world->addObject(std::make_shared<Floor>((Vector3){0.0f, -0.05f, 0.0f},
-                                           (Vector3){50.0f, 0.1f, 50.0f}, GREEN,
-                                           true));
+  world->addObject(std::make_shared<Floor>(
+      (Vector3){0.0f, -5.05f, 0.0f}, (Vector3){50.0f, 0.1f, 50.0f},
+      "../resources/forrest_ground_01_diff_4k.jpg", true));
   // "../resources/forrest_ground_01_diff_4k.jpg"
 
   while (!WindowShouldClose()) {

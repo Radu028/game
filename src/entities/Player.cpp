@@ -5,8 +5,11 @@
 
 #include "GameWorld.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "settings/Physics.h"
 #include "systems/InputSystem.h"
+
+const float PLAYER_MOVEMENT_SPEED = 5.0f;
 
 Player::Player(Vector3 position)
     : GameObject(position, true, true, false),
@@ -72,7 +75,8 @@ bool Player::checkCollisionWithWorldHorizontal() const {
 
   for (const auto &objSharedPtr : world->getObjects()) {
     const GameObject *otherObj = objSharedPtr.get();
-    if (!otherObj || otherObj == this || !otherObj->getHasCollision()) {
+    if (!otherObj || otherObj == this || !otherObj->getHasCollision() ||
+        otherObj->getIsStatic()) {
       continue;
     }
 
@@ -98,7 +102,6 @@ void Player::moveWithSliding(float start, float end, float *positionComponent) {
     float t1 = 1.0f;
     float tMid;
     const int MAX_ITERATIONS = 10;
-    const float EPSILON = 0.001f;
 
     for (int i = 0; i < MAX_ITERATIONS && (t1 - t0) > EPSILON; i++) {
       tMid = (t0 + t1) / 2.0f;
@@ -151,14 +154,22 @@ void Player::performDetailedGroundCheck() {
                    otherBox.max.y) < 0.1f) {
         foundGround = true;
         Vector3 pPos = getPosition();
-        float playerFootY =
-            pPos.y - (getBoundingBox().max.y - getBoundingBox().min.y) / 2.0f;
 
-        if (std::abs(playerFootY - otherBox.max.y) < 0.15f) {
-          pPos.y = otherBox.max.y +
-                   (getBoundingBox().max.y - getBoundingBox().min.y) / 2.0f;
-          setPosition(pPos);
-        }
+        float playerHalfHeight =
+            (getBoundingBox().max.y - getBoundingBox().min.y) / 2.0f;
+        pPos.y = otherBox.max.y + playerHalfHeight + EPSILON;
+        setPosition(pPos);
+
+        // float playerFootY =
+        //     pPos.y - (getBoundingBox().max.y - getBoundingBox().min.y)
+        //     / 2.0f;
+        //
+        // if (std::abs(playerFootY - otherBox.max.y) < 0.15f) {
+        //   pPos.y = otherBox.max.y +
+        //            (getBoundingBox().max.y - getBoundingBox().min.y)
+        //            / 2.0f;
+        //   setPosition(pPos);
+        // }
 
         Vector3 currentVel = getVelocity();
         if (currentVel.y < 0) {
@@ -178,7 +189,7 @@ void Player::update(float deltaTime) {
 
   performDetailedGroundCheck();
 
-  handleInput(deltaTime);
+  handleInput(PLAYER_MOVEMENT_SPEED);
 
   torso.setPosition(position);
 
