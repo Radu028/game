@@ -8,7 +8,9 @@ BodyPart::BodyPart(Vector3 position, Vector3 size, Color color,
       size(size),
       color(color),
       rotationAxis({0.0f, 1.0f, 0.0f}),
-      rotationAngle(0.0f) {}
+      rotationAngle(0.0f) {
+  model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
+}
 
 void BodyPart::setRotation(const Vector3 axis, float angle) {
   rotationAxis = axis;
@@ -20,10 +22,13 @@ void BodyPart::setPosition(Vector3 newPos) { GameObject::setPosition(newPos); }
 Vector3 BodyPart::getSize() const { return size; }
 Color BodyPart::getColor() const { return color; }
 
+float BodyPart::getRotationAngle() const { return rotationAngle; }
+Vector3 BodyPart::getRotationAxis() const { return rotationAxis; }
+
 void BodyPart::draw() const {
   // TODO: Reconsider this.
-  DrawModelEx(LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z)), position,
-              rotationAxis, rotationAngle, {1.0f, 1.0f, 1.0f}, color);
+  DrawModelEx(model, position, rotationAxis, rotationAngle, {1.0f, 1.0f, 1.0f},
+              color);
 }
 
 BoundingBox BodyPart::getBoundingBox() const {

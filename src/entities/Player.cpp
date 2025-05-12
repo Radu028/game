@@ -12,6 +12,7 @@
 const float PLAYER_MOVEMENT_SPEED = 5.0f;
 const float PLAYER_ANIMATION_SPEED = 10.0f;
 const float PLAYER_SWING_ANGLE_DEGREES = 20.0f;
+const float PLAYER_RETURN_TO_NEUTRAL_SPEED = 7.0f;
 
 Player::Player(Vector3 position)
     : GameObject(position, true, true, false),
@@ -207,26 +208,37 @@ void Player::update(float deltaTime) {
   rightLeg.setPosition(
       {torsoPos.x + legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
 
+  const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
   static float animTime = 0.0f;
   Vector2 moveInput = InputSystem::getMovementAxis();
   bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
   if (isMoving) {
     animTime += deltaTime * PLAYER_ANIMATION_SPEED;
     float angleDegrees = sin(animTime) * PLAYER_SWING_ANGLE_DEGREES;
-    const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
 
     leftArm.setRotation(swingAxis, angleDegrees);
     rightArm.setRotation(swingAxis, -angleDegrees);
     leftLeg.setRotation(swingAxis, -angleDegrees);
     rightLeg.setRotation(swingAxis, angleDegrees);
   } else {
-    const Vector3 neutralAxis = {1.0f, 0.0f, 0.0f};
-    const float neutralAngle = 0.0f;
+    const float NEUTRAL_ANGLE = 0.0f;
+    const float ANGLE_TRESHOLD = 0.1f;
 
-    leftArm.setRotation(neutralAxis, neutralAngle);
-    rightArm.setRotation(neutralAxis, neutralAngle);
-    leftLeg.setRotation(neutralAxis, neutralAngle);
-    rightLeg.setRotation(neutralAxis, neutralAngle);
+    auto returnLimbToNeutral = [&](BodyPart &limb) {
+      float currentAngle = limb.getRotationAngle();
+      if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_TRESHOLD) {
+        float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE,
+                              PLAYER_RETURN_TO_NEUTRAL_SPEED * deltaTime);
+        limb.setRotation(swingAxis, newAngle);
+      } else {
+        limb.setRotation(swingAxis, NEUTRAL_ANGLE);
+      }
+    };
+
+    returnLimbToNeutral(leftArm);
+    returnLimbToNeutral(rightArm);
+    returnLimbToNeutral(leftLeg);
+    returnLimbToNeutral(rightLeg);
   }
 }
 

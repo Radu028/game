@@ -12,6 +12,8 @@ class BodyPart : public GameObject {
   Vector3 rotationAxis;
   float rotationAngle;
 
+  Model model;
+
  public:
   BodyPart(Vector3 position, Vector3 size, Color color,
            bool hasCollision = true);
@@ -21,6 +23,9 @@ class BodyPart : public GameObject {
 
   Vector3 getSize() const;
   Color getColor() const;
+
+  float getRotationAngle() const;
+  Vector3 getRotationAxis() const;
 
   void draw() const override;
   BoundingBox getBoundingBox() const override;
