@@ -160,17 +160,6 @@ void Player::performDetailedGroundCheck() {
         pPos.y = otherBox.max.y + playerHalfHeight + EPSILON;
         setPosition(pPos);
 
-        // float playerFootY =
-        //     pPos.y - (getBoundingBox().max.y - getBoundingBox().min.y)
-        //     / 2.0f;
-        //
-        // if (std::abs(playerFootY - otherBox.max.y) < 0.15f) {
-        //   pPos.y = otherBox.max.y +
-        //            (getBoundingBox().max.y - getBoundingBox().min.y)
-        //            / 2.0f;
-        //   setPosition(pPos);
-        // }
-
         Vector3 currentVel = getVelocity();
         if (currentVel.y < 0) {
           currentVel.y = 0;
