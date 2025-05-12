@@ -1,20 +1,27 @@
-#ifndef BODYPART_H
-#define BODYPART_H
+#pragma once
 
-#include "objects/CubeObject.h"
+#include "objects/GameObject.h"
+#include "raylib.h"
 
-class BodyPart : public CubeObject {
+class GameObject;
+
+class BodyPart : public GameObject {
  private:
+  Vector3 size;
+  Color color;
   Vector3 rotationAxis;
   float rotationAngle;
 
  public:
   BodyPart(Vector3 position, Vector3 size, Color color,
-           bool hasCollision = false);
+           bool hasCollision = true);
 
-  void setRotation(const Vector3& axis, float angle);
-  void setPosition(Vector3 newPos) const;
+  void setRotation(const Vector3 axis, float angle);
+  void setPosition(Vector3 newPos);
+
+  Vector3 getSize() const;
+  Color getColor() const;
+
   void draw() const override;
+  BoundingBox getBoundingBox() const override;
 };
-
-#endif

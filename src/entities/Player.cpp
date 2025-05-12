@@ -10,6 +10,8 @@
 #include "systems/InputSystem.h"
 
 const float PLAYER_MOVEMENT_SPEED = 5.0f;
+const float PLAYER_ANIMATION_SPEED = 10.0f;
+const float PLAYER_SWING_ANGLE_DEGREES = 20.0f;
 
 Player::Player(Vector3 position)
     : GameObject(position, true, true, false),
@@ -183,43 +185,48 @@ void Player::update(float deltaTime) {
   torso.setPosition(position);
 
   Vector3 torsoPos = torso.getPosition();
-  float torsoHeight = torso.getSize().y;
-  float headHeight = head.getSize().y;
+  Vector3 torsoSize = torso.getSize();
+  Vector3 headSize = head.getSize();
+
+  float torsoHeight = torsoSize.y;
   head.setPosition({torsoPos.x,
-                    torsoPos.y + torsoHeight / 2.0f + headHeight / 2.0f,
+                    torsoPos.y + torsoHeight / 2.0f + headSize.y / 2.0f,
                     torsoPos.z});
 
-  float armOffsetX = torso.getSize().x / 2.0f + leftArm.getSize().x / 2.0f;
+  Vector3 leftArmSize = leftArm.getSize();
+  float armOffsetX = torsoSize.x / 2.0f + leftArmSize.x / 2.0f;
   leftArm.setPosition({torsoPos.x - armOffsetX, torsoPos.y, torsoPos.z});
+
   rightArm.setPosition({torsoPos.x + armOffsetX, torsoPos.y, torsoPos.z});
 
-  float legOffsetY = torsoHeight / 2.0f + leftLeg.getSize().y / 2.0f;
-  leftLeg.setPosition({torsoPos.x - torso.getSize().x / 4.0f,
-                       torsoPos.y - legOffsetY, torsoPos.z});
-  rightLeg.setPosition({torsoPos.x + torso.getSize().x / 4.0f,
-                        torsoPos.y - legOffsetY, torsoPos.z});
+  Vector3 leftLegSize = leftLeg.getSize();
+  float legOffsetY = torsoHeight / 2.0f + leftLegSize.y / 2.0f;
+  float legOffsetX = torsoSize.x / 4.0f;
+  leftLeg.setPosition(
+      {torsoPos.x - legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
+  rightLeg.setPosition(
+      {torsoPos.x + legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
 
   static float animTime = 0.0f;
-  if (IsKeyDown(KEY_W) || IsKeyDown(KEY_S) || IsKeyDown(KEY_A) ||
-      IsKeyDown(KEY_D)) {
-    animTime += deltaTime * 10.0f;
-    float animOffset = sin(animTime) * 0.2f;
+  Vector2 moveInput = InputSystem::getMovementAxis();
+  bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
+  if (isMoving) {
+    animTime += deltaTime * PLAYER_ANIMATION_SPEED;
+    float angleDegrees = sin(animTime) * PLAYER_SWING_ANGLE_DEGREES;
+    const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
 
-    // Vector3 leftArmPos = leftArm.getPosition();
-    // leftArmPos.y += animOffset;
-    // leftArm.setPosition(leftArmPos);
+    leftArm.setRotation(swingAxis, angleDegrees);
+    rightArm.setRotation(swingAxis, -angleDegrees);
+    leftLeg.setRotation(swingAxis, -angleDegrees);
+    rightLeg.setRotation(swingAxis, angleDegrees);
+  } else {
+    const Vector3 neutralAxis = {1.0f, 0.0f, 0.0f};
+    const float neutralAngle = 0.0f;
 
-    // Vector3 rightArmPos = rightArm.getPosition();
-    // rightArmPos.y -= animOffset;
-    // rightArm.setPosition(rightArmPos);
-
-    // Vector3 leftLegPos = leftLeg.getPosition();
-    // leftLegPos.y -= animOffset;
-    // leftLeg.setPosition(leftLegPos);
-
-    // Vector3 rightLegPos = rightLeg.getPosition();
-    // rightLegPos.y += animOffset;
-    // rightLeg.setPosition(rightLegPos);
+    leftArm.setRotation(neutralAxis, neutralAngle);
+    rightArm.setRotation(neutralAxis, neutralAngle);
+    leftLeg.setRotation(neutralAxis, neutralAngle);
+    rightLeg.setRotation(neutralAxis, neutralAngle);
   }
 }
 
