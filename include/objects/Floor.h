@@ -1,6 +1,7 @@
 #pragma once
 
 #include "objects/StaticWorldObject.h"
+#include "raylib.h"
 
 class StaticWorldObject;
 
@@ -11,4 +12,7 @@ class Floor : public StaticWorldObject {
  public:
   Floor(Vector3 position, Vector3 dimensions, Color color,
         bool hasCollision = true);
+
+  void draw() const;
+  BoundingBox getBoundingBox() const;
 };
