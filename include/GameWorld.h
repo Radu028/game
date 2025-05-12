@@ -4,7 +4,7 @@
 #include <memory>
 #include <vector>
 
-#include "GameObject.h"
+#include "objects/GameObject.h"
 
 class PhysicsSystem;
 class Player;

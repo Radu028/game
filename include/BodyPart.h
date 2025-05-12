@@ -1,7 +1,7 @@
 #ifndef BODYPART_H
 #define BODYPART_H
 
-#include "CubeObject.h"
+#include "objects/CubeObject.h"
 
 class BodyPart : public CubeObject {
  private:

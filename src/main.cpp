@@ -1,8 +1,9 @@
 
-#include "CubeObject.h"
-#include "GameObject.h"
 #include "GameWorld.h"
 #include "entities/Player.h"
+#include "objects/CubeObject.h"
+#include "objects/Floor.h"
+#include "objects/GameObject.h"
 #include "raylib.h"
 #include "settings/Physics.h"
 
@@ -35,9 +36,10 @@ int main() {
                                                 (Vector3){1.0f, 1.0f, 1.0f},
                                                 ORANGE, true, "", false, true));
 
-  world->addObject(std::make_shared<CubeObject>(
-      (Vector3){0.0f, -0.05f, 0.0f}, (Vector3){50.0f, 0.1f, 50.0f}, GREEN, true,
-      "../resources/forrest_ground_01_diff_4k.jpg", false, true));
+  world->addObject(std::make_shared<Floor>((Vector3){0.0f, -0.05f, 0.0f},
+                                           (Vector3){50.0f, 0.1f, 50.0f}, GREEN,
+                                           true));
+  // "../resources/forrest_ground_01_diff_4k.jpg"
 
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();

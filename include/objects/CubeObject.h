@@ -4,7 +4,7 @@
 #include <memory>  // For std::shared_ptr
 #include <string>
 
-#include "GameObject.h"
+#include "objects/GameObject.h"
 #include "raylib.h"
 
 class GameObject;

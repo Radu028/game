@@ -2,8 +2,8 @@
 
 #include <algorithm>
 
-#include "GameObject.h"
 #include "GameWorld.h"
+#include "objects/GameObject.h"
 #include "raymath.h"
 #include "settings/Physics.h"
 

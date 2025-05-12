@@ -5,7 +5,7 @@
 #include <string>
 
 #include "BodyPart.h"
-#include "GameObject.h"
+#include "objects/GameObject.h"
 #include "raylib.h"
 
 class GameWorld;

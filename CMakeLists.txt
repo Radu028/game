@@ -8,7 +8,10 @@ find_package(raylib REQUIRED)
 
 include_directories(include)
 
-file(GLOB_RECURSE SOURCES "src/*.cpp")
+file(GLOB SRC_ROOT_FILES "src/*.cpp")
+file(GLOB_RECURSE SRC_SUBDIR_FILES "src/*/*.cpp")
 
-add_executable(${PROJECT_NAME} ${SOURCES})
+set(ALL_GAME_SOURCES ${SRC_ROOT_FILES} ${SRC_SUBDIR_FILES})
+
+add_executable(${PROJECT_NAME} ${ALL_GAME_SOURCES})
 target_link_libraries(${PROJECT_NAME} raylib)

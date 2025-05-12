@@ -4,7 +4,7 @@
 // #include <memory>
 #include <vector>
 
-#include "GameObject.h"
+#include "objects/GameObject.h"
 #include "raylib.h"
 #include "settings/Physics.h"
 

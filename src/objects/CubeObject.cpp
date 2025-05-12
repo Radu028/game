@@ -1,4 +1,4 @@
-#include "CubeObject.h"
+#include "objects/CubeObject.h"
 
 #include <iostream>
 #include <memory>

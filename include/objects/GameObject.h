@@ -16,10 +16,8 @@ class GameObject {
   bool hasCollision;
 
  public:
-  // GameObject(Vector3 position, bool hasCollision = true);
   GameObject(Vector3 position, bool hasCollision = true,
-             bool affectedByGravity = true,
-             bool isStatic = false);  // Updated constructor
+             bool affectedByGravity = true, bool isStatic = false);
   virtual ~GameObject() = default;
 
   Vector3 getPosition() const { return position; }
@@ -33,15 +31,14 @@ class GameObject {
   void setVelocity(Vector3 newVelocity) { velocity = newVelocity; }
   void setIsOnGround(bool onGround) { isOnGround = onGround; }
 
-  virtual void update(float deltaTime) {};
   virtual void draw() const = 0;
-
-  virtual void interact() {};
   virtual BoundingBox getBoundingBox() const = 0;
 
-  bool checkCollision(const GameObject& other) const;
+  virtual void update(float deltaTime) {};
+  virtual void interact() {};
   virtual bool checkCollisionWith(const BoundingBox& otherBox) const;
 
+  bool checkCollision(const GameObject& other) const;
   float getDistance(const GameObject& other) const;
 };
 
