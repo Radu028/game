@@ -24,6 +24,32 @@ Player::Player(Vector3 position)
       rightLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW),
       world(nullptr) {}
 
+void Player::updateBodyPartPositions() {
+  torso.setPosition(position);
+
+  Vector3 torsoPos = torso.getPosition();
+  Vector3 torsoSize = torso.getSize();
+  Vector3 headSize = head.getSize();
+  float torsoHeight = torsoSize.y;
+
+  head.setPosition({torsoPos.x,
+                    torsoPos.y + torsoHeight / 2.0f + headSize.y / 2.0f,
+                    torsoPos.z});
+
+  Vector3 leftArmSize = leftArm.getSize();
+  float armOffsetX = torsoSize.x / 2.0f + leftArmSize.x / 2.0f;
+  leftArm.setPosition({torsoPos.x - armOffsetX, torsoPos.y, torsoPos.z});
+  rightArm.setPosition({torsoPos.x + armOffsetX, torsoPos.y, torsoPos.z});
+
+  Vector3 leftLegSize = leftLeg.getSize();
+  float legOffsetY = torsoHeight / 2.0f + leftLegSize.y / 2.0f;
+  float legOffsetX = torsoSize.x / 4.0f;
+  leftLeg.setPosition(
+      {torsoPos.x - legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
+  rightLeg.setPosition(
+      {torsoPos.x + legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
+}
+
 void Player::handleInput(float movementSpeed) {
   Vector2 moveAxis = InputSystem::getMovementAxis();
 
@@ -72,9 +98,14 @@ void Player::jump() {
 bool Player::checkCollisionWithWorldHorizontal() const {
   if (!world) return false;
 
-  BodyPart currentTorso = torso;
-  currentTorso.setPosition(this->position);
-  BoundingBox playerBox = currentTorso.getBoundingBox();
+  // TODO: Maybe move this directly in getBounginBox()?
+  std::vector<BoundingBox> playerPartBoxes;
+  playerPartBoxes.push_back(torso.getBoundingBox());
+  playerPartBoxes.push_back(leftArm.getBoundingBox());
+  playerPartBoxes.push_back(rightArm.getBoundingBox());
+  playerPartBoxes.push_back(leftLeg.getBoundingBox());
+  playerPartBoxes.push_back(rightLeg.getBoundingBox());
+  playerPartBoxes.push_back(head.getBoundingBox());
 
   for (const auto &objSharedPtr : world->getObjects()) {
     const GameObject *otherObj = objSharedPtr.get();
@@ -83,8 +114,12 @@ bool Player::checkCollisionWithWorldHorizontal() const {
       continue;
     }
 
-    if (CheckCollisionBoxes(playerBox, otherObj->getBoundingBox())) {
-      return true;
+    BoundingBox otherBox = otherObj->getBoundingBox();
+
+    for (const auto &partBox : playerPartBoxes) {
+      if (CheckCollisionBoxes(partBox, otherBox)) {
+        return true;
+      }
     }
   }
   return false;
@@ -95,11 +130,13 @@ void Player::moveWithSliding(float start, float end, float *positionComponent) {
 
   // Try full movement first
   *positionComponent = end;
+  updateBodyPartPositions();
 
   // Check if we have a collision
   if (checkCollisionWithWorldHorizontal()) {
     // Reset position and find maximum safe position
     *positionComponent = originalValue;
+    updateBodyPartPositions();
 
     float t0 = 0.0f;
     float t1 = 1.0f;
@@ -109,6 +146,7 @@ void Player::moveWithSliding(float start, float end, float *positionComponent) {
     for (int i = 0; i < MAX_ITERATIONS && (t1 - t0) > EPSILON; i++) {
       tMid = (t0 + t1) / 2.0f;
       *positionComponent = start + (end - start) * tMid;  // Test this position
+      updateBodyPartPositions();
       if (checkCollisionWithWorldHorizontal()) {
         t1 = tMid;  // Collision, try earlier
       } else {
@@ -117,6 +155,7 @@ void Player::moveWithSliding(float start, float end, float *positionComponent) {
     }
     *positionComponent =
         start + (end - start) * t0;  // Apply safest found position
+    updateBodyPartPositions();
   }
 }
 
@@ -126,54 +165,67 @@ void Player::performDetailedGroundCheck() {
     return;
   }
 
-  BodyPart currentTorso = torso;
-  currentTorso.setPosition(this->position);
-  BoundingBox playerBaseBox = currentTorso.getBoundingBox();
+  BoundingBox leftLegBox = leftLeg.getBoundingBox();
+  BoundingBox rightLegBox = rightLeg.getBoundingBox();
 
-  float checkDepth = playerBaseBox.min.y - 0.1f;
+  bool foundGroundThisFrame = false;
+  float highestGroundYContact = -std::numeric_limits<float>::infinity();
+  Vector3 newPlayerPosition = getPosition();
+  bool positionNeedsAdjustment = false;
 
-  bool foundGround = false;
   for (const auto &objSharedPtr : world->getObjects()) {
     const GameObject *otherObj = objSharedPtr.get();
-    if (!otherObj || !otherObj->getHasCollision() ||
-        otherObj->getIsStatic() == false) {
-      // TODO: Check later this.
-      if (!otherObj || !otherObj->getHasCollision()) continue;
+    // TODO: Check later this. Maybe implement a 2 frame colision check.
+    if (!otherObj || otherObj == this || !otherObj->getHasCollision() ||
+        !otherObj->getIsStatic()) {
+      continue;
     }
 
     BoundingBox otherBox = otherObj->getBoundingBox();
 
-    bool yAlign = (playerBaseBox.min.y >= otherBox.max.y - 0.05f) &&
-                  (playerBaseBox.min.y <= otherBox.max.y + 0.2f);
+    std::vector<const BoundingBox *> legBoxes = {&leftLegBox, &rightLegBox};
 
-    bool xzOverlap = (playerBaseBox.max.x > otherBox.min.x &&
-                      playerBaseBox.min.x < otherBox.max.x) &&
-                     (playerBaseBox.max.z > otherBox.min.z &&
-                      playerBaseBox.min.z < otherBox.max.z);
+    for (const BoundingBox *legBoxPtr : legBoxes) {
+      const BoundingBox &currentLegBox = *legBoxPtr;
 
-    if (yAlign && xzOverlap) {
-      if (std::abs(this->position.y -
-                   (playerBaseBox.max.y - playerBaseBox.min.y) / 2 -
-                   otherBox.max.y) < 0.1f) {
-        foundGround = true;
-        Vector3 pPos = getPosition();
+      bool yAlign = (currentLegBox.min.y >= otherBox.max.y - 0.05f) &&
+                    (currentLegBox.min.y <= otherBox.max.y + 0.2f);
 
-        float playerHalfHeight =
-            (getBoundingBox().max.y - getBoundingBox().min.y) / 2.0f;
-        pPos.y = otherBox.max.y + playerHalfHeight + EPSILON;
-        setPosition(pPos);
+      bool xzOverlap = (currentLegBox.max.x > otherBox.min.x &&
+                        currentLegBox.min.x < otherBox.max.x) &&
+                       (currentLegBox.max.z > otherBox.min.z &&
+                        currentLegBox.min.z < otherBox.max.z);
 
-        Vector3 currentVel = getVelocity();
-        if (currentVel.y < 0) {
-          currentVel.y = 0;
-          setVelocity(currentVel);
+      if (yAlign && xzOverlap) {
+        if (std::abs(currentLegBox.min.y - otherBox.max.y) < 0.1f) {
+          foundGroundThisFrame = true;
+          Vector3 currentPlayerOrigin = getPosition();
+
+          float distPlayerOriginToLegBottom =
+              currentPlayerOrigin.y - currentLegBox.min.y;
+          float targetPlayerOriginY =
+              otherBox.max.y + distPlayerOriginToLegBottom;
+
+          if (targetPlayerOriginY > highestGroundYContact) {
+            highestGroundYContact = targetPlayerOriginY;
+            newPlayerPosition.y = targetPlayerOriginY + EPSILON;
+            positionNeedsAdjustment = true;
+          }
         }
-
-        break;  // Found ground
       }
     }
   }
-  setIsOnGround(foundGround);
+
+  if (foundGroundThisFrame && positionNeedsAdjustment) {
+    setPosition(newPlayerPosition);
+    Vector3 currentVelocity = getVelocity();
+    if (currentVelocity.y < 0) {
+      currentVelocity.y = 0;
+      setVelocity(currentVelocity);
+    }
+  }
+
+  setIsOnGround(foundGroundThisFrame);
 }
 
 void Player::update(float deltaTime) {
@@ -182,31 +234,7 @@ void Player::update(float deltaTime) {
   performDetailedGroundCheck();
 
   handleInput(PLAYER_MOVEMENT_SPEED);
-
-  torso.setPosition(position);
-
-  Vector3 torsoPos = torso.getPosition();
-  Vector3 torsoSize = torso.getSize();
-  Vector3 headSize = head.getSize();
-
-  float torsoHeight = torsoSize.y;
-  head.setPosition({torsoPos.x,
-                    torsoPos.y + torsoHeight / 2.0f + headSize.y / 2.0f,
-                    torsoPos.z});
-
-  Vector3 leftArmSize = leftArm.getSize();
-  float armOffsetX = torsoSize.x / 2.0f + leftArmSize.x / 2.0f;
-  leftArm.setPosition({torsoPos.x - armOffsetX, torsoPos.y, torsoPos.z});
-
-  rightArm.setPosition({torsoPos.x + armOffsetX, torsoPos.y, torsoPos.z});
-
-  Vector3 leftLegSize = leftLeg.getSize();
-  float legOffsetY = torsoHeight / 2.0f + leftLegSize.y / 2.0f;
-  float legOffsetX = torsoSize.x / 4.0f;
-  leftLeg.setPosition(
-      {torsoPos.x - legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
-  rightLeg.setPosition(
-      {torsoPos.x + legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
+  updateBodyPartPositions();
 
   const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
   static float animTime = 0.0f;
@@ -251,4 +279,28 @@ void Player::draw() const {
   rightLeg.draw();
 }
 
-BoundingBox Player::getBoundingBox() const { return torso.getBoundingBox(); }
+BoundingBox Player::getBoundingBox() const {
+  BoundingBox combinedBox = torso.getBoundingBox();
+  BoundingBox headBox = head.getBoundingBox();
+  BoundingBox leftArmBox = leftArm.getBoundingBox();
+  BoundingBox rightArmBox = rightArm.getBoundingBox();
+  BoundingBox leftLegBox = leftLeg.getBoundingBox();
+  BoundingBox rightLegBox = rightLeg.getBoundingBox();
+
+  combinedBox.min = Vector3Min(combinedBox.min, headBox.min);
+  combinedBox.max = Vector3Max(combinedBox.max, headBox.max);
+
+  combinedBox.min = Vector3Min(combinedBox.min, leftArmBox.min);
+  combinedBox.max = Vector3Max(combinedBox.max, leftArmBox.max);
+
+  combinedBox.min = Vector3Min(combinedBox.min, rightArmBox.min);
+  combinedBox.max = Vector3Max(combinedBox.max, rightArmBox.max);
+
+  combinedBox.min = Vector3Min(combinedBox.min, leftLegBox.min);
+  combinedBox.max = Vector3Max(combinedBox.max, leftLegBox.max);
+
+  combinedBox.min = Vector3Min(combinedBox.min, rightLegBox.min);
+  combinedBox.max = Vector3Max(combinedBox.max, rightLegBox.max);
+
+  return combinedBox;
+}

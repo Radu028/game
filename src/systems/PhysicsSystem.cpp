@@ -108,18 +108,24 @@ void PhysicsSystem::applyGravityToObject(GameObject& obj, float deltaTime) {
   // TODO: Try implement swept collision detection.
 
   float contactT = getContactTime(obj, verticalMovementVector);
+  if (std::abs(verticalDeltaThisFrame) > EPSILON) {
+    contactT = getContactTime(obj, verticalMovementVector);
+  }
 
   Vector3 actualDisplacement = Vector3Scale(verticalMovementVector, contactT);
   Vector3 finalPosition = Vector3Add(currentPosition, actualDisplacement);
   obj.setPosition(finalPosition);
 
-  if (contactT < 1.0f && currentVelocity.y <= 0) {
-    obj.setIsOnGround(true);
-    currentVelocity.y = 0;
-  } else {
-    obj.setIsOnGround(false);
-    if (contactT < 1.0f && currentVelocity.y > 0) {
+  if (contactT < 1.0f - EPSILON) {
+    if (currentVelocity.y <= 0) {
+      obj.setIsOnGround(true);
       currentVelocity.y = 0;
+    } else {
+      currentVelocity.y = 0;
+    }
+  } else {
+    if (currentVelocity.y > EPSILON) {
+      obj.setIsOnGround(false);
     }
   }
   obj.setVelocity(currentVelocity);

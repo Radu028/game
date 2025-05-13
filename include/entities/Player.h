@@ -29,6 +29,8 @@ class Player : public GameObject {
  public:
   Player(Vector3 position = (Vector3){0.0f, 0.0f, 0.0f});
 
+  void updateBodyPartPositions();
+
   void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
   void handleInput(float movementSpeed);
   void update(float deltaTime) override;
