@@ -118,10 +118,11 @@ void PhysicsSystem::applyGravityToObject(GameObject& obj, float deltaTime) {
 
   if (contactT < 1.0f - EPSILON) {
     if (currentVelocity.y <= 0) {
-      obj.setIsOnGround(true);
       currentVelocity.y = 0;
+      obj.setIsOnGround(true);
     } else {
       currentVelocity.y = 0;
+      obj.setIsOnGround(false);
     }
   } else {
     if (currentVelocity.y > EPSILON) {

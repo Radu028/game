@@ -25,7 +25,7 @@ int main() {
   player1.setWorld(world);
 
   world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f},
-                                                (Vector3){1.0f, 1.0f, 1.0f},
+                                                (Vector3){1.0f, 2.0f, 1.0f},
                                                 PINK, true, "", true, false));
 
   world->addObject(std::make_shared<CubeObject>(

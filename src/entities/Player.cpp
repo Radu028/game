@@ -109,8 +109,7 @@ bool Player::checkCollisionWithWorldHorizontal() const {
 
   for (const auto &objSharedPtr : world->getObjects()) {
     const GameObject *otherObj = objSharedPtr.get();
-    if (!otherObj || otherObj == this || !otherObj->getHasCollision() ||
-        otherObj->getIsStatic()) {
+    if (!otherObj || otherObj == this || !otherObj->getHasCollision()) {
       continue;
     }
 
@@ -176,8 +175,7 @@ void Player::performDetailedGroundCheck() {
   for (const auto &objSharedPtr : world->getObjects()) {
     const GameObject *otherObj = objSharedPtr.get();
     // TODO: Check later this. Maybe implement a 2 frame colision check.
-    if (!otherObj || otherObj == this || !otherObj->getHasCollision() ||
-        !otherObj->getIsStatic()) {
+    if (!otherObj || otherObj == this || !otherObj->getHasCollision()) {
       continue;
     }
 
