@@ -167,7 +167,7 @@ void Player::performDetailedGroundCheck() {
   BoundingBox leftLegBox = leftLeg.getBoundingBox();
   BoundingBox rightLegBox = rightLeg.getBoundingBox();
 
-  bool foundGroundThisFrame = false;
+  bool foundLegSupportThisFrame = false;
   float highestGroundYContact = -std::numeric_limits<float>::infinity();
   Vector3 newPlayerPosition = getPosition();
   bool positionNeedsAdjustment = false;
@@ -195,35 +195,36 @@ void Player::performDetailedGroundCheck() {
                         currentLegBox.min.z < otherBox.max.z);
 
       if (yAlign && xzOverlap) {
-        if (std::abs(currentLegBox.min.y - otherBox.max.y) < 0.1f) {
-          foundGroundThisFrame = true;
-          Vector3 currentPlayerOrigin = getPosition();
+        foundLegSupportThisFrame = true;
 
-          float distPlayerOriginToLegBottom =
-              currentPlayerOrigin.y - currentLegBox.min.y;
-          float targetPlayerOriginY =
-              otherBox.max.y + distPlayerOriginToLegBottom;
+        Vector3 currentPlayerOrigin = getPosition();
+        float distPlayerOriginToLegBottom =
+            currentPlayerOrigin.y - currentLegBox.min.y;
+        float potentialPlayerYOnThisSurface =
+            otherBox.max.y + distPlayerOriginToLegBottom;
 
-          if (targetPlayerOriginY > highestGroundYContact) {
-            highestGroundYContact = targetPlayerOriginY;
-            newPlayerPosition.y = targetPlayerOriginY + EPSILON;
-            positionNeedsAdjustment = true;
-          }
+        if (potentialPlayerYOnThisSurface > highestGroundYContact) {
+          highestGroundYContact = potentialPlayerYOnThisSurface;
         }
       }
     }
   }
 
-  if (foundGroundThisFrame && positionNeedsAdjustment) {
-    setPosition(newPlayerPosition);
+  if (foundLegSupportThisFrame) {
+    setIsOnGround(true);
+
+    Vector3 finalPlayerPosition = getPosition();
+    finalPlayerPosition.y = highestGroundYContact + EPSILON;
+    setPosition(finalPlayerPosition);
+
     Vector3 currentVelocity = getVelocity();
     if (currentVelocity.y < 0) {
       currentVelocity.y = 0;
       setVelocity(currentVelocity);
     }
+  } else {
+    setIsOnGround(false);
   }
-
-  setIsOnGround(foundGroundThisFrame);
 }
 
 void Player::update(float deltaTime) {
@@ -248,11 +249,11 @@ void Player::update(float deltaTime) {
     rightLeg.setRotation(swingAxis, angleDegrees);
   } else {
     const float NEUTRAL_ANGLE = 0.0f;
-    const float ANGLE_TRESHOLD = 0.1f;
+    const float ANGLE_THRESHOLD = 0.1f;
 
     auto returnLimbToNeutral = [&](BodyPart &limb) {
       float currentAngle = limb.getRotationAngle();
-      if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_TRESHOLD) {
+      if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_THRESHOLD) {
         float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE,
                               PLAYER_RETURN_TO_NEUTRAL_SPEED * deltaTime);
         limb.setRotation(swingAxis, newAngle);
@@ -275,6 +276,93 @@ void Player::draw() const {
   rightArm.draw();
   leftLeg.draw();
   rightLeg.draw();
+}
+
+float Player::getVerticalCollisionContactTime(
+    const Vector3 &verticalMovementVector, const GameWorld *world,
+    int maxItertions) const {
+  if (!world ||
+      (verticalMovementVector.y == 0 && verticalMovementVector.x == 0 &&
+       verticalMovementVector.z == 0)) {
+    return 1.0f;
+  }
+
+  Vector3 originalPlayerPos = position;
+  float t0 = 0.0f, t1 = 1.0f, tMid;
+
+  auto checkCollisionAtT = [&](float t) -> bool {
+    Vector3 testDisplacement = Vector3Scale(verticalMovementVector, t);
+
+    std::vector<BoundingBox> playerPartFutureBoxes;
+    bool movingDown = verticalMovementVector.y < 0.0f;
+    bool movingUp = verticalMovementVector.y > 0.0f;
+
+    if (movingDown) {
+      BoundingBox currentLeftLegBox = leftLeg.getBoundingBox();
+      BoundingBox currentRightLegBox = rightLeg.getBoundingBox();
+      playerPartFutureBoxes.push_back(
+          {Vector3Add(currentLeftLegBox.min, testDisplacement),
+           Vector3Add(currentLeftLegBox.max, testDisplacement)});
+      playerPartFutureBoxes.push_back(
+          {Vector3Add(currentRightLegBox.min, testDisplacement),
+           Vector3Add(currentRightLegBox.max, testDisplacement)});
+    } else if (movingUp) {
+      BoundingBox currentHeadBox = head.getBoundingBox();
+      playerPartFutureBoxes.push_back(
+          {Vector3Add(currentHeadBox.min, testDisplacement),
+           Vector3Add(currentHeadBox.max, testDisplacement)});
+    }
+
+    if (playerPartFutureBoxes.empty()) {
+      return false;
+    }
+    for (const auto &otherSharedPtr : world->getObjects()) {
+      const GameObject *other = otherSharedPtr.get();
+      if (!other || other == this || !other->getHasCollision()) {
+        continue;
+      }
+      BoundingBox otherBox = other->getBoundingBox();
+
+      for (const auto &futurePlayerPartBox : playerPartFutureBoxes) {
+        if (CheckCollisionBoxes(futurePlayerPartBox, otherBox)) {
+          if (movingUp && t < 0.001f) {
+            TraceLog(LOG_WARNING,
+                     "Player Upward Collision (t=%.5f): Head Box: min(%.2f, "
+                     "%.2f, %.2f) max(%.2f, %.2f, %.2f)",
+                     t, futurePlayerPartBox.min.x, futurePlayerPartBox.min.y,
+                     futurePlayerPartBox.min.z, futurePlayerPartBox.max.x,
+                     futurePlayerPartBox.max.y, futurePlayerPartBox.max.z);
+            TraceLog(LOG_WARNING,
+                     "Collided with Other Box: min(%.2f, %.2f, %.2f) max(%.2f, "
+                     "%.2f, %.2f)",
+                     otherBox.min.x, otherBox.min.y, otherBox.min.z,
+                     otherBox.max.x, otherBox.max.y, otherBox.max.z);
+          }
+
+          return true;  // Collision detected
+        }
+      }
+    }
+    return false;  // No collision for any relevant part
+  };
+
+  if (!checkCollisionAtT(1.0f)) {
+    return 1.0f;  // No collision at full step
+  }
+
+  // Binary search for the exact contact time
+  for (int i = 0; i < maxItertions; i++) {
+    if ((t1 - t0) < EPSILON) {
+      break;
+    }
+    tMid = (t0 + t1) / 2.0f;
+    if (checkCollisionAtT(tMid)) {
+      t1 = tMid;  // Collision occurred at tMid or earlier
+    } else {
+      t0 = tMid;  // No collision at tMid, can go at least this far
+    }
+  }
+  return t0;
 }
 
 BoundingBox Player::getBoundingBox() const {

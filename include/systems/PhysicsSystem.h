@@ -18,12 +18,12 @@ class PhysicsSystem {
   // Checks if obj would collide with any other relevant object in the world if
   // it were at futurePosition. This is crucial for predictive collision
   // checking.
-  bool checkCollisionWithWorld(GameObject& obj,
-                               const Vector3& futurePosition) const;
+  // bool checkCollisionWithWorld(GameObject& obj,
+  //                              const Vector3& futurePosition) const;
 
   // A helper method to perform a continuous collision detection sweep (like a
   // binary search on the movement path) to find the exact point of contact.
-  float getContactTime(GameObject& obj, const Vector3& movementVector) const;
+  // float getContactTime(GameObject& obj, const Vector3& movementVector) const;
 
  public:
   PhysicsSystem(GameWorld* gameWorld);

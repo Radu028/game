@@ -3,7 +3,11 @@
 
 #include <memory>  // For std::shared_ptr
 
+#include "GameWorld.h"
 #include "raylib.h"
+#include "settings/Physics.h"
+
+class GameWorld;
 
 class GameObject {
  protected:
@@ -37,6 +41,9 @@ class GameObject {
   virtual void update(float deltaTime) {};
   virtual void interact() {};
   virtual bool checkCollisionWith(const BoundingBox& otherBox) const;
+  virtual float getVerticalCollisionContactTime(
+      const Vector3& verticalMovementVector, const GameWorld* world,
+      int maxIterations) const;
 
   bool checkCollision(const GameObject& other) const;
   float getDistance(const GameObject& other) const;

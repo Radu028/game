@@ -8,8 +8,6 @@
 #include "objects/GameObject.h"
 #include "raylib.h"
 
-class GameWorld;
-
 enum Direction { FORWARD, BACKWARD, LEFT, RIGHT };
 
 class Player : public GameObject {
@@ -35,6 +33,10 @@ class Player : public GameObject {
   void handleInput(float movementSpeed);
   void update(float deltaTime) override;
   void draw() const override;
+
+  float getVerticalCollisionContactTime(const Vector3& vericalMovementVector,
+                                        const GameWorld* world,
+                                        int maxIterations) const override;
 
   BoundingBox getBoundingBox() const override;
 

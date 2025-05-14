@@ -9,4 +9,6 @@ struct PhysicsSettings {
   // Prevents extreme time steps
   static constexpr float MIN_DELTA_TIME = 0.001f;
   static constexpr float MAX_DELTA_TIME = 0.033f;  // Caps at ~30fps minimum
+
+  static constexpr int MAX_PHYSICS_ITERATIONS = 10;
 };

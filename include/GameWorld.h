@@ -7,6 +7,7 @@
 #include "objects/GameObject.h"
 
 class PhysicsSystem;
+class GameObject;
 class Player;
 
 class GameWorld {
