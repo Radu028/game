@@ -20,9 +20,9 @@ int main() {
   camera.fovy = 45.0f;
   camera.projection = CAMERA_PERSPECTIVE;
 
-  Player player1((Vector3){0.0f, 2.0f, 0.0f});
-  GameWorld* world = GameWorld::getInstance(&player1);
-  player1.setWorld(world);
+  auto player1 = std::make_shared<Player>((Vector3){0.0f, 2.0f, 0.0f});
+  GameWorld* world = GameWorld::getInstance(player1.get());
+  player1->setWorld(world);
 
   world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f},
                                                 (Vector3){1.0f, 2.0f, 1.0f},
@@ -39,24 +39,21 @@ int main() {
   world->addObject(std::make_shared<Floor>(
       (Vector3){0.0f, -5.05f, 0.0f}, (Vector3){50.0f, 0.1f, 50.0f},
       "../resources/forrest_ground_01_diff_4k.jpg", true));
-  // "../resources/forrest_ground_01_diff_4k.jpg"
 
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
 
-    // player1.handleInput(0.1f);
-
     world->update(GetFrameTime());
 
-    if (IsKeyPressed(KEY_E)) {
-      for (const auto& obj : world->getObjects()) {
-        if (obj) {
-          obj->interact();
-        }
-      }
-    }
+    // if (IsKeyPressed(KEY_E)) {
+    //   for (const auto& obj : world->getObjects()) {
+    //     if (obj) {
+    //       obj->interact();
+    //     }
+    //   }
+    // }
 
-    Vector3 playerPos = player1.getPosition();
+    Vector3 playerPos = player1->getPosition();
     camera.target = playerPos;
     camera.position =
         (Vector3){playerPos.x, playerPos.y + 5.0f, playerPos.z + 10.0f};
@@ -65,7 +62,7 @@ int main() {
     ClearBackground(RAYWHITE);
 
     BeginMode3D(camera);
-    player1.draw();
+    player1->draw();
     world->draw();
     EndMode3D();
 
