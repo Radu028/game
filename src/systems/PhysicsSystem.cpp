@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "GameWorld.h"
+#include "entities/Player.h"
 #include "objects/GameObject.h"
 #include "raymath.h"
 #include "settings/Physics.h"
@@ -36,6 +37,14 @@ void PhysicsSystem::applyGravityToObject(GameObject& obj, float deltaTime) {
 
   // Apply gravitational acceleration
   Vector3 currentVelocity = obj.getVelocity();
+  bool justJumped = false;
+  Player* playerObj = dynamic_cast<Player*>(&obj);
+  if (playerObj && !playerObj->getIsOnGround() && currentVelocity.y > 0.0f) {
+    if (std::abs(currentVelocity.y - PhysicsSettings::JUMP_VELOCITY) <
+        EPSILON) {
+    }
+  }
+
   currentVelocity.y += PhysicsSettings::GRAVITY_ACCELERATION * deltaTime;
 
   // Clamp fall speed (terminal velocity)
@@ -61,19 +70,29 @@ void PhysicsSystem::applyGravityToObject(GameObject& obj, float deltaTime) {
   obj.setPosition(finalPosition);
 
   bool prelimOnGround = false;
+  Vector3 resolvedVelocity = currentVelocity;
 
   if (contactTimeFactor < 1.0f - EPSILON) {
     if (currentVelocity.y <= 0) {
-      currentVelocity.y = 0;
+      resolvedVelocity.y = 0;
       prelimOnGround = true;
     } else {
-      currentVelocity.y = 0;
+      resolvedVelocity.y = 0;
       prelimOnGround = false;
     }
   } else {
-    prelimOnGround = false;
+    if (obj.getIsOnGround() && resolvedVelocity.y <= 0.0f &&
+        std::abs(verticalDeltaThisFrame) <
+            PhysicsSettings::GROUND_STICK_DETACH_THRESHOLD) {
+      prelimOnGround = true;
+      resolvedVelocity.y = 0;
+    } else {
+      prelimOnGround = false;
+    }
   }
 
-  obj.setIsOnGround(prelimOnGround);
-  obj.setVelocity(currentVelocity);
+  if (!playerObj) {
+    obj.setIsOnGround(prelimOnGround);
+  }
+  obj.setVelocity(resolvedVelocity);
 }

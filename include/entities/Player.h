@@ -32,6 +32,7 @@ class Player : public GameObject {
   void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
   void handleInput(float movementSpeed);
   void update(float deltaTime) override;
+  void postPhysicsUpdate(float deltaTime);
   void draw() const override;
 
   float getVerticalCollisionContactTime(const Vector3& vericalMovementVector,

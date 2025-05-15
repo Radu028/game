@@ -29,35 +29,45 @@ GameWorld::~GameWorld() {
 }
 
 void GameWorld::addObject(std::shared_ptr<GameObject> object) {
-  if (object) {
-    objects.push_back(object);
-    if (physicsSystem) {
-      physicsSystem->addObject(object.get());
-    }
+  if (!object) return;
+
+  objects.push_back(object);
+  if (physicsSystem) {
+    physicsSystem->addObject(object.get());
   }
 }
 
 void GameWorld::removeObject(std::shared_ptr<GameObject> object) {
-  if (object && physicsSystem) {
+  if (!object) return;
+
+  if (physicsSystem) {
     physicsSystem->removeObject(object.get());
   }
-  objects.erase(std::remove(objects.begin(), objects.end(), object),
+
+  objects.erase(std::remove_if(objects.begin(), objects.end(),
+                               [&](const std::shared_ptr<GameObject>& obj) {
+                                 return obj == object;
+                               }),
                 objects.end());
 }
 
 void GameWorld::update(float deltaTime) {
+  if (player) {
+    player->update(deltaTime);
+  }
+
+  for (auto& objSharedPtr : objects) {
+    if (objSharedPtr.get() != player) {
+      objSharedPtr->update(deltaTime);
+    }
+  }
+
   if (physicsSystem) {
     physicsSystem->update(deltaTime);
   }
 
   if (player) {
-    player->update(deltaTime);
-  }
-
-  for (auto& obj : objects) {
-    if (obj && obj.get() != player) {
-      obj->update(deltaTime);
-    }
+    player->postPhysicsUpdate(deltaTime);
   }
 }
 

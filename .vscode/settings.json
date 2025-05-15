@@ -58,7 +58,8 @@
     "regex": "cpp",
     "set": "cpp",
     "unordered_set": "cpp",
-    "valarray": "cpp"
+    "valarray": "cpp",
+    "memory": "cpp"
   },
   "github.copilot.enable": {
     "*": true,

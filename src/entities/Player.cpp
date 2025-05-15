@@ -116,8 +116,19 @@ bool Player::checkCollisionWithWorldHorizontal() const {
     BoundingBox otherBox = otherObj->getBoundingBox();
 
     for (const auto &partBox : playerPartBoxes) {
-      if (CheckCollisionBoxes(partBox, otherBox)) {
-        return true;
+      bool xzOverlap =
+          (partBox.max.x > otherBox.min.x && partBox.min.x < otherBox.max.x) &&
+          (partBox.max.z > otherBox.min.z && partBox.min.z < otherBox.max.z);
+
+      if (!xzOverlap) continue;
+
+      float yOverlap =
+          std::max(0.0f, std::min(partBox.max.y, otherBox.max.y) -
+                             std::max(partBox.min.y, otherBox.min.y));
+      if (yOverlap >= PhysicsSettings::MIN_Y_OVERLAP_FOR_HORIZONTAL_COLLISION) {
+        if (CheckCollisionBoxes(partBox, otherBox)) {
+          return true;
+        }
       }
     }
   }
@@ -142,7 +153,9 @@ void Player::moveWithSliding(float start, float end, float *positionComponent) {
     float tMid;
     const int MAX_ITERATIONS = 10;
 
-    for (int i = 0; i < MAX_ITERATIONS && (t1 - t0) > EPSILON; i++) {
+    for (int i = 0; i < MAX_ITERATIONS &&
+                    (t1 - t0) > PhysicsSettings::COLLISION_SWEEP_EPSILON;
+         i++) {
       tMid = (t0 + t1) / 2.0f;
       *positionComponent = start + (end - start) * tMid;  // Test this position
       updateBodyPartPositions();
@@ -186,8 +199,13 @@ void Player::performDetailedGroundCheck() {
     for (const BoundingBox *legBoxPtr : legBoxes) {
       const BoundingBox &currentLegBox = *legBoxPtr;
 
-      bool yAlign = (currentLegBox.min.y >= otherBox.max.y - 0.05f) &&
-                    (currentLegBox.min.y <= otherBox.max.y + 0.2f);
+      bool yAlign =
+          (currentLegBox.min.y >=
+           otherBox.max.y -
+               PhysicsSettings::GROUND_CHECK_Y_ALIGN_MAX_PENETRATION) &&
+          (currentLegBox.min.y <=
+           otherBox.max.y +
+               PhysicsSettings::GROUND_CHECK_Y_ALIGN_MAX_SEPARATION);
 
       bool xzOverlap = (currentLegBox.max.x > otherBox.min.x &&
                         currentLegBox.min.x < otherBox.max.x) &&
@@ -214,7 +232,8 @@ void Player::performDetailedGroundCheck() {
     setIsOnGround(true);
 
     Vector3 finalPlayerPosition = getPosition();
-    finalPlayerPosition.y = highestGroundYContact + EPSILON;
+    finalPlayerPosition.y =
+        highestGroundYContact + PhysicsSettings::GROUND_ADJUST_EPSILON;
     setPosition(finalPlayerPosition);
 
     Vector3 currentVelocity = getVelocity();
@@ -233,6 +252,46 @@ void Player::update(float deltaTime) {
   performDetailedGroundCheck();
 
   handleInput(PLAYER_MOVEMENT_SPEED);
+  updateBodyPartPositions();
+
+  const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
+  static float animTime = 0.0f;
+  Vector2 moveInput = InputSystem::getMovementAxis();
+  bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
+  if (isMoving) {
+    animTime += deltaTime * PLAYER_ANIMATION_SPEED;
+    float angleDegrees = sin(animTime) * PLAYER_SWING_ANGLE_DEGREES;
+
+    leftArm.setRotation(swingAxis, angleDegrees);
+    rightArm.setRotation(swingAxis, -angleDegrees);
+    leftLeg.setRotation(swingAxis, -angleDegrees);
+    rightLeg.setRotation(swingAxis, angleDegrees);
+  } else {
+    const float NEUTRAL_ANGLE = 0.0f;
+    const float ANGLE_THRESHOLD = 0.1f;
+
+    auto returnLimbToNeutral = [&](BodyPart &limb) {
+      float currentAngle = limb.getRotationAngle();
+      if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_THRESHOLD) {
+        float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE,
+                              PLAYER_RETURN_TO_NEUTRAL_SPEED * deltaTime);
+        limb.setRotation(swingAxis, newAngle);
+      } else {
+        limb.setRotation(swingAxis, NEUTRAL_ANGLE);
+      }
+    };
+
+    returnLimbToNeutral(leftArm);
+    returnLimbToNeutral(rightArm);
+    returnLimbToNeutral(leftLeg);
+    returnLimbToNeutral(rightLeg);
+  }
+}
+
+void Player::postPhysicsUpdate(float deltaTime) {
+  if (!world) return;
+
+  performDetailedGroundCheck();
   updateBodyPartPositions();
 
   const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
@@ -325,20 +384,6 @@ float Player::getVerticalCollisionContactTime(
 
       for (const auto &futurePlayerPartBox : playerPartFutureBoxes) {
         if (CheckCollisionBoxes(futurePlayerPartBox, otherBox)) {
-          if (movingUp && t < 0.001f) {
-            TraceLog(LOG_WARNING,
-                     "Player Upward Collision (t=%.5f): Head Box: min(%.2f, "
-                     "%.2f, %.2f) max(%.2f, %.2f, %.2f)",
-                     t, futurePlayerPartBox.min.x, futurePlayerPartBox.min.y,
-                     futurePlayerPartBox.min.z, futurePlayerPartBox.max.x,
-                     futurePlayerPartBox.max.y, futurePlayerPartBox.max.z);
-            TraceLog(LOG_WARNING,
-                     "Collided with Other Box: min(%.2f, %.2f, %.2f) max(%.2f, "
-                     "%.2f, %.2f)",
-                     otherBox.min.x, otherBox.min.y, otherBox.min.z,
-                     otherBox.max.x, otherBox.max.y, otherBox.max.z);
-          }
-
           return true;  // Collision detected
         }
       }
@@ -352,7 +397,7 @@ float Player::getVerticalCollisionContactTime(
 
   // Binary search for the exact contact time
   for (int i = 0; i < maxItertions; i++) {
-    if ((t1 - t0) < EPSILON) {
+    if ((t1 - t0) < PhysicsSettings::COLLISION_SWEEP_EPSILON) {
       break;
     }
     tMid = (t0 + t1) / 2.0f;

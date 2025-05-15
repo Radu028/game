@@ -7,7 +7,7 @@
 CubeObject::CubeObject(Vector3 position, Vector3 size, Color color,
                        bool hasCollision, const std::string& texturePath,
                        bool affectedByGravity, bool isStatic)
-    : GameObject(position, hasCollision),
+    : GameObject(position, hasCollision, affectedByGravity, isStatic),
       size(size),
       color(color),
       textureLoaded(false) {
@@ -26,7 +26,8 @@ CubeObject::CubeObject(Vector3 position, Vector3 size, Color color,
 }
 
 CubeObject::CubeObject(const CubeObject& other)
-    : GameObject(other.position, other.hasCollision),
+    : GameObject(other.position, other.hasCollision, other.affectedByGravity,
+                 other.isStatic),
       size(other.size),
       color(other.color),
       hasTexture(other.hasTexture) {

@@ -30,11 +30,11 @@ int main() {
 
   world->addObject(std::make_shared<CubeObject>(
       (Vector3){-2.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, SKYBLUE, true,
-      "", false, true));
+      "", true, false));
 
   world->addObject(std::make_shared<CubeObject>((Vector3){0.0f, 0.5f, 2.0f},
                                                 (Vector3){1.0f, 1.0f, 1.0f},
-                                                ORANGE, true, "", false, true));
+                                                ORANGE, true, "", true, false));
 
   world->addObject(std::make_shared<Floor>(
       (Vector3){0.0f, -5.05f, 0.0f}, (Vector3){50.0f, 0.1f, 50.0f},
