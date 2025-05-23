@@ -22,4 +22,6 @@ Vector2 InputSystem::getMovementAxis() {
   return dir;
 }
 
-bool InputSystem::isJumpPressed() { return IsKeyPressed(KEY_SPACE); }
+bool InputSystem::isJumpPressed() { 
+  return IsKeyPressed(KEY_W);
+}

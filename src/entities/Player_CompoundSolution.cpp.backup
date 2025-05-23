@@ -1,0 +1,67 @@
+// Exemplu de implementare cu Compound Shape pentru coliziuni complete
+#include "entities/Player.h"
+#include "GameWorld.h"
+#include "raymath.h"
+#include "settings/Physics.h"
+#include "systems/InputSystem.h"
+#include <cmath>
+
+void Player::setupCompoundCapsuleController(btDiscreteDynamicsWorld* bulletWorld) {
+    if (capsuleBody) return;
+    
+    // Creează compound shape
+    auto* compoundShape = new btCompoundShape();
+    
+    // Transform pentru fiecare component
+    btTransform localTransform;
+    localTransform.setIdentity();
+    
+    // Torso (main capsule) - centrul caracterului
+    auto* torsoShape = new btCapsuleShape(CAPSULE_RADIUS, CAPSULE_HEIGHT);
+    localTransform.setOrigin(btVector3(0, 0, 0));
+    compoundShape->addChildShape(localTransform, torsoShape);
+    
+    // Head (sphere)
+    auto* headShape = new btSphereShape(0.25f);
+    localTransform.setOrigin(btVector3(0, 1.0f, 0));
+    compoundShape->addChildShape(localTransform, headShape);
+    
+    // Left Arm (capsule)
+    auto* leftArmShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(-0.45f, 0.5f, 0));
+    compoundShape->addChildShape(localTransform, leftArmShape);
+    
+    // Right Arm (capsule)
+    auto* rightArmShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(0.45f, 0.5f, 0));
+    compoundShape->addChildShape(localTransform, rightArmShape);
+    
+    // Left Leg (capsule)
+    auto* leftLegShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(-0.15f, -0.7f, 0));
+    compoundShape->addChildShape(localTransform, leftLegShape);
+    
+    // Right Leg (capsule)
+    auto* rightLegShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(0.15f, -0.7f, 0));
+    compoundShape->addChildShape(localTransform, rightLegShape);
+    
+    // Creează rigid body cu compound shape
+    btTransform startTransform;
+    startTransform.setIdentity();
+    startTransform.setOrigin(btVector3(position.x, position.y, position.z));
+    
+    btVector3 inertia(0, 0, 0);
+    compoundShape->calculateLocalInertia(PLAYER_MASS, inertia);
+    
+    auto* motion = new btDefaultMotionState(startTransform);
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(PLAYER_MASS, motion, compoundShape, inertia);
+    capsuleBody = new btRigidBody(rbInfo);
+    
+    // Setări de control
+    capsuleBody->setAngularFactor(btVector3(0, 0, 0)); // Previne rotația
+    capsuleBody->setDamping(0.4f, 0.8f);
+    capsuleBody->setActivationState(DISABLE_DEACTIVATION);
+    
+    bulletWorld->addRigidBody(capsuleBody);
+}

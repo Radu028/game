@@ -29,4 +29,7 @@ class BodyPart : public GameObject {
 
   void draw() const override;
   BoundingBox getBoundingBox() const override;
+
+  void setBulletBody(btRigidBody* body) { GameObject::setBulletBody(body); }
+  btRigidBody* getBulletBody() const { return GameObject::getBulletBody(); }
 };

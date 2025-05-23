@@ -1,55 +1,81 @@
+// Player.h - Professional, Bullet3-integrated player character
 #ifndef PLAYER_H
 #define PLAYER_H
 
 #include <memory>
 #include <string>
-
+#include <btBulletDynamicsCommon.h>
+#include <BulletCollision/CollisionDispatch/btGhostObject.h>
+#include <BulletDynamics/Character/btKinematicCharacterController.h>
 #include "BodyPart.h"
 #include "objects/GameObject.h"
 #include "raylib.h"
 
-enum Direction { FORWARD, BACKWARD, LEFT, RIGHT };
+class GameWorld;
 
+/**
+ * Player character, fully integrated with Bullet Physics (Bullet3).
+ * Uses a single compound rigid body for all physics and collision.
+ * Each body part has its own collision shape within the compound.
+ * Visual body parts are synchronized with the compound body.
+ */
 class Player : public GameObject {
  private:
+  // Visual body parts (no collision, only for rendering)
   BodyPart torso;
   BodyPart head;
   BodyPart leftArm, rightArm;
   BodyPart leftLeg, rightLeg;
 
-  GameWorld* world;
+  GameWorld* world = nullptr;
 
-  void move(Direction direction, float byValue);
-  void jump();
-  bool checkCollisionWithWorldHorizontal() const;
-  void moveWithSliding(float start, float end, float* positionComponent);
+  // Bullet physics compound body (contains collision shapes for all body parts)
+  btRigidBody* capsuleBody = nullptr;
+
+  // --- Internal helpers ---
+  void updateBodyPartPositions();
+  bool isOnGroundBullet() const;
 
  public:
-  Player(Vector3 position = (Vector3){0.0f, 0.0f, 0.0f});
+  // Construct player at given position
+  explicit Player(Vector3 position = {0.0f, 0.0f, 0.0f});
+  ~Player() override;
 
-  void updateBodyPartPositions();
+  // Bullet capsule setup/teardown
+  void setupCapsuleController(btDiscreteDynamicsWorld* bulletWorld);
+  void removeCapsuleController(btDiscreteDynamicsWorld* bulletWorld);
 
-  void setWorld(GameWorld* gameWorld) { this->world = gameWorld; }
+  // Set game world pointer
+  void setWorld(GameWorld* gameWorld) { world = gameWorld; }
+
+  // Input & update
   void handleInput(float movementSpeed);
   void update(float deltaTime) override;
   void postPhysicsUpdate(float deltaTime);
   void draw() const override;
 
-  float getVerticalCollisionContactTime(const Vector3& vericalMovementVector,
-                                        const GameWorld* world,
-                                        int maxIterations) const override;
-
+  // Bounding box covers all body parts (for selection, not collision)
   BoundingBox getBoundingBox() const override;
 
-  void performDetailedGroundCheck();
+  // Bullet-based ground check
+  bool isOnGround() const;
 
-  // Adaugă acces la BodyPart-uri pentru PhysicsSystem
-  BodyPart* getTorso() { return &torso; }
-  BodyPart* getHead() { return &head; }
-  BodyPart* getLeftArm() { return &leftArm; }
-  BodyPart* getRightArm() { return &rightArm; }
-  BodyPart* getLeftLeg() { return &leftLeg; }
-  BodyPart* getRightLeg() { return &rightLeg; }
+  // Individual body part collision detection
+  bool checkHeadCollision() const;
+  bool checkArmCollision(bool isLeft) const;
+  bool checkLegCollision(bool isLeft) const;
+  bool checkTorsoCollision() const;
+
+  // Access to body parts (for visuals)
+  const BodyPart& getTorso() const { return torso; }
+  const BodyPart& getHead() const { return head; }
+  const BodyPart& getLeftArm() const { return leftArm; }
+  const BodyPart& getRightArm() const { return rightArm; }
+  const BodyPart& getLeftLeg() const { return leftLeg; }
+  const BodyPart& getRightLeg() const { return rightLeg; }
+
+  // Capsule body access (for physics system)
+  btRigidBody* getCapsuleBody() const { return capsuleBody; }
 };
 
 #endif

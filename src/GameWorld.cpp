@@ -76,3 +76,7 @@ void GameWorld::draw() const {
     obj->draw();
   }
 }
+
+btDiscreteDynamicsWorld* GameWorld::getBulletWorld() const {
+    return physicsSystem ? physicsSystem->dynamicsWorld : nullptr;
+}

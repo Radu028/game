@@ -1,445 +1,413 @@
+// Player.cpp - Professional, Bullet3-integrated player character
 #include "entities/Player.h"
-
-#include <cmath>
-#include <memory>
-
 #include "GameWorld.h"
-#include "raylib.h"
 #include "raymath.h"
 #include "settings/Physics.h"
 #include "systems/InputSystem.h"
+#include <cmath>
 
-const float PLAYER_MOVEMENT_SPEED = 5.0f;
-const float PLAYER_ANIMATION_SPEED = 10.0f;
-const float PLAYER_SWING_ANGLE_DEGREES = 20.0f;
-const float PLAYER_RETURN_TO_NEUTRAL_SPEED = 7.0f;
+namespace {
+constexpr float CAPSULE_RADIUS = 0.3f;
+constexpr float CAPSULE_HEIGHT = 1.4f;
+constexpr float PLAYER_MASS = 12.0f;
+constexpr float JUMP_IMPULSE = 6.5f;
+constexpr float ANIMATION_SPEED = 7.0f;
+constexpr float SWING_ANGLE_DEGREES = 35.0f;
+constexpr float RETURN_TO_NEUTRAL_SPEED = 8.0f;
+}
 
 Player::Player(Vector3 position)
     : GameObject(position, true, true, false),
-      torso(position, {0.5f, 1.5f, 0.3f}, BLUE),
-      head({0, 0, 0}, {0.5f, 0.5f, 0.5f}, RED),
-      leftArm({0, 0, 0}, {0.3f, 1.0f, 0.3f}, GREEN),
-      rightArm({0, 0, 0}, {0.3f, 1.0f, 0.3f}, GREEN),
-      leftLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW),
-      rightLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW),
-      world(nullptr) {}
+      torso(position, {0.5f, 1.5f, 0.3f}, BLUE, false),        // No collision - handled by compound shape
+      head({0, 0, 0}, {0.5f, 0.5f, 0.5f}, RED, false),         // No collision - handled by compound shape
+      leftArm({0, 0, 0}, {0.3f, 1.0f, 0.3f}, GREEN, false),    // No collision - handled by compound shape
+      rightArm({0, 0, 0}, {0.3f, 1.0f, 0.3f}, GREEN, false),   // No collision - handled by compound shape
+      leftLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW, false),   // No collision - handled by compound shape
+      rightLeg({0, 0, 0}, {0.3f, 1.0f, 0.3f}, YELLOW, false) {}// No collision - handled by compound shape
 
-void Player::updateBodyPartPositions() {
-  torso.setPosition(position);
+Player::~Player() {
+    // Capsule body cleanup is handled by PhysicsSystem
+}
 
-  Vector3 torsoPos = torso.getPosition();
-  Vector3 torsoSize = torso.getSize();
-  Vector3 headSize = head.getSize();
-  float torsoHeight = torsoSize.y;
+void Player::setupCapsuleController(btDiscreteDynamicsWorld* bulletWorld) {
+    if (capsuleBody) return;
+    
+    // Creează compound shape pentru toate componentele
+    auto* compoundShape = new btCompoundShape();
+    btTransform localTransform;
+    localTransform.setIdentity();
 
-  head.setPosition({torsoPos.x,
-                    torsoPos.y + torsoHeight / 2.0f + headSize.y / 2.0f,
-                    torsoPos.z});
+    // Torso (capsule)
+    auto* torsoShape = new btCapsuleShape(CAPSULE_RADIUS, CAPSULE_HEIGHT);
+    localTransform.setOrigin(btVector3(0, 0, 0));
+    compoundShape->addChildShape(localTransform, torsoShape);
 
-  Vector3 leftArmSize = leftArm.getSize();
-  float armOffsetX = torsoSize.x / 2.0f + leftArmSize.x / 2.0f;
-  leftArm.setPosition({torsoPos.x - armOffsetX, torsoPos.y, torsoPos.z});
-  rightArm.setPosition({torsoPos.x + armOffsetX, torsoPos.y, torsoPos.z});
+    // Head (sphere)
+    auto* headShape = new btSphereShape(0.25f);
+    localTransform.setOrigin(btVector3(0, 1.0f, 0));
+    compoundShape->addChildShape(localTransform, headShape);
 
-  Vector3 leftLegSize = leftLeg.getSize();
-  float legOffsetY = torsoHeight / 2.0f + leftLegSize.y / 2.0f;
-  float legOffsetX = torsoSize.x / 4.0f;
-  leftLeg.setPosition(
-      {torsoPos.x - legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
-  rightLeg.setPosition(
-      {torsoPos.x + legOffsetX, torsoPos.y - legOffsetY, torsoPos.z});
+    // Left Arm (capsule)
+    auto* leftArmShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(-0.45f, 0.5f, 0));
+    compoundShape->addChildShape(localTransform, leftArmShape);
+
+    // Right Arm (capsule)
+    auto* rightArmShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(0.45f, 0.5f, 0));
+    compoundShape->addChildShape(localTransform, rightArmShape);
+
+    // Left Leg (capsule) - positioned so feet touch the ground
+    auto* leftLegShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(-0.15f, -1.1f, 0)); // Y = -0.7f (torso bottom) - 0.4f (half leg height)
+    compoundShape->addChildShape(localTransform, leftLegShape);
+
+    // Right Leg (capsule) - positioned so feet touch the ground
+    auto* rightLegShape = new btCapsuleShape(0.15f, 0.8f);
+    localTransform.setOrigin(btVector3(0.15f, -1.1f, 0)); // Y = -0.7f (torso bottom) - 0.4f (half leg height)
+    compoundShape->addChildShape(localTransform, rightLegShape);
+
+    // Creează rigid body cu compound shape
+    btTransform startTransform;
+    startTransform.setIdentity();
+    startTransform.setOrigin(btVector3(position.x, position.y, position.z));
+
+    btVector3 inertia(0, 0, 0);
+    compoundShape->calculateLocalInertia(PLAYER_MASS, inertia);
+
+    auto* motion = new btDefaultMotionState(startTransform);
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(PLAYER_MASS, motion, compoundShape, inertia);
+    capsuleBody = new btRigidBody(rbInfo);
+
+    // Setări de control
+    capsuleBody->setAngularFactor(btVector3(0, 0, 0)); // Previne rotația
+    capsuleBody->setDamping(0.4f, 0.8f);
+    capsuleBody->setActivationState(DISABLE_DEACTIVATION);
+    capsuleBody->setFriction(0.8f);
+    capsuleBody->setRollingFriction(0.1f);
+    capsuleBody->setSpinningFriction(0.1f);
+
+    bulletWorld->addRigidBody(capsuleBody);
+}
+
+void Player::removeCapsuleController(btDiscreteDynamicsWorld* bulletWorld) {
+    if (capsuleBody) {
+        bulletWorld->removeRigidBody(capsuleBody);
+        delete capsuleBody->getMotionState();
+        // Șterge toate shape-urile din compound
+        btCompoundShape* compound = dynamic_cast<btCompoundShape*>(capsuleBody->getCollisionShape());
+        if (compound) {
+            for (int i = compound->getNumChildShapes() - 1; i >= 0; --i) {
+                btCollisionShape* child = compound->getChildShape(i);
+                delete child;
+            }
+        }
+        delete capsuleBody->getCollisionShape();
+        delete capsuleBody;
+        capsuleBody = nullptr;
+    }
+}
+
+bool Player::isOnGroundBullet() const {
+    if (!capsuleBody || !world) return false;
+    btTransform trans;
+    capsuleBody->getMotionState()->getWorldTransform(trans);
+    btVector3 start = trans.getOrigin();
+    btVector3 end = start - btVector3(0, 0.8f, 0);
+    btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+    world->getBulletWorld()->rayTest(start, end, rayCallback);
+    return rayCallback.hasHit();
+}
+
+bool Player::isOnGround() const {
+    return isOnGroundBullet();
+}
+
+// Individual body part collision detection
+// Individual body part collision detection using precise ray casting
+bool Player::checkHeadCollision() const {
+    if (!capsuleBody || !world) return false;
+    
+    btTransform trans;
+    capsuleBody->getMotionState()->getWorldTransform(trans);
+    btVector3 playerPos = trans.getOrigin();
+    
+    // Head position (offset from player center)
+    btVector3 headCenter = playerPos + btVector3(0, 1.0f, 0);
+    
+    // Check collision in multiple directions around head (spherical detection)
+    btVector3 directions[] = {
+        btVector3(0.3f, 0, 0),    // Right
+        btVector3(-0.3f, 0, 0),   // Left
+        btVector3(0, 0.3f, 0),    // Up
+        btVector3(0, -0.3f, 0),   // Down
+        btVector3(0, 0, 0.3f),    // Forward
+        btVector3(0, 0, -0.3f),   // Backward
+        btVector3(0.2f, 0.2f, 0), // Diagonals
+        btVector3(-0.2f, 0.2f, 0),
+        btVector3(0.2f, -0.2f, 0),
+        btVector3(-0.2f, -0.2f, 0)
+    };
+    
+    for (const auto& dir : directions) {
+        btVector3 start = headCenter;
+        btVector3 end = headCenter + dir;
+        btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+        rayCallback.m_collisionFilterGroup = btBroadphaseProxy::DefaultFilter;
+        rayCallback.m_collisionFilterMask = btBroadphaseProxy::AllFilter;
+        
+        world->getBulletWorld()->rayTest(start, end, rayCallback);
+        if (rayCallback.hasHit()) {
+            // Verifică dacă nu e coliziune cu propriul corp
+            if (rayCallback.m_collisionObject != capsuleBody) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+bool Player::checkArmCollision(bool isLeft) const {
+    if (!capsuleBody || !world) return false;
+    
+    btTransform trans;
+    capsuleBody->getMotionState()->getWorldTransform(trans);
+    btVector3 playerPos = trans.getOrigin();
+    
+    // Arm position (offset from player center)
+    float armOffset = isLeft ? -0.45f : 0.45f;
+    btVector3 armPos = playerPos + btVector3(armOffset, 0.5f, 0);
+    
+    // Check collision in multiple directions around arm
+    btVector3 directions[] = {
+        btVector3(armOffset > 0 ? 0.2f : -0.2f, 0, 0),  // Outward
+        btVector3(0, 0.2f, 0),   // Up
+        btVector3(0, -0.2f, 0),  // Down
+        btVector3(0, 0, 0.2f),   // Forward
+        btVector3(0, 0, -0.2f)   // Backward
+    };
+    
+    for (const auto& dir : directions) {
+        btVector3 start = armPos;
+        btVector3 end = armPos + dir;
+        btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+        rayCallback.m_collisionFilterGroup = btBroadphaseProxy::DefaultFilter;
+        rayCallback.m_collisionFilterMask = btBroadphaseProxy::AllFilter;
+        
+        world->getBulletWorld()->rayTest(start, end, rayCallback);
+        if (rayCallback.hasHit() && rayCallback.m_collisionObject != capsuleBody) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool Player::checkLegCollision(bool isLeft) const {
+    if (!capsuleBody || !world) return false;
+    
+    btTransform trans;
+    capsuleBody->getMotionState()->getWorldTransform(trans);
+    btVector3 playerPos = trans.getOrigin();
+    
+    // Leg position (offset from player center)
+    float legOffset = isLeft ? -0.15f : 0.15f;
+    float capsuleHalfHeight = CAPSULE_HEIGHT / 2.0f;
+    btVector3 legPos = playerPos + btVector3(legOffset, -capsuleHalfHeight - 0.4f, 0);
+    
+    // Check collision in multiple directions around leg
+    btVector3 directions[] = {
+        btVector3(legOffset > 0 ? 0.1f : -0.1f, 0, 0),  // Outward
+        btVector3(0, -0.1f, 0),  // Down
+        btVector3(0, 0, 0.1f),   // Forward
+        btVector3(0, 0, -0.1f)   // Backward
+    };
+    
+    for (const auto& dir : directions) {
+        btVector3 start = legPos;
+        btVector3 end = legPos + dir;
+        btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+        rayCallback.m_collisionFilterGroup = btBroadphaseProxy::DefaultFilter;
+        rayCallback.m_collisionFilterMask = btBroadphaseProxy::AllFilter;
+        
+        world->getBulletWorld()->rayTest(start, end, rayCallback);
+        if (rayCallback.hasHit() && rayCallback.m_collisionObject != capsuleBody) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+bool Player::checkTorsoCollision() const {
+    if (!capsuleBody || !world) return false;
+    
+    btTransform trans;
+    capsuleBody->getMotionState()->getWorldTransform(trans);
+    btVector3 playerPos = trans.getOrigin();
+    
+    // Check collision around torso center
+    btVector3 directions[] = {
+        btVector3(0.1f, 0, 0),   // Right
+        btVector3(-0.1f, 0, 0),  // Left
+        btVector3(0, 0, 0.1f),   // Forward
+        btVector3(0, 0, -0.1f)   // Backward
+    };
+    
+    for (const auto& dir : directions) {
+        btVector3 start = playerPos;
+        btVector3 end = playerPos + dir;
+        btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+        world->getBulletWorld()->rayTest(start, end, rayCallback);
+        if (rayCallback.hasHit()) return true;
+    }
+    
+    return false;
 }
 
 void Player::handleInput(float movementSpeed) {
+    if (!capsuleBody) return;
     Vector2 moveAxis = InputSystem::getMovementAxis();
-    btRigidBody* body = getBulletBody();
-    if (body) {
-        btVector3 velocity = body->getLinearVelocity();
-        float speed = movementSpeed;
-        // Dacă nu există input, oprește XZ complet
-        if (moveAxis.x == 0.0f && moveAxis.y == 0.0f) {
-            body->setLinearVelocity(btVector3(0, velocity.y(), 0));
-        } else {
-            // WASD pe XZ
-            btVector3 newVel(moveAxis.x * speed, velocity.y(), -moveAxis.y * speed);
-            body->setLinearVelocity(newVel);
+    btVector3 forward(0, 0, -1), right(1, 0, 0);
+    btVector3 move = moveAxis.x * right + moveAxis.y * forward;
+    if (move.length2() > 0.01f) {
+        move.normalize();
+        move *= movementSpeed * 50.0f;
+        btVector3 vel = capsuleBody->getLinearVelocity();
+        move.setY(0);
+        vel.setY(0);
+        btVector3 desiredVel = move;
+        btVector3 impulse = (desiredVel - vel) * capsuleBody->getMass();
+        capsuleBody->applyCentralImpulse(impulse * 0.5f);
+    }
+    if (InputSystem::isJumpPressed()) {
+        btVector3 vel = capsuleBody->getLinearVelocity();
+        if (std::abs(vel.y()) < 0.1f && isOnGroundBullet()) {
+            capsuleBody->applyCentralImpulse(btVector3(0, JUMP_IMPULSE, 0));
         }
-        // Sărit
-        if (IsKeyPressed(KEY_SPACE) && isOnGround) {
-            body->applyCentralImpulse(btVector3(0, PhysicsSettings::JUMP_VELOCITY, 0));
-            isOnGround = false;
-        }
     }
 }
 
-void Player::move(Direction direction, float byValue) {
-  if (!world) return;
-
-  Vector3 oldPosition = position;
-  Vector3 newPosition = position;
-
-  if (direction == FORWARD)
-    newPosition.z -= byValue;
-  else if (direction == BACKWARD)
-    newPosition.z += byValue;
-  else if (direction == LEFT)
-    newPosition.x -= byValue;
-  else if (direction == RIGHT)
-    newPosition.x += byValue;
-
-  // Move along X axis with sliding collision
-  if (newPosition.x != oldPosition.x) {
-    moveWithSliding(oldPosition.x, newPosition.x, &position.x);
-  }
-
-  // Move along Z axis with sliding collision
-  if (newPosition.z != oldPosition.z) {
-    moveWithSliding(oldPosition.z, newPosition.z, &position.z);
-  }
-}
-
-void Player::jump() {
-  if (isOnGround && bulletBody) {
-    bulletBody->applyCentralImpulse(btVector3(0, 7.0f, 0));  // impuls pe Y
-    isOnGround = false;
-  }
-}
-
-bool Player::checkCollisionWithWorldHorizontal() const {
-  if (!world) return false;
-
-  // TODO: Maybe move this directly in getBounginBox()?
-  std::vector<BoundingBox> playerPartBoxes;
-  playerPartBoxes.push_back(torso.getBoundingBox());
-  playerPartBoxes.push_back(leftArm.getBoundingBox());
-  playerPartBoxes.push_back(rightArm.getBoundingBox());
-  playerPartBoxes.push_back(leftLeg.getBoundingBox());
-  playerPartBoxes.push_back(rightLeg.getBoundingBox());
-  playerPartBoxes.push_back(head.getBoundingBox());
-
-  for (const auto &objSharedPtr : world->getObjects()) {
-    const GameObject *otherObj = objSharedPtr.get();
-    if (!otherObj || otherObj == this || !otherObj->getHasCollision()) {
-      continue;
-    }
-
-    BoundingBox otherBox = otherObj->getBoundingBox();
-
-    for (const auto &partBox : playerPartBoxes) {
-      bool xzOverlap =
-          (partBox.max.x > otherBox.min.x && partBox.min.x < otherBox.max.x) &&
-          (partBox.max.z > otherBox.min.z && partBox.min.z < otherBox.max.z);
-
-      if (!xzOverlap) continue;
-
-      float yOverlap =
-          std::max(0.0f, std::min(partBox.max.y, otherBox.max.y) -
-                             std::max(partBox.min.y, otherBox.min.y));
-      if (yOverlap >= PhysicsSettings::MIN_Y_OVERLAP_FOR_HORIZONTAL_COLLISION) {
-        if (CheckCollisionBoxes(partBox, otherBox)) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-}
-
-void Player::moveWithSliding(float start, float end, float *positionComponent) {
-  float originalValue = *positionComponent;
-
-  // Try full movement first
-  *positionComponent = end;
-  updateBodyPartPositions();
-
-  // Check if we have a collision
-  if (checkCollisionWithWorldHorizontal()) {
-    // Reset position and find maximum safe position
-    *positionComponent = originalValue;
-    updateBodyPartPositions();
-
-    float t0 = 0.0f;
-    float t1 = 1.0f;
-    float tMid;
-    const int MAX_ITERATIONS = 10;
-
-    for (int i = 0; i < MAX_ITERATIONS &&
-                    (t1 - t0) > PhysicsSettings::COLLISION_SWEEP_EPSILON;
-         i++) {
-      tMid = (t0 + t1) / 2.0f;
-      *positionComponent = start + (end - start) * tMid;  // Test this position
-      updateBodyPartPositions();
-      if (checkCollisionWithWorldHorizontal()) {
-        t1 = tMid;  // Collision, try earlier
-      } else {
-        t0 = tMid;  // No collision, can go at least this far
-      }
-    }
-    *positionComponent =
-        start + (end - start) * t0;  // Apply safest found position
-    updateBodyPartPositions();
-  }
-}
-
-void Player::performDetailedGroundCheck() {
-  if (!world) {
-    setIsOnGround(false);
-    return;
-  }
-
-  BoundingBox leftLegBox = leftLeg.getBoundingBox();
-  BoundingBox rightLegBox = rightLeg.getBoundingBox();
-
-  bool foundLegSupportThisFrame = false;
-  float highestGroundYContact = -std::numeric_limits<float>::infinity();
-  Vector3 newPlayerPosition = getPosition();
-  bool positionNeedsAdjustment = false;
-
-  for (const auto &objSharedPtr : world->getObjects()) {
-    const GameObject *otherObj = objSharedPtr.get();
-    // TODO: Check later this. Maybe implement a 2 frame colision check.
-    if (!otherObj || otherObj == this || !otherObj->getHasCollision()) {
-      continue;
-    }
-
-    BoundingBox otherBox = otherObj->getBoundingBox();
-
-    std::vector<const BoundingBox *> legBoxes = {&leftLegBox, &rightLegBox};
-
-    for (const BoundingBox *legBoxPtr : legBoxes) {
-      const BoundingBox &currentLegBox = *legBoxPtr;
-
-      bool yAlign =
-          (currentLegBox.min.y >=
-           otherBox.max.y -
-               PhysicsSettings::GROUND_CHECK_Y_ALIGN_MAX_PENETRATION) &&
-          (currentLegBox.min.y <=
-           otherBox.max.y +
-               PhysicsSettings::GROUND_CHECK_Y_ALIGN_MAX_SEPARATION);
-
-      bool xzOverlap = (currentLegBox.max.x > otherBox.min.x &&
-                        currentLegBox.min.x < otherBox.max.x) &&
-                       (currentLegBox.max.z > otherBox.min.z &&
-                        currentLegBox.min.z < otherBox.max.z);
-
-      if (yAlign && xzOverlap) {
-        foundLegSupportThisFrame = true;
-
-        Vector3 currentPlayerOrigin = getPosition();
-        float distPlayerOriginToLegBottom =
-            currentPlayerOrigin.y - currentLegBox.min.y;
-        float potentialPlayerYOnThisSurface =
-            otherBox.max.y + distPlayerOriginToLegBottom;
-
-        if (potentialPlayerYOnThisSurface > highestGroundYContact) {
-          highestGroundYContact = potentialPlayerYOnThisSurface;
-        }
-      }
-    }
-  }
-
-  if (foundLegSupportThisFrame) {
-    setIsOnGround(true);
-
-    Vector3 finalPlayerPosition = getPosition();
-    finalPlayerPosition.y =
-        highestGroundYContact + PhysicsSettings::GROUND_ADJUST_EPSILON;
-    setPosition(finalPlayerPosition);
-
-    Vector3 currentVelocity = getVelocity();
-    if (currentVelocity.y < 0) {
-      currentVelocity.y = 0;
-      setVelocity(currentVelocity);
-    }
-  } else {
-    setIsOnGround(false);
-  }
+void Player::updateBodyPartPositions() {
+    if (!capsuleBody) return;
+    btTransform t;
+    capsuleBody->getMotionState()->getWorldTransform(t);
+    btVector3 p = t.getOrigin();
+    // Torso (center of capsule)
+    torso.setPosition({p.x(), p.y(), p.z()});
+    torso.setRotation({0, 1, 0}, 0);
+    // Head (above torso)
+    Vector3 headOffset = {0, 1.0f, 0};
+    head.setPosition({p.x() + headOffset.x, p.y() + headOffset.y, p.z() + headOffset.z});
+    // Arms (sideways, mid torso)
+    leftArm.setPosition({p.x() - 0.45f, p.y() + 0.5f, p.z()});
+    rightArm.setPosition({p.x() + 0.45f, p.y() + 0.5f, p.z()});
+    // Legs (below capsule)
+    float capsuleHalfHeight = CAPSULE_HEIGHT / 2.0f;
+    float legLength = 1.0f;
+    float legY = p.y() - capsuleHalfHeight - (legLength / 2.0f) + 0.05f;
+    leftLeg.setPosition({p.x() - 0.15f, legY, p.z()});
+    rightLeg.setPosition({p.x() + 0.15f, legY, p.z()});
 }
 
 void Player::update(float deltaTime) {
-  if (!world) return;
-
-  // Poziția va fi sincronizată de PhysicsSystem
-  updateBodyPartPositions();
-
-  const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
-  static float animTime = 0.0f;
-  Vector2 moveInput = InputSystem::getMovementAxis();
-  bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
-  if (isMoving) {
-    animTime += deltaTime * PLAYER_ANIMATION_SPEED;
-    float angleDegrees = sin(animTime) * PLAYER_SWING_ANGLE_DEGREES;
-
-    leftArm.setRotation(swingAxis, angleDegrees);
-    rightArm.setRotation(swingAxis, -angleDegrees);
-    leftLeg.setRotation(swingAxis, -angleDegrees);
-    rightLeg.setRotation(swingAxis, angleDegrees);
-  } else {
-    const float NEUTRAL_ANGLE = 0.0f;
-    const float ANGLE_THRESHOLD = 0.1f;
-
-    auto returnLimbToNeutral = [&](BodyPart &limb) {
-      float currentAngle = limb.getRotationAngle();
-      if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_THRESHOLD) {
-        float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE,
-                              PLAYER_RETURN_TO_NEUTRAL_SPEED * deltaTime);
-        limb.setRotation(swingAxis, newAngle);
-      } else {
-        limb.setRotation(swingAxis, NEUTRAL_ANGLE);
-      }
-    };
-
-    returnLimbToNeutral(leftArm);
-    returnLimbToNeutral(rightArm);
-    returnLimbToNeutral(leftLeg);
-    returnLimbToNeutral(rightLeg);
-  }
+    if (capsuleBody) {
+        btTransform trans;
+        capsuleBody->getMotionState()->getWorldTransform(trans);
+        btVector3 pos = trans.getOrigin();
+        this->position = {pos.x(), pos.y(), pos.z()};
+        updateBodyPartPositions();
+    }
+    // Animate limbs (visual only)
+    const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
+    static float animTime = 0.0f;
+    Vector2 moveInput = InputSystem::getMovementAxis();
+    bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
+    if (isMoving) {
+        animTime += deltaTime * ANIMATION_SPEED;
+        float angleDegrees = sin(animTime) * SWING_ANGLE_DEGREES;
+        leftArm.setRotation(swingAxis, angleDegrees);
+        rightArm.setRotation(swingAxis, -angleDegrees);
+        leftLeg.setRotation(swingAxis, -angleDegrees);
+        rightLeg.setRotation(swingAxis, angleDegrees);
+    } else {
+        const float NEUTRAL_ANGLE = 0.0f;
+        const float ANGLE_THRESHOLD = 0.1f;
+        auto returnLimbToNeutral = [&](BodyPart &limb) {
+            float currentAngle = limb.getRotationAngle();
+            if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_THRESHOLD) {
+                float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE, RETURN_TO_NEUTRAL_SPEED * deltaTime);
+                limb.setRotation(swingAxis, newAngle);
+            } else {
+                limb.setRotation(swingAxis, NEUTRAL_ANGLE);
+            }
+        };
+        returnLimbToNeutral(leftArm);
+        returnLimbToNeutral(rightArm);
+        returnLimbToNeutral(leftLeg);
+        returnLimbToNeutral(rightLeg);
+    }
 }
 
 void Player::postPhysicsUpdate(float deltaTime) {
-  if (!world) return;
-
-  performDetailedGroundCheck();
-  updateBodyPartPositions();
-
-  const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
-  static float animTime = 0.0f;
-  Vector2 moveInput = InputSystem::getMovementAxis();
-  bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
-  if (isMoving) {
-    animTime += deltaTime * PLAYER_ANIMATION_SPEED;
-    float angleDegrees = sin(animTime) * PLAYER_SWING_ANGLE_DEGREES;
-
-    leftArm.setRotation(swingAxis, angleDegrees);
-    rightArm.setRotation(swingAxis, -angleDegrees);
-    leftLeg.setRotation(swingAxis, -angleDegrees);
-    rightLeg.setRotation(swingAxis, angleDegrees);
-  } else {
-    const float NEUTRAL_ANGLE = 0.0f;
-    const float ANGLE_THRESHOLD = 0.1f;
-
-    auto returnLimbToNeutral = [&](BodyPart &limb) {
-      float currentAngle = limb.getRotationAngle();
-      if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_THRESHOLD) {
-        float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE,
-                              PLAYER_RETURN_TO_NEUTRAL_SPEED * deltaTime);
-        limb.setRotation(swingAxis, newAngle);
-      } else {
-        limb.setRotation(swingAxis, NEUTRAL_ANGLE);
-      }
-    };
-
-    returnLimbToNeutral(leftArm);
-    returnLimbToNeutral(rightArm);
-    returnLimbToNeutral(leftLeg);
-    returnLimbToNeutral(rightLeg);
-  }
+    updateBodyPartPositions();
+    // Animate limbs (visual only)
+    const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
+    static float animTime = 0.0f;
+    Vector2 moveInput = InputSystem::getMovementAxis();
+    bool isMoving = (moveInput.x != 0.0f || moveInput.y != 0.0f);
+    if (isMoving) {
+        animTime += deltaTime * ANIMATION_SPEED;
+        float angleDegrees = sin(animTime) * SWING_ANGLE_DEGREES;
+        leftArm.setRotation(swingAxis, angleDegrees);
+        rightArm.setRotation(swingAxis, -angleDegrees);
+        leftLeg.setRotation(swingAxis, -angleDegrees);
+        rightLeg.setRotation(swingAxis, angleDegrees);
+    } else {
+        const float NEUTRAL_ANGLE = 0.0f;
+        const float ANGLE_THRESHOLD = 0.1f;
+        auto returnLimbToNeutral = [&](BodyPart &limb) {
+            float currentAngle = limb.getRotationAngle();
+            if (std::abs(currentAngle - NEUTRAL_ANGLE) > ANGLE_THRESHOLD) {
+                float newAngle = Lerp(currentAngle, NEUTRAL_ANGLE, RETURN_TO_NEUTRAL_SPEED * deltaTime);
+                limb.setRotation(swingAxis, newAngle);
+            } else {
+                limb.setRotation(swingAxis, NEUTRAL_ANGLE);
+            }
+        };
+        returnLimbToNeutral(leftArm);
+        returnLimbToNeutral(rightArm);
+        returnLimbToNeutral(leftLeg);
+        returnLimbToNeutral(rightLeg);
+    }
 }
 
 void Player::draw() const {
-  torso.draw();
-  head.draw();
-  leftArm.draw();
-  rightArm.draw();
-  leftLeg.draw();
-  rightLeg.draw();
-}
-
-float Player::getVerticalCollisionContactTime(
-    const Vector3 &verticalMovementVector, const GameWorld *world,
-    int maxItertions) const {
-  if (!world ||
-      (verticalMovementVector.y == 0 && verticalMovementVector.x == 0 &&
-       verticalMovementVector.z == 0)) {
-    return 1.0f;
-  }
-
-  Vector3 originalPlayerPos = position;
-  float t0 = 0.0f, t1 = 1.0f, tMid;
-
-  auto checkCollisionAtT = [&](float t) -> bool {
-    Vector3 testDisplacement = Vector3Scale(verticalMovementVector, t);
-
-    std::vector<BoundingBox> playerPartFutureBoxes;
-    bool movingDown = verticalMovementVector.y < 0.0f;
-    bool movingUp = verticalMovementVector.y > 0.0f;
-
-    if (movingDown) {
-      BoundingBox currentLeftLegBox = leftLeg.getBoundingBox();
-      BoundingBox currentRightLegBox = rightLeg.getBoundingBox();
-      playerPartFutureBoxes.push_back(
-          {Vector3Add(currentLeftLegBox.min, testDisplacement),
-           Vector3Add(currentLeftLegBox.max, testDisplacement)});
-      playerPartFutureBoxes.push_back(
-          {Vector3Add(currentRightLegBox.min, testDisplacement),
-           Vector3Add(currentRightLegBox.max, testDisplacement)});
-    } else if (movingUp) {
-      BoundingBox currentHeadBox = head.getBoundingBox();
-      playerPartFutureBoxes.push_back(
-          {Vector3Add(currentHeadBox.min, testDisplacement),
-           Vector3Add(currentHeadBox.max, testDisplacement)});
-    }
-
-    if (playerPartFutureBoxes.empty()) {
-      return false;
-    }
-    for (const auto &otherSharedPtr : world->getObjects()) {
-      const GameObject *other = otherSharedPtr.get();
-      if (!other || other == this || !other->getHasCollision()) {
-        continue;
-      }
-      BoundingBox otherBox = other->getBoundingBox();
-
-      for (const auto &futurePlayerPartBox : playerPartFutureBoxes) {
-        if (CheckCollisionBoxes(futurePlayerPartBox, otherBox)) {
-          return true;  // Collision detected
-        }
-      }
-    }
-    return false;  // No collision for any relevant part
-  };
-
-  if (!checkCollisionAtT(1.0f)) {
-    return 1.0f;  // No collision at full step
-  }
-
-  // Binary search for the exact contact time
-  for (int i = 0; i < maxItertions; i++) {
-    if ((t1 - t0) < PhysicsSettings::COLLISION_SWEEP_EPSILON) {
-      break;
-    }
-    tMid = (t0 + t1) / 2.0f;
-    if (checkCollisionAtT(tMid)) {
-      t1 = tMid;  // Collision occurred at tMid or earlier
-    } else {
-      t0 = tMid;  // No collision at tMid, can go at least this far
-    }
-  }
-  return t0;
+    torso.draw();
+    head.draw();
+    leftArm.draw();
+    rightArm.draw();
+    leftLeg.draw();
+    rightLeg.draw();
 }
 
 BoundingBox Player::getBoundingBox() const {
-  BoundingBox combinedBox = torso.getBoundingBox();
-  BoundingBox headBox = head.getBoundingBox();
-  BoundingBox leftArmBox = leftArm.getBoundingBox();
-  BoundingBox rightArmBox = rightArm.getBoundingBox();
-  BoundingBox leftLegBox = leftLeg.getBoundingBox();
-  BoundingBox rightLegBox = rightLeg.getBoundingBox();
-
-  combinedBox.min = Vector3Min(combinedBox.min, headBox.min);
-  combinedBox.max = Vector3Max(combinedBox.max, headBox.max);
-
-  combinedBox.min = Vector3Min(combinedBox.min, leftArmBox.min);
-  combinedBox.max = Vector3Max(combinedBox.max, leftArmBox.max);
-
-  combinedBox.min = Vector3Min(combinedBox.min, rightArmBox.min);
-  combinedBox.max = Vector3Max(combinedBox.max, rightArmBox.max);
-
-  combinedBox.min = Vector3Min(combinedBox.min, leftLegBox.min);
-  combinedBox.max = Vector3Max(combinedBox.max, leftLegBox.max);
-
-  combinedBox.min = Vector3Min(combinedBox.min, rightLegBox.min);
-  combinedBox.max = Vector3Max(combinedBox.max, rightLegBox.max);
-
-  return combinedBox;
+    BoundingBox combinedBox = torso.getBoundingBox();
+    BoundingBox headBox = head.getBoundingBox();
+    BoundingBox leftArmBox = leftArm.getBoundingBox();
+    BoundingBox rightArmBox = rightArm.getBoundingBox();
+    BoundingBox leftLegBox = leftLeg.getBoundingBox();
+    BoundingBox rightLegBox = rightLeg.getBoundingBox();
+    combinedBox.min = Vector3Min(combinedBox.min, headBox.min);
+    combinedBox.max = Vector3Max(combinedBox.max, headBox.max);
+    combinedBox.min = Vector3Min(combinedBox.min, leftArmBox.min);
+    combinedBox.max = Vector3Max(combinedBox.max, leftArmBox.max);
+    combinedBox.min = Vector3Min(combinedBox.min, rightArmBox.min);
+    combinedBox.max = Vector3Max(combinedBox.max, rightArmBox.max);
+    combinedBox.min = Vector3Min(combinedBox.min, leftLegBox.min);
+    combinedBox.max = Vector3Max(combinedBox.max, leftLegBox.max);
+    combinedBox.min = Vector3Min(combinedBox.min, rightLegBox.min);
+    combinedBox.max = Vector3Max(combinedBox.max, rightLegBox.max);
+    return combinedBox;
 }
