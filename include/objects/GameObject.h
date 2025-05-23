@@ -2,6 +2,7 @@
 #define GAMEOBJECT_H
 
 #include <memory>  // For std::shared_ptr
+#include <btBulletDynamicsCommon.h>
 
 #include "GameWorld.h"
 #include "raylib.h"
@@ -16,13 +17,13 @@ class GameObject {
   bool isOnGround;
   bool affectedByGravity;
   bool isStatic;
-
   bool hasCollision;
+  btRigidBody* bulletBody = nullptr;  // Adaugă pointer la rigid body Bullet
 
  public:
   GameObject(Vector3 position, bool hasCollision = true,
              bool affectedByGravity = true, bool isStatic = false);
-  virtual ~GameObject() = default;
+  virtual ~GameObject();
 
   Vector3 getPosition() const { return position; }
   Vector3 getVelocity() const { return velocity; }
@@ -30,6 +31,8 @@ class GameObject {
   bool isAffectedByGravity() const { return affectedByGravity; }
   bool getIsStatic() const { return isStatic; }
   bool getHasCollision() const { return hasCollision; }
+  void setBulletBody(btRigidBody* body) { bulletBody = body; }
+  btRigidBody* getBulletBody() const { return bulletBody; }
 
   void setPosition(Vector3 newPosition) { position = newPosition; }
   void setVelocity(Vector3 newVelocity) { velocity = newVelocity; }

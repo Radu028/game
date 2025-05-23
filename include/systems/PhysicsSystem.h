@@ -1,7 +1,8 @@
 #ifndef PHYSICSSYSTEM_H
 #define PHYSICSSYSTEM_H
 
-// #include <memory>
+#include <btBulletDynamicsCommon.h>
+#include <unordered_map>
 #include <vector>
 
 #include "objects/GameObject.h"
@@ -13,28 +14,26 @@ class GameWorld;
 class PhysicsSystem {
  private:
   std::vector<GameObject*> physicsObjects;
+  std::unordered_map<GameObject*, btRigidBody*> objectToBody;  // mapare GameObject -> btRigidBody
   GameWorld* world;
 
-  // Checks if obj would collide with any other relevant object in the world if
-  // it were at futurePosition. This is crucial for predictive collision
-  // checking.
-  // bool checkCollisionWithWorld(GameObject& obj,
-  //                              const Vector3& futurePosition) const;
-
-  // A helper method to perform a continuous collision detection sweep (like a
-  // binary search on the movement path) to find the exact point of contact.
-  // float getContactTime(GameObject& obj, const Vector3& movementVector) const;
+  // Bullet Physics
+  btDefaultCollisionConfiguration* collisionConfig;
+  btCollisionDispatcher* dispatcher;
+  btBroadphaseInterface* broadphase;
+  btSequentialImpulseConstraintSolver* solver;
+  btDiscreteDynamicsWorld* dynamicsWorld;
 
  public:
   PhysicsSystem(GameWorld* gameWorld);
+  ~PhysicsSystem();
 
   void addObject(GameObject* obj);
   void removeObject(GameObject* obj);
-
   void update(float deltaTime);
 
  private:
-  void applyGravityToObject(GameObject& obj, float deltaTime);
+  void syncGameObjectsFromBullet();
 };
 
 #endif

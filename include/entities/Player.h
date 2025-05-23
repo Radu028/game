@@ -42,6 +42,14 @@ class Player : public GameObject {
   BoundingBox getBoundingBox() const override;
 
   void performDetailedGroundCheck();
+
+  // Adaugă acces la BodyPart-uri pentru PhysicsSystem
+  BodyPart* getTorso() { return &torso; }
+  BodyPart* getHead() { return &head; }
+  BodyPart* getLeftArm() { return &leftArm; }
+  BodyPart* getRightArm() { return &rightArm; }
+  BodyPart* getLeftLeg() { return &leftLeg; }
+  BodyPart* getRightLeg() { return &rightLeg; }
 };
 
 #endif

@@ -1,5 +1,5 @@
 #include "objects/GameObject.h"
-
+#include <btBulletDynamicsCommon.h>
 #include <cmath>
 
 #include "GameWorld.h"
@@ -13,7 +13,16 @@ GameObject::GameObject(Vector3 position, bool hasCollision,
       isOnGround(false),
       affectedByGravity(affectedByGravity),
       isStatic(isStatic),
-      hasCollision(hasCollision) {}
+      hasCollision(hasCollision),
+      bulletBody(nullptr) {}
+
+GameObject::~GameObject() {
+  if (bulletBody) {
+    delete bulletBody->getMotionState();
+    delete bulletBody->getCollisionShape();
+    delete bulletBody;
+  }
+}
 
 bool GameObject::checkCollision(const GameObject& other) const {
   if (!this->hasCollision || !other.getHasCollision()) {

@@ -51,14 +51,25 @@ void Player::updateBodyPartPositions() {
 }
 
 void Player::handleInput(float movementSpeed) {
-  Vector2 moveAxis = InputSystem::getMovementAxis();
-
-  if (moveAxis.y > 0.0f) move(FORWARD, movementSpeed * GetFrameTime());
-  if (moveAxis.y < 0.0f) move(BACKWARD, movementSpeed * GetFrameTime());
-  if (moveAxis.x < 0.0f) move(LEFT, movementSpeed * GetFrameTime());
-  if (moveAxis.x > 0.0f) move(RIGHT, movementSpeed * GetFrameTime());
-
-  if (InputSystem::isJumpPressed()) jump();
+    Vector2 moveAxis = InputSystem::getMovementAxis();
+    btRigidBody* body = getBulletBody();
+    if (body) {
+        btVector3 velocity = body->getLinearVelocity();
+        float speed = movementSpeed;
+        // Dacă nu există input, oprește XZ complet
+        if (moveAxis.x == 0.0f && moveAxis.y == 0.0f) {
+            body->setLinearVelocity(btVector3(0, velocity.y(), 0));
+        } else {
+            // WASD pe XZ
+            btVector3 newVel(moveAxis.x * speed, velocity.y(), -moveAxis.y * speed);
+            body->setLinearVelocity(newVel);
+        }
+        // Sărit
+        if (IsKeyPressed(KEY_SPACE) && isOnGround) {
+            body->applyCentralImpulse(btVector3(0, PhysicsSettings::JUMP_VELOCITY, 0));
+            isOnGround = false;
+        }
+    }
 }
 
 void Player::move(Direction direction, float byValue) {
@@ -88,11 +99,10 @@ void Player::move(Direction direction, float byValue) {
 }
 
 void Player::jump() {
-  if (!isOnGround) return;
-  Vector3 currentVelocity = getVelocity();
-  currentVelocity.y = PhysicsSettings::JUMP_VELOCITY;
-  setVelocity(currentVelocity);
-  setIsOnGround(false);
+  if (isOnGround && bulletBody) {
+    bulletBody->applyCentralImpulse(btVector3(0, 7.0f, 0));  // impuls pe Y
+    isOnGround = false;
+  }
 }
 
 bool Player::checkCollisionWithWorldHorizontal() const {
@@ -249,9 +259,7 @@ void Player::performDetailedGroundCheck() {
 void Player::update(float deltaTime) {
   if (!world) return;
 
-  performDetailedGroundCheck();
-
-  handleInput(PLAYER_MOVEMENT_SPEED);
+  // Poziția va fi sincronizată de PhysicsSystem
   updateBodyPartPositions();
 
   const Vector3 swingAxis = {1.0f, 0.0f, 0.0f};
