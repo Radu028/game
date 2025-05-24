@@ -31,7 +31,6 @@ class GameWorld {
   void removeObject(std::shared_ptr<GameObject> object);
   void update(float deltaTime);
   void draw() const;
-  void checkCollisions();
   btDiscreteDynamicsWorld* getBulletWorld() const;
   btDiscreteDynamicsWorld* getDynamicsWorld() const { return getBulletWorld(); }
 

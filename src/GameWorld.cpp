@@ -2,7 +2,6 @@
 
 #include <algorithm>  // For std::remove
 
-#include "entities/Player.h"
 #include "systems/PhysicsSystem.h"
 
 GameWorld* GameWorld::instance = nullptr;
@@ -67,13 +66,9 @@ void GameWorld::update(float deltaTime) {
     physicsSystem->update(deltaTime);
   }
 
-  // Only do visual updates for Player objects (not for other GameObject types like RobloxStylePlayer)
+  // Only do visual updates for GameObject types
   if (player) {
-    // Try to cast to Player to call postPhysicsUpdate - only if it's actually a Player
-    if (Player* actualPlayer = dynamic_cast<Player*>(player)) {
-      actualPlayer->postPhysicsUpdate(deltaTime);
-    }
-    // For other GameObject types (like RobloxStylePlayer), their update() method handles everything
+    // For GameObject types (like SimpleRagdoll), their update() method handles everything
   }
 }
 

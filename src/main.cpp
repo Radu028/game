@@ -1,13 +1,9 @@
 #include "GameWorld.h"
-#include "entities/Player.h"
-#include "entities/AdvancedPlayerController.h"
 #include "entities/SimpleRagdoll.h"
 #include "objects/CubeObject.h"
 #include "objects/Floor.h"
-#include "objects/GameObject.h"
 #include "systems/InputSystem.h"
 #include "raylib.h"
-#include "settings/Physics.h"
 
 #define PLAYER_MOVEMENT_SPEED 5.0f
 
@@ -103,15 +99,12 @@ int main() {
     DrawText(TextFormat("Player Feet Pos: (%.2f, %.2f, %.2f)", playerPos.x, playerPos.y, playerPos.z), 10, 70, 20, WHITE);
     
     // Enhanced ground detection display
-    bool raycastGround = player1->isOnGround();
-    bool contactGround = player1->isOnGroundContact();
-    bool canJump = raycastGround || contactGround;
+    bool onGround = player1->isOnGround();
     
-    DrawText(TextFormat("Ground (Raycast): %s", raycastGround ? "Yes" : "No"), 10, 100, 20, raycastGround ? GREEN : RED);
-    DrawText(TextFormat("Ground (Contact): %s", contactGround ? "Yes" : "No"), 10, 120, 20, contactGround ? GREEN : RED);
-    DrawText(TextFormat("Can Jump: %s", canJump ? "YES" : "NO"), 10, 140, 20, canJump ? GREEN : RED);
+    DrawText(TextFormat("Ground (Raycast): %s", onGround ? "Yes" : "No"), 10, 100, 20, onGround ? GREEN : RED);
+    DrawText(TextFormat("Can Jump: %s", onGround ? "YES" : "NO"), 10, 120, 20, onGround ? GREEN : RED);
     
-    DrawText("Simple Ragdoll Character", 10, 170, 20, WHITE);
+    DrawText("Simple Ragdoll Character", 10, 150, 20, WHITE);
     
     // Control instructions
     DrawText("CONTROLS:", 10, 200, 20, YELLOW);

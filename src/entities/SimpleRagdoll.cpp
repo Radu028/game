@@ -14,9 +14,6 @@ SimpleRagdoll::SimpleRagdoll(Vector3 position)
       rightArm({0, 0, 0}, {0.2f, 0.6f, 0.2f}, GREEN, false),
       leftLeg({0, 0, 0}, {0.25f, 0.8f, 0.25f}, YELLOW, false),
       rightLeg({0, 0, 0}, {0.25f, 0.8f, 0.25f}, YELLOW, false) {
-    
-    printf("[DEBUG] SimpleRagdoll created at position: (%.2f, %.2f, %.2f)\n", 
-           position.x, position.y, position.z);
 }
 
 SimpleRagdoll::~SimpleRagdoll() {
@@ -35,11 +32,6 @@ void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     Vector3 physicsPos = this->position;
     float calculatedY = 0.50f + CHARACTER_HEIGHT / 2 + 0.05f; // Position at floor + half height + small clearance
     physicsPos.y = calculatedY;
-    
-    printf("[DEBUG] Position calculation: floor=0.50 + height/2=%.2f + clearance=0.05 = %.2f\n", 
-           CHARACTER_HEIGHT/2, calculatedY);
-    printf("[DEBUG] Setting character center at Y=%.2f (was Y=%.2f) with collision margin=0.10\n", 
-           physicsPos.y, this->position.y);
     
     // Create motion state
     btTransform transform;
@@ -75,29 +67,13 @@ void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     // Use world gravity instead of custom gravity
     // physicsBody->setGravity(btVector3(0, -15.0f, 0)); // Removed: was overriding world gravity
     
-    // Debug physics body properties
-    printf("[DEBUG] Physics body mass: %.2f, isStaticObject: %s, isKinematicObject: %s\n",
-           physicsBody->getMass(),
-           physicsBody->isStaticObject() ? "true" : "false",
-           physicsBody->isKinematicObject() ? "true" : "false");
+
     
-    // Debug linear and angular factors
-    btVector3 linearFactor = physicsBody->getLinearFactor();
-    btVector3 angularFactor = physicsBody->getAngularFactor();
-    printf("[DEBUG] Linear factor: (%.2f, %.2f, %.2f), Angular factor: (%.2f, %.2f, %.2f)\n",
-           linearFactor.x(), linearFactor.y(), linearFactor.z(),
-           angularFactor.x(), angularFactor.y(), angularFactor.z());
+
     
-    // Debug damping settings
-    printf("[DEBUG] Linear damping: %.3f, Angular damping: %.3f\n",
-           physicsBody->getLinearDamping(), physicsBody->getAngularDamping());
+
     
-    // Debug gravity settings
-    btVector3 bodyGravity = physicsBody->getGravity();
-    btVector3 worldGravity = bulletWorld->getGravity();
-    printf("[DEBUG] Body gravity: (%.2f, %.2f, %.2f), World gravity: (%.2f, %.2f, %.2f)\n",
-           bodyGravity.x(), bodyGravity.y(), bodyGravity.z(),
-           worldGravity.x(), worldGravity.y(), worldGravity.z());
+
     
     // Add to physics world
     bulletWorld->addRigidBody(physicsBody);
@@ -114,15 +90,12 @@ void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     physicsBody->setLinearVelocity(btVector3(0, 0, 0));
     physicsBody->setAngularVelocity(btVector3(0, 0, 0));
     
-    printf("[DEBUG] Final position after world add: Center Y=%.2f, Feet Y=%.2f\n", 
-           physicsPos.y, physicsPos.y - CHARACTER_HEIGHT/2);
+
     
     // Update visual positions immediately
     updateVisualFromPhysics();
     
-    printf("[DEBUG] SimpleRagdoll physics setup complete - Capsule character controller\n");
-    printf("[DEBUG] Character height: %.2f, radius: %.2f, mass: %.2f\n", 
-           CHARACTER_HEIGHT, CHARACTER_RADIUS, CHARACTER_MASS);
+
 }
 
 void SimpleRagdoll::removeFromPhysics(btDiscreteDynamicsWorld* bulletWorld) {
@@ -285,57 +258,10 @@ bool SimpleRagdoll::isOnGround() const {
         float hitDistance = rayCallback.m_closestHitFraction * 0.2f; // Distance to ground in meters
         btVector3 velocity = physicsBody->getLinearVelocity();
         
-        // Debug ground detection with hit object info
-        static int groundDebugCounter = 0;
-        if (++groundDebugCounter % 60 == 0) {
-            const btRigidBody* hitBody = btRigidBody::upcast(rayCallback.m_collisionObject);
-            printf("[GROUND] Hit distance: %.3f, Y velocity: %.2f, Hit object: %p\n", 
-                   hitDistance, velocity.y(), hitBody);
-        }
+
         
         // We're on ground if we hit something close and not moving up fast
         return hitDistance < 0.20f && velocity.y() < 2.0f; // Increased tolerance to 20cm for elevated character
-    }
-    
-    return false;
-}
-
-bool SimpleRagdoll::isOnGroundContact() const {
-    if (!physicsBody || !world) return false;
-    
-    // Check for contact points with other objects
-    btDiscreteDynamicsWorld* dynamicsWorld = world->getBulletWorld();
-    int numManifolds = dynamicsWorld->getDispatcher()->getNumManifolds();
-    
-    // Get our character's bottom position
-    btTransform transform;
-    physicsBody->getMotionState()->getWorldTransform(transform);
-    btVector3 characterPos = transform.getOrigin();
-    float characterBottom = characterPos.y() - CHARACTER_HEIGHT/2;
-    
-    for (int i = 0; i < numManifolds; i++) {
-        btPersistentManifold* contactManifold = dynamicsWorld->getDispatcher()->getManifoldByIndexInternal(i);
-        
-        // Check if one of the bodies is our character
-        const btCollisionObject* obA = contactManifold->getBody0();
-        const btCollisionObject* obB = contactManifold->getBody1();
-        
-        if (obA == physicsBody || obB == physicsBody) {
-            int numContacts = contactManifold->getNumContacts();
-            for (int j = 0; j < numContacts; j++) {
-                btManifoldPoint& pt = contactManifold->getContactPoint(j);
-                if (pt.getDistance() < 0.05f) { // Very close contact
-                    // Get contact point
-                    btVector3 contactPoint = (obA == physicsBody) ? pt.getPositionWorldOnA() : pt.getPositionWorldOnB();
-                    
-                    // Check if contact is near the bottom of the character (ground contact)
-                    float contactHeight = contactPoint.y();
-                    if (contactHeight <= characterBottom + 0.2f) { // Within 20cm of feet
-                        return true;
-                    }
-                }
-            }
-        }
     }
     
     return false;
@@ -346,36 +272,13 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
 
     Vector2 moveAxis = InputSystem::getMovementAxis();
     
-    // Debug: Print current velocity and position with more detail
-    btVector3 currentVel = physicsBody->getLinearVelocity();
-    Vector3 currentPos = getPhysicsPosition();
-    Vector3 feetPos = getFeetPosition();
-    static int debugCounter = 0;
-    if (++debugCounter % 60 == 0) { // Every second
-        printf("[DEBUG] Center: (%.2f, %.2f, %.2f), Feet: (%.2f, %.2f, %.2f), Vel: (%.2f, %.2f, %.2f), Ground: %s\n",
-               currentPos.x, currentPos.y, currentPos.z,
-               feetPos.x, feetPos.y, feetPos.z,
-               currentVel.x(), currentVel.y(), currentVel.z(),
-               isOnGround() ? "YES" : "NO");
-        
-        // Check for penetration with floor (floor top is at Y=0.50, character should be above)
-        if (feetPos.y < 0.52f) { // Allow 2cm margin
-            printf("[DEBUG] WARNING: Character feet too close to floor! Feet Y=%.3f, Floor top=0.500\n", feetPos.y);
-        }
-    }
+
 
     // HANDLE JUMP FIRST - before movement can override Y velocity
     if (InputSystem::isJumpPressed()) {
-        bool raycastGround = isOnGround();
-        bool contactGround = isOnGroundContact();
-        bool canJump = raycastGround || contactGround;
-        
-        printf("[JUMP] Jump pressed! Raycast: %s, Contact: %s, Can jump: %s\n", 
-               raycastGround ? "YES" : "NO", 
-               contactGround ? "YES" : "NO",
-               canJump ? "YES" : "NO");
+        bool onGround = isOnGround();
                
-        if (canJump) {
+        if (onGround) {
             jump();
         }
     }
@@ -401,19 +304,9 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
         velocity.setY(preservedY); // Explicitly preserve Y velocity
         physicsBody->setLinearVelocity(velocity);
         
-        // Debug: Check if Y velocity was preserved
-        btVector3 afterVel = physicsBody->getLinearVelocity();
-        if (std::abs(preservedY) > 0.1f) { // Only log when there's significant Y velocity
-            printf("[MOVEMENT] Preserved Y velocity: %.3f -> %.3f (should be same)\n", 
-                   preservedY, afterVel.y());
-        }
+
         
-        // Remove the dual impulse - just use velocity setting for cleaner movement
-        static int moveDebugCounter = 0;
-        if (++moveDebugCounter % 30 == 0) {
-            printf("[INPUT] Moving with velocity: (%.2f, %.2f, %.2f)\n", 
-                   velocity.x(), velocity.y(), velocity.z());
-        }
+
         
     } else if (isOnGround()) {
         // Stop horizontal movement when no input
@@ -427,10 +320,6 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
 
 void SimpleRagdoll::jump() {
     if (!physicsBody) return;
-    
-    // Get current velocity and position for debugging
-    btVector3 currentVel = physicsBody->getLinearVelocity();
-    Vector3 currentPos = getPhysicsPosition();
     
     // Reset Y velocity to ensure clean jump
     btVector3 velocity = physicsBody->getLinearVelocity();
@@ -453,18 +342,6 @@ void SimpleRagdoll::jump() {
     
     // Temporarily reduce contact processing to allow movement
     physicsBody->setContactProcessingThreshold(1.0f); // Ignore small contacts temporarily
-    
-    // Check velocity immediately after applying impulse
-    btVector3 newVel = physicsBody->getLinearVelocity();
-    
-    printf("[JUMP] Character jumped! Pos: (%.2f, %.2f, %.2f), PrevVel: (%.2f, %.2f, %.2f), Jump impulse: %.2f\n",
-           currentPos.x, currentPos.y, currentPos.z,
-           currentVel.x(), currentVel.y(), currentVel.z(), jumpForce);
-    printf("[JUMP] Velocity AFTER impulse: (%.2f, %.2f, %.2f)\n",
-           newVel.x(), newVel.y(), newVel.z());
-    
-    // Debug: Check if velocity persists after a short delay
-    printf("[JUMP] Applied direct velocity: %.2f, plus impulse: %.2f\n", 8.0f, jumpForce);
 }
 
 void SimpleRagdoll::update(float deltaTime) {
@@ -473,23 +350,6 @@ void SimpleRagdoll::update(float deltaTime) {
     
     // Animate limbs
     animateLimbs(deltaTime);
-    
-    // Debug output
-    static float debugTimer = 0;
-    debugTimer += deltaTime;
-    if (debugTimer > 2.0f) { // Every 2 seconds
-        Vector3 pos = getPhysicsPosition();
-        bool onGround = isOnGround();
-        
-        if (physicsBody) {
-            btVector3 velocity = physicsBody->getLinearVelocity();
-            printf("[DEBUG] Pos: (%.2f, %.2f, %.2f), Vel: (%.2f, %.2f, %.2f), Ground: %s\n",
-                   pos.x, pos.y, pos.z,
-                   velocity.x(), velocity.y(), velocity.z(),
-                   onGround ? "YES" : "NO");
-        }
-        debugTimer = 0;
-    }
 }
 
 void SimpleRagdoll::draw() const {

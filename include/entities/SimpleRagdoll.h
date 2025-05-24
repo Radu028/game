@@ -26,7 +26,6 @@ public:
     
     // Ground detection
     bool isOnGround() const;
-    bool isOnGroundContact() const;  // Alternative ground detection method
     
     // Position methods
     Vector3 getFeetPosition() const;

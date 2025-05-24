@@ -24,8 +24,6 @@ class PhysicsSystem {
   void addObject(GameObject* obj);
   void removeObject(GameObject* obj);
   void update(float deltaTime);
-  void addPlayerParts(class Player* player);
-  void removePlayerParts(class Player* player);
 
   // Expose Bullet world for GameWorld
   friend class GameWorld;
