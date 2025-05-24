@@ -44,17 +44,6 @@ int main() {
       (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){10.0f, 1.0f, 10.0f},
       "../resources/forrest_ground_01_diff_4k.jpg", true));
 
-  // Debug: Print floor bounding box after adding
-  auto floorObj = world->getObjects().back();
-  if (auto floor = std::dynamic_pointer_cast<Floor>(floorObj)) {
-    BoundingBox box = floor->getBoundingBox();
-    printf("[DEBUG] Floor pos: (%.2f, %.2f, %.2f), size: (%.2f, %.2f, %.2f)\n",
-           floor->getPosition().x, floor->getPosition().y, floor->getPosition().z,
-           10.0f, 1.0f, 10.0f);
-    printf("[DEBUG] Floor bounding box min: (%.2f, %.2f, %.2f), max: (%.2f, %.2f, %.2f)\n",
-           box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
-  }
-
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
 
@@ -64,27 +53,13 @@ int main() {
 
     world->update(deltaTime);
 
-    // if (IsKeyPressed(KEY_E)) {
-    //   for (const auto& obj : world->getObjects()) {
-    //     if (obj) {
-    //       obj->interact();
-    //     }
-    //   }
-    // }
-
     Vector3 playerPos = player1->getFeetPosition(); // Get feet position for proper camera tracking
-    // Improved camera positioning - make sure character is always visible
-    Vector3 cameraOffset = {0.0f, 3.0f, 8.0f};  // Closer and lower for better view
-    camera.target = (Vector3){playerPos.x, playerPos.y + 1.5f, playerPos.z}; // Target at character center
-    camera.position = (Vector3){playerPos.x + cameraOffset.x, playerPos.y + cameraOffset.y, playerPos.z + cameraOffset.z};
+    // PERFORMANCE OPTIMIZATION: Cache camera offset calculation - it's constant
+    static const Vector3 cameraOffset = {0.0f, 3.0f, 8.0f};  // Closer and lower for better view
+    static const float targetYOffset = 1.5f; // Cache target Y offset
     
-    // Debug: Print camera and player positions
-    static int cameraDebugCounter = 0;
-    if (++cameraDebugCounter % 120 == 0) { // Every 2 seconds
-        printf("[DEBUG] Camera pos: (%.2f, %.2f, %.2f), Target: (%.2f, %.2f, %.2f)\n",
-               camera.position.x, camera.position.y, camera.position.z,
-               camera.target.x, camera.target.y, camera.target.z);
-    }
+    camera.target = (Vector3){playerPos.x, playerPos.y + targetYOffset, playerPos.z}; // Target at character center
+    camera.position = (Vector3){playerPos.x + cameraOffset.x, playerPos.y + cameraOffset.y, playerPos.z + cameraOffset.z};
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -96,31 +71,6 @@ int main() {
 
     // Draw debug info and controls
     DrawFPS(10, 40);
-    DrawText(TextFormat("Player Feet Pos: (%.2f, %.2f, %.2f)", playerPos.x, playerPos.y, playerPos.z), 10, 70, 20, WHITE);
-    
-    // Enhanced ground detection display
-    bool onGround = player1->isOnGround();
-    
-    DrawText(TextFormat("Ground (Raycast): %s", onGround ? "Yes" : "No"), 10, 100, 20, onGround ? GREEN : RED);
-    DrawText(TextFormat("Can Jump: %s", onGround ? "YES" : "NO"), 10, 120, 20, onGround ? GREEN : RED);
-    
-    DrawText("Simple Ragdoll Character", 10, 150, 20, WHITE);
-    
-    // Control instructions
-    DrawText("CONTROLS:", 10, 200, 20, YELLOW);
-    DrawText("WASD - Move", 10, 220, 16, WHITE);
-    DrawText("SPACE - Jump", 10, 240, 16, WHITE);
-    DrawText("Mouse - Look around", 10, 260, 16, WHITE);
-    DrawText("ESC - Close game", 10, 280, 16, WHITE);
-    
-    // Movement status indicators
-    Vector2 moveAxis = InputSystem::getMovementAxis();
-    if (moveAxis.x != 0.0f || moveAxis.y != 0.0f) {
-        DrawText(TextFormat("MOVING: (%.1f, %.1f)", moveAxis.x, moveAxis.y), 10, 310, 18, GREEN);
-    }
-    if (InputSystem::isJumpPressed()) {
-        DrawText("JUMPING!", 10, 330, 18, RED);
-    }
 
     EndDrawing();
   }

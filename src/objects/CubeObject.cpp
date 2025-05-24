@@ -1,6 +1,5 @@
 #include "objects/CubeObject.h"
 
-#include <iostream>
 #include <memory>
 #include <string>
 
@@ -54,11 +53,14 @@ CubeObject::~CubeObject() {
 Vector3 CubeObject::getSize() const { return size; }
 
 BoundingBox CubeObject::getBoundingBox() const {
+  // PERFORMANCE OPTIMIZATION: Cache half-size calculations to avoid repeated division
+  float halfX = size.x * 0.5f;
+  float halfY = size.y * 0.5f; 
+  float halfZ = size.z * 0.5f;
+  
   return (BoundingBox){
-      (Vector3){position.x - size.x / 2, position.y - size.y / 2,
-                position.z - size.z / 2},
-      (Vector3){position.x + size.x / 2, position.y + size.y / 2,
-                position.z + size.z / 2},
+      (Vector3){position.x - halfX, position.y - halfY, position.z - halfZ},
+      (Vector3){position.x + halfX, position.y + halfY, position.z + halfZ},
   };
 }
 
@@ -69,11 +71,13 @@ void CubeObject::draw() const {
     DrawCube(position, size.x, size.y, size.z, color);
   }
 
+#ifdef DEBUG_WIREFRAMES
   Color wireColor = RED;
   if (color.r == 255) wireColor = GREEN;
 
   BoundingBox box = getBoundingBox();
   DrawBoundingBox(box, wireColor);
+#endif
 }
 
 bool CubeObject::checkCollision(const CubeObject& other) const {
@@ -88,4 +92,6 @@ bool CubeObject::checkCollision(const CubeObject& other) const {
   return result;
 }
 
-void CubeObject::interact() { std::cout << "Test" << std::endl; }
+void CubeObject::interact() {
+  // TODO: Implement cube-specific interaction behavior
+}

@@ -26,17 +26,19 @@ float BodyPart::getRotationAngle() const { return rotationAngle; }
 Vector3 BodyPart::getRotationAxis() const { return rotationAxis; }
 
 void BodyPart::draw() const {
-  // TODO: Reconsider this.
   DrawModelEx(model, position, rotationAxis, rotationAngle, {1.0f, 1.0f, 1.0f},
               color);
 }
 
 BoundingBox BodyPart::getBoundingBox() const {
   Vector3 currentPosition = getPosition();
+  // PERFORMANCE OPTIMIZATION: Cache half-size calculations to avoid repeated division
+  float halfX = size.x * 0.5f;
+  float halfY = size.y * 0.5f;
+  float halfZ = size.z * 0.5f;
+  
   return (BoundingBox){
-      (Vector3){currentPosition.x - size.x / 2, currentPosition.y - size.y / 2,
-                currentPosition.z - size.z / 2},
-      (Vector3){currentPosition.x + size.x / 2, currentPosition.y + size.y / 2,
-                currentPosition.z + size.z / 2},
+      (Vector3){currentPosition.x - halfX, currentPosition.y - halfY, currentPosition.z - halfZ},
+      (Vector3){currentPosition.x + halfX, currentPosition.y + halfY, currentPosition.z + halfZ},
   };
 }

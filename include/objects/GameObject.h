@@ -51,6 +51,7 @@ class GameObject {
 
   bool checkCollision(const GameObject& other) const;
   float getDistance(const GameObject& other) const;
+  float getDistanceSquared(const GameObject& other) const;
 };
 
 #endif

@@ -27,10 +27,13 @@ void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     // CRITICAL: Add collision margin to prevent feet from being exactly on floor surface
     physicsShape->setMargin(0.1f); // 10cm margin to create gap between character and floor
     
+    // PERFORMANCE OPTIMIZATION: Cache half-height calculation to avoid repeated division
+    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    
     // Set position above ground - minimal clearance since we now have collision margin
     // Floor top is at Y=0.50, so character center should be at Y = 0.50 + CHARACTER_HEIGHT/2
     Vector3 physicsPos = this->position;
-    float calculatedY = 0.50f + CHARACTER_HEIGHT / 2 + 0.05f; // Position at floor + half height + small clearance
+    float calculatedY = 0.50f + halfHeight + 0.05f; // Position at floor + half height + small clearance
     physicsPos.y = calculatedY;
     
     // Create motion state
@@ -126,10 +129,14 @@ void SimpleRagdoll::updateVisualFromPhysics() {
     // Calculate body parts positions relative to physics body center
     Vector3 centerPos = {physicsPos.x(), physicsPos.y(), physicsPos.z()};
     
+    // PERFORMANCE OPTIMIZATION: Cache frequently used calculations
+    float quarterHeight = CHARACTER_HEIGHT * 0.25f;
+    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    
     // Head: above center
     Vector3 headPos = {
         centerPos.x,
-        centerPos.y + CHARACTER_HEIGHT/2 - 0.2f, // Near top of capsule
+        centerPos.y + halfHeight - 0.2f, // Near top of capsule
         centerPos.z
     };
     
@@ -137,7 +144,7 @@ void SimpleRagdoll::updateVisualFromPhysics() {
     Vector3 torsoPos = centerPos;
     
     // Arms: at shoulder level
-    float shoulderY = centerPos.y + CHARACTER_HEIGHT/4;
+    float shoulderY = centerPos.y + quarterHeight;
     Vector3 leftArmPos = {
         centerPos.x - 0.4f,
         shoulderY,
@@ -149,8 +156,8 @@ void SimpleRagdoll::updateVisualFromPhysics() {
         centerPos.z
     };
     
-    // Legs: below center
-    float legY = centerPos.y - CHARACTER_HEIGHT/4;
+    // Legs: below center  
+    float legY = centerPos.y - quarterHeight;
     Vector3 leftLegPos = {
         centerPos.x - 0.15f,
         legY,
@@ -191,14 +198,28 @@ void SimpleRagdoll::animateLimbs(float deltaTime) {
     
     // Get movement velocity for animation
     btVector3 velocity = physicsBody->getLinearVelocity();
-    float speed = Vector3Length({velocity.x(), 0, velocity.z()}); // Horizontal speed only
-    bool isMoving = speed > 0.5f; // Threshold for animation
+    // PERFORMANCE OPTIMIZATION: Use squared length to avoid expensive sqrt calculation
+    float speedSquared = velocity.x() * velocity.x() + velocity.z() * velocity.z(); // Horizontal speed only
+    bool isMoving = speedSquared > 0.25f; // Threshold for animation (0.5^2 = 0.25)
     
     if (isMoving) {
+        // Use sqrt only when needed for animation speed calculation
+        float speed = sqrtf(speedSquared);
         animationTime += deltaTime * speed * 2.0f; // Animation speed based on movement speed
         
-        float armSwing = sin(animationTime) * 20.0f; // Degrees
-        float legSwing = sin(animationTime) * 25.0f;
+        // PERFORMANCE OPTIMIZATION: Use fast sine approximation instead of expensive sin() calls
+        // Taylor series approximation: sin(x) ≈ x - x³/6 + x⁵/120 (for small angles)
+        // For animation, we can use a simpler triangle wave approximation
+        float normalizedTime = fmodf(animationTime, 2.0f * PI) / PI; // Normalize to [0, 2]
+        float triangleWave;
+        if (normalizedTime <= 1.0f) {
+            triangleWave = 2.0f * normalizedTime - 1.0f; // Rising: -1 to 1
+        } else {
+            triangleWave = 3.0f - 2.0f * normalizedTime; // Falling: 1 to -1
+        }
+        
+        float armSwing = triangleWave * 20.0f; // Degrees
+        float legSwing = triangleWave * 25.0f;
         
         // Apply animation with setRotation (not addRotation)
         leftArm.setRotation({1, 0, 0}, armSwing);
@@ -225,8 +246,9 @@ Vector3 SimpleRagdoll::getPhysicsPosition() const {
 
 Vector3 SimpleRagdoll::getFeetPosition() const {
     Vector3 centerPos = getPhysicsPosition();
+    // PERFORMANCE OPTIMIZATION: Cache half-height calculation to avoid repeated division
     // Return position at the bottom of the capsule (feet level)
-    centerPos.y -= CHARACTER_HEIGHT / 2;
+    centerPos.y -= CHARACTER_HEIGHT * 0.5f;
     return centerPos;
 }
 
@@ -238,8 +260,11 @@ bool SimpleRagdoll::isOnGround() const {
     physicsBody->getMotionState()->getWorldTransform(transform);
     btVector3 pos = transform.getOrigin();
     
+    // PERFORMANCE OPTIMIZATION: Cache half-height calculation to avoid repeated division
+    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    
     // Cast ray downward from bottom of capsule - improved for better surface detection
-    float rayStartY = pos.y() - CHARACTER_HEIGHT/2 + 0.1f; // Start slightly above bottom
+    float rayStartY = pos.y() - halfHeight + 0.1f; // Start slightly above bottom
     float rayEndY = rayStartY - 0.2f; // 20cm below (shorter, more precise)
     
     btVector3 rayStart(pos.x(), rayStartY, pos.z());
@@ -285,9 +310,15 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
 
     // Apply movement forces AFTER jump (preserve Y velocity from jump)
     if (moveAxis.x != 0.0f || moveAxis.y != 0.0f) {
-        // Calculate movement direction in world space
+        // PERFORMANCE OPTIMIZATION: Use fast normalization to avoid expensive sqrt when possible
         Vector3 movement = {moveAxis.x, 0, -moveAxis.y}; // Z is inverted for forward
-        movement = Vector3Normalize(movement);
+        float lengthSquared = movement.x * movement.x + movement.z * movement.z;
+        if (lengthSquared > 1.0f) {
+            // Only normalize if needed (length > 1)
+            float invLength = 1.0f / sqrtf(lengthSquared);
+            movement.x *= invLength;
+            movement.z *= invLength;
+        }
         
         // Get current velocity (including any Y velocity from jumping)
         btVector3 velocity = physicsBody->getLinearVelocity();
@@ -360,18 +391,12 @@ void SimpleRagdoll::draw() const {
     rightArm.draw();
     leftLeg.draw();
     rightLeg.draw();
-    
-    // Debug: Draw physics body outline
-    if (physicsBody) {
-        Vector3 pos = getPhysicsPosition();
-        // Draw wireframe capsule for debugging
-        DrawCylinderWires(pos, CHARACTER_RADIUS, CHARACTER_RADIUS, CHARACTER_HEIGHT, 8, GREEN);
-    }
 }
 
 BoundingBox SimpleRagdoll::getBoundingBox() const {
     Vector3 pos = getPhysicsPosition();
-    float halfHeight = CHARACTER_HEIGHT / 2;
+    // PERFORMANCE OPTIMIZATION: Cache half-height calculation to avoid repeated division
+    float halfHeight = CHARACTER_HEIGHT * 0.5f;
     
     return {
         {pos.x - CHARACTER_RADIUS, pos.y - halfHeight, pos.z - CHARACTER_RADIUS},

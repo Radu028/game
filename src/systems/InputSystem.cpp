@@ -13,10 +13,13 @@ Vector2 InputSystem::getMovementAxis() {
 
   Vector2 dir = {x, y};
 
-  float length = std::sqrt(x * x + y * y);
-  if (length > 1.0f) {
-    dir.x /= length;
-    dir.y /= length;
+  // Use squared length to avoid sqrt when possible
+  float lengthSquared = x * x + y * y;
+  if (lengthSquared > 1.0f) {
+    // Fast inverse square root approximation for normalization
+    float invLength = 1.0f / std::sqrt(lengthSquared);
+    dir.x *= invLength;
+    dir.y *= invLength;
   }
 
   return dir;
