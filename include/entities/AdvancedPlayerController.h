@@ -1,17 +1,20 @@
-// Exemplu de implementare cu Character Controller avansat
+// Professional Character Controller using Bullet Physics btKinematicCharacterController
 #pragma once
 
 #include "entities/Player.h"
 #include <btBulletDynamicsCommon.h>
 #include <BulletCollision/CollisionDispatch/btGhostObject.h>
+#include <BulletDynamics/Character/btKinematicCharacterController.h>
 
 class AdvancedPlayerController {
 private:
-    btGhostObject* ghostObject;
+    // Professional character controller components
+    btKinematicCharacterController* characterController;
+    btPairCachingGhostObject* ghostObject;
     btConvexShape* convexShape;
     btDiscreteDynamicsWorld* world;
     
-    // Coliziuni separate pentru fiecare membru
+    // Collision detection for body parts (optional for advanced features)
     struct BodyPartCollider {
         btGhostObject* ghost;
         btConvexShape* shape;
@@ -40,7 +43,7 @@ public:
 
     bool isOnGround() const { return onGround; }
 
-    // Detectează coliziuni pentru fiecare membru individual
+    // Collision detection for individual body parts
     bool checkHeadCollision() const;
     bool checkArmCollision(bool isLeft) const;
     bool checkLegCollision(bool isLeft) const;
@@ -48,13 +51,12 @@ public:
     void update(float deltaTime);
     void handleInput(float movementSpeed);
 
-    // Sincronizează poziția vizuală a playerului cu ghostObject-ul (baza la sol)
+    // Synchronize visual player position with character controller (feet on ground)
     void syncPlayerVisual(Player& player);
 
 private:
     void updateGhostObjects();
     void performGroundCheck();
-    void resolveCollisions();
 
     BodyPartCollider createBodyPartCollider(const Vector3& size, const Vector3& offset);
 };

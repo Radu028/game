@@ -15,17 +15,17 @@ class GameWorld {
   static GameWorld* instance;
 
   std::vector<std::shared_ptr<GameObject>> objects;
-  Player* player;
+  GameObject* player;
   std::unique_ptr<PhysicsSystem> physicsSystem;
 
-  GameWorld(Player* player);
+  GameWorld(GameObject* player);
 
   GameWorld(const GameWorld&) = delete;
   GameWorld& operator=(const GameWorld&) = delete;
   ~GameWorld();
 
  public:
-  static GameWorld* getInstance(Player* player);
+  static GameWorld* getInstance(GameObject* player);
 
   void addObject(std::shared_ptr<GameObject> object);
   void removeObject(std::shared_ptr<GameObject> object);
@@ -33,6 +33,7 @@ class GameWorld {
   void draw() const;
   void checkCollisions();
   btDiscreteDynamicsWorld* getBulletWorld() const;
+  btDiscreteDynamicsWorld* getDynamicsWorld() const { return getBulletWorld(); }
 
   const std::vector<std::shared_ptr<GameObject>>& getObjects() const {
     return objects;

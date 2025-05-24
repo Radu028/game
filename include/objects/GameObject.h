@@ -37,6 +37,7 @@ class GameObject {
   void setPosition(Vector3 newPosition) { position = newPosition; }
   void setVelocity(Vector3 newVelocity) { velocity = newVelocity; }
   void setIsOnGround(bool onGround) { isOnGround = onGround; }
+  void setHasCollision(bool collision) { hasCollision = collision; }
 
   virtual void draw() const = 0;
   virtual BoundingBox getBoundingBox() const = 0;

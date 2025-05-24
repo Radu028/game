@@ -112,11 +112,23 @@ bool Player::isOnGroundBullet() const {
     if (!capsuleBody || !world) return false;
     btTransform trans;
     capsuleBody->getMotionState()->getWorldTransform(trans);
-    btVector3 start = trans.getOrigin();
-    btVector3 end = start - btVector3(0, 0.8f, 0);
+    btVector3 playerCenter = trans.getOrigin();
+    
+    // Start raycast from foot level (where leg capsules are positioned)
+    btVector3 start = playerCenter + btVector3(0, -1.1f, 0); // Foot level
+    btVector3 end = start - btVector3(0, 0.3f, 0); // Small distance below feet
+    
     btCollisionWorld::ClosestRayResultCallback rayCallback(start, end);
+    rayCallback.m_collisionFilterGroup = btBroadphaseProxy::DefaultFilter;
+    rayCallback.m_collisionFilterMask = btBroadphaseProxy::AllFilter;
+    
     world->getBulletWorld()->rayTest(start, end, rayCallback);
-    return rayCallback.hasHit();
+    
+    // Also check if the player is moving very slowly vertically
+    btVector3 velocity = capsuleBody->getLinearVelocity();
+    bool isStable = std::abs(velocity.y()) < 0.5f;
+    
+    return rayCallback.hasHit() && isStable;
 }
 
 bool Player::isOnGround() const {
@@ -290,25 +302,33 @@ void Player::handleInput(float movementSpeed) {
 }
 
 void Player::updateBodyPartPositions() {
-    if (!capsuleBody) return;
-    btTransform t;
-    capsuleBody->getMotionState()->getWorldTransform(t);
-    btVector3 p = t.getOrigin();
+    Vector3 p;
+    if (capsuleBody) {
+        // Use physics body position when available
+        btTransform t;
+        capsuleBody->getMotionState()->getWorldTransform(t);
+        btVector3 physicsPos = t.getOrigin();
+        p = {physicsPos.x(), physicsPos.y(), physicsPos.z()};
+    } else {
+        // Use GameObject position when no physics body (controlled externally)
+        p = this->position;
+    }
+    
     // Torso (center of capsule)
-    torso.setPosition({p.x(), p.y(), p.z()});
+    torso.setPosition({p.x, p.y, p.z});
     torso.setRotation({0, 1, 0}, 0);
     // Head (above torso)
     Vector3 headOffset = {0, 1.0f, 0};
-    head.setPosition({p.x() + headOffset.x, p.y() + headOffset.y, p.z() + headOffset.z});
+    head.setPosition({p.x + headOffset.x, p.y + headOffset.y, p.z + headOffset.z});
     // Arms (sideways, mid torso)
-    leftArm.setPosition({p.x() - 0.45f, p.y() + 0.5f, p.z()});
-    rightArm.setPosition({p.x() + 0.45f, p.y() + 0.5f, p.z()});
+    leftArm.setPosition({p.x - 0.45f, p.y + 0.5f, p.z});
+    rightArm.setPosition({p.x + 0.45f, p.y + 0.5f, p.z});
     // Legs (below capsule)
     float capsuleHalfHeight = CAPSULE_HEIGHT / 2.0f;
     float legLength = 1.0f;
-    float legY = p.y() - capsuleHalfHeight - (legLength / 2.0f) + 0.05f;
-    leftLeg.setPosition({p.x() - 0.15f, legY, p.z()});
-    rightLeg.setPosition({p.x() + 0.15f, legY, p.z()});
+    float legY = p.y - capsuleHalfHeight - (legLength / 2.0f) + 0.05f;
+    leftLeg.setPosition({p.x - 0.15f, legY, p.z});
+    rightLeg.setPosition({p.x + 0.15f, legY, p.z});
 }
 
 void Player::update(float deltaTime) {

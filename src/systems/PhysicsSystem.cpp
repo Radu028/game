@@ -127,7 +127,10 @@ void PhysicsSystem::syncGameObjectsFromBullet() {
 }
 
 void PhysicsSystem::addPlayerParts(Player* player) {
-    player->setupCapsuleController(dynamicsWorld);
+    // Only add physics body if player has collision enabled
+    if (player->getHasCollision()) {
+        player->setupCapsuleController(dynamicsWorld);
+    }
 }
 
 void PhysicsSystem::removePlayerParts(Player* player) {
