@@ -13,7 +13,7 @@ PhysicsSystem::PhysicsSystem(GameWorld* gameWorld) : world(gameWorld) {
     broadphase = new btDbvtBroadphase();
     solver = new btSequentialImpulseConstraintSolver();
     dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher, broadphase, solver, collisionConfig);
-    dynamicsWorld->setGravity(btVector3(0, PhysicsSettings::GRAVITY_ACCELERATION, 0));
+    dynamicsWorld->setGravity(btVector3(0, GameSettings::Physics::GRAVITY_ACCELERATION, 0));
 }
 
 PhysicsSystem::~PhysicsSystem() {

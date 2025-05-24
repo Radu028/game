@@ -7,21 +7,21 @@
 
 SimpleRagdoll::SimpleRagdoll(Vector3 position)
     : GameObject(position, true, true, false),
-      torso({0, 0, 0}, {0.6f, 1.0f, 0.3f}, BLUE, false),
-      head({0, 0, 0}, {0.4f, 0.4f, 0.4f}, RED, false),
-      leftArm({0, 0, 0}, {0.2f, 0.6f, 0.2f}, GREEN, false),
-      rightArm({0, 0, 0}, {0.2f, 0.6f, 0.2f}, GREEN, false),
-      leftLeg({0, 0, 0}, {0.25f, 0.8f, 0.25f}, YELLOW, false),
-      rightLeg({0, 0, 0}, {0.25f, 0.8f, 0.25f}, YELLOW, false) {
+      torso({0, 0, 0}, GameSettings::BodyParts::TORSO_SIZE, GameSettings::BodyParts::TORSO_COLOR, false),
+      head({0, 0, 0}, GameSettings::BodyParts::HEAD_SIZE, GameSettings::BodyParts::HEAD_COLOR, false),
+      leftArm({0, 0, 0}, GameSettings::BodyParts::ARM_SIZE, GameSettings::BodyParts::ARM_COLOR, false),
+      rightArm({0, 0, 0}, GameSettings::BodyParts::ARM_SIZE, GameSettings::BodyParts::ARM_COLOR, false),
+      leftLeg({0, 0, 0}, GameSettings::BodyParts::LEG_SIZE, GameSettings::BodyParts::LEG_COLOR, false),
+      rightLeg({0, 0, 0}, GameSettings::BodyParts::LEG_SIZE, GameSettings::BodyParts::LEG_COLOR, false) {
 }
 
 SimpleRagdoll::~SimpleRagdoll() {
 }
 
 void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
-    physicsShape = new btCapsuleShape(CHARACTER_RADIUS, CHARACTER_HEIGHT - 2*CHARACTER_RADIUS);
-    physicsShape->setMargin(0.1f);
-    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    physicsShape = new btCapsuleShape(GameSettings::Character::RADIUS, GameSettings::Character::HEIGHT - 2*GameSettings::Character::RADIUS);
+    physicsShape->setMargin(GameSettings::Collision::SHAPE_MARGIN);
+    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
     Vector3 physicsPos = this->position;
     float calculatedY = 0.50f + halfHeight + 0.05f;
     physicsPos.y = calculatedY;
@@ -30,13 +30,13 @@ void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     transform.setOrigin(btVector3(physicsPos.x, physicsPos.y, physicsPos.z));
     motionState = new btDefaultMotionState(transform);
     btVector3 inertia(0, 0, 0);
-    physicsShape->calculateLocalInertia(CHARACTER_MASS, inertia);
-    btRigidBody::btRigidBodyConstructionInfo rbInfo(CHARACTER_MASS, motionState, physicsShape, inertia);
-    rbInfo.m_friction = 0.1f;
-    rbInfo.m_rollingFriction = 0.0f;
-    rbInfo.m_restitution = 0.0f;
+    physicsShape->calculateLocalInertia(GameSettings::Character::MASS, inertia);
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(GameSettings::Character::MASS, motionState, physicsShape, inertia);
+    rbInfo.m_friction = GameSettings::Collision::FRICTION;
+    rbInfo.m_rollingFriction = GameSettings::Collision::ROLLING_FRICTION;
+    rbInfo.m_restitution = GameSettings::Collision::RESTITUTION;
     physicsBody = new btRigidBody(rbInfo);
-    physicsBody->setDamping(DAMPING_LINEAR, DAMPING_ANGULAR);
+    physicsBody->setDamping(GameSettings::Character::DAMPING_LINEAR, GameSettings::Character::DAMPING_ANGULAR);
     physicsBody->setActivationState(DISABLE_DEACTIVATION);
     physicsBody->setAngularFactor(btVector3(0, 1, 0));
     physicsBody->setLinearFactor(btVector3(1, 1, 1));
@@ -79,37 +79,41 @@ void SimpleRagdoll::updateVisualFromPhysics() {
     
     Vector3 centerPos = {physicsPos.x(), physicsPos.y(), physicsPos.z()};
     
-    float quarterHeight = CHARACTER_HEIGHT * 0.25f;
-    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    float quarterHeight = GameSettings::Character::HEIGHT * 0.25f;
+    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
     
+    // Head positioning - more prominent and blocky
     Vector3 headPos = {
         centerPos.x,
-        centerPos.y + halfHeight - 0.2f,
+        centerPos.y + halfHeight - GameSettings::BodyParts::HEAD_OFFSET_Y,
         centerPos.z
     };
     
+    // Torso stays at center
     Vector3 torsoPos = centerPos;
     
+    // Arms positioning - wider for more Lego-like appearance
     float shoulderY = centerPos.y + quarterHeight;
     Vector3 leftArmPos = {
-        centerPos.x - 0.4f,
+        centerPos.x - GameSettings::BodyParts::ARM_OFFSET_X,
         shoulderY,
         centerPos.z
     };
     Vector3 rightArmPos = {
-        centerPos.x + 0.4f,
+        centerPos.x + GameSettings::BodyParts::ARM_OFFSET_X,
         shoulderY,
         centerPos.z
     };
     
+    // Legs positioning - more stable stance
     float legY = centerPos.y - quarterHeight;
     Vector3 leftLegPos = {
-        centerPos.x - 0.15f,
+        centerPos.x - GameSettings::BodyParts::LEG_OFFSET_X,
         legY,
         centerPos.z
     };
     Vector3 rightLegPos = {
-        centerPos.x + 0.15f,
+        centerPos.x + GameSettings::BodyParts::LEG_OFFSET_X,
         legY,
         centerPos.z
     };
@@ -140,11 +144,11 @@ void SimpleRagdoll::animateLimbs(float deltaTime) {
     
     btVector3 velocity = physicsBody->getLinearVelocity();
     float speedSquared = velocity.x() * velocity.x() + velocity.z() * velocity.z();
-    bool isMoving = speedSquared > 0.25f;
+    bool isMoving = speedSquared > GameSettings::Animation::SPEED_THRESHOLD;
     
     if (isMoving) {
         float speed = sqrtf(speedSquared);
-        animationTime += deltaTime * speed * 2.0f;
+        animationTime += deltaTime * speed * GameSettings::Animation::SPEED_MULTIPLIER;
         
         float normalizedTime = fmodf(animationTime, 2.0f * PI) / PI;
         float triangleWave;
@@ -154,8 +158,8 @@ void SimpleRagdoll::animateLimbs(float deltaTime) {
             triangleWave = 3.0f - 2.0f * normalizedTime;
         }
         
-        float armSwing = triangleWave * 20.0f;
-        float legSwing = triangleWave * 25.0f;
+        float armSwing = triangleWave * GameSettings::Animation::ARM_SWING_AMOUNT;
+        float legSwing = triangleWave * GameSettings::Animation::LEG_SWING_AMOUNT;
         
         leftArm.setRotation({1, 0, 0}, armSwing);
         rightArm.setRotation({1, 0, 0}, -armSwing);
@@ -180,7 +184,7 @@ Vector3 SimpleRagdoll::getPhysicsPosition() const {
 
 Vector3 SimpleRagdoll::getFeetPosition() const {
     Vector3 centerPos = getPhysicsPosition();
-    centerPos.y -= CHARACTER_HEIGHT * 0.5f;
+    centerPos.y -= GameSettings::Character::HEIGHT * 0.5f;
     return centerPos;
 }
 
@@ -191,10 +195,10 @@ bool SimpleRagdoll::isOnGround() const {
     physicsBody->getMotionState()->getWorldTransform(transform);
     btVector3 pos = transform.getOrigin();
     
-    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
     
     float rayStartY = pos.y() - halfHeight + 0.1f;
-    float rayEndY = rayStartY - 0.2f;
+    float rayEndY = rayStartY - GameSettings::Collision::GROUND_CHECK_DISTANCE;
     
     btVector3 rayStart(pos.x(), rayStartY, pos.z());
     btVector3 rayEnd(pos.x(), rayEndY, pos.z());
@@ -207,10 +211,10 @@ bool SimpleRagdoll::isOnGround() const {
     world->getBulletWorld()->rayTest(rayStart, rayEnd, rayCallback);
     
     if (rayCallback.hasHit() && rayCallback.m_collisionObject != physicsBody) {
-        float hitDistance = rayCallback.m_closestHitFraction * 0.2f;
+        float hitDistance = rayCallback.m_closestHitFraction * GameSettings::Collision::GROUND_CHECK_DISTANCE;
         btVector3 velocity = physicsBody->getLinearVelocity();
         
-        return hitDistance < 0.20f && velocity.y() < 2.0f;
+        return hitDistance < GameSettings::Collision::GROUND_CHECK_TOLERANCE && velocity.y() < GameSettings::Collision::VELOCITY_Y_THRESHOLD;
     }
     
     return false;
@@ -274,7 +278,7 @@ void SimpleRagdoll::jump() {
     jumpVelocity.setY(8.0f);
     physicsBody->setLinearVelocity(jumpVelocity);
     
-    float jumpForce = JUMP_IMPULSE * 2.0f;
+    float jumpForce = GameSettings::Character::JUMP_IMPULSE * 2.0f;
     btVector3 jumpImpulse(0, jumpForce, 0);
     physicsBody->applyCentralImpulse(jumpImpulse);
     
@@ -300,10 +304,10 @@ void SimpleRagdoll::draw() const {
 
 BoundingBox SimpleRagdoll::getBoundingBox() const {
     Vector3 pos = getPhysicsPosition();
-    float halfHeight = CHARACTER_HEIGHT * 0.5f;
+    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
     
     return {
-        {pos.x - CHARACTER_RADIUS, pos.y - halfHeight, pos.z - CHARACTER_RADIUS},
-        {pos.x + CHARACTER_RADIUS, pos.y + halfHeight, pos.z + CHARACTER_RADIUS}
+        {pos.x - GameSettings::Character::RADIUS, pos.y - halfHeight, pos.z - GameSettings::Character::RADIUS},
+        {pos.x + GameSettings::Character::RADIUS, pos.y + halfHeight, pos.z + GameSettings::Character::RADIUS}
     };
 }

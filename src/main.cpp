@@ -4,8 +4,7 @@
 #include "objects/Floor.h"
 #include "systems/InputSystem.h"
 #include "raylib.h"
-
-#define PLAYER_MOVEMENT_SPEED 5.0f
+#include "settings/Physics.h"
 
 int main() {
   InitWindow(1280, 720, "Joc 3D");
@@ -46,17 +45,15 @@ int main() {
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
 
-    player1->handleInput(PLAYER_MOVEMENT_SPEED);
+    player1->handleInput(GameSettings::Character::MOVEMENT_SPEED);
     player1->update(deltaTime);
 
     world->update(deltaTime);
 
     Vector3 playerPos = player1->getFeetPosition();
-    static const Vector3 cameraOffset = {0.0f, 3.0f, 8.0f};
-    static const float targetYOffset = 1.5f;
     
-    camera.target = (Vector3){playerPos.x, playerPos.y + targetYOffset, playerPos.z};
-    camera.position = (Vector3){playerPos.x + cameraOffset.x, playerPos.y + cameraOffset.y, playerPos.z + cameraOffset.z};
+    camera.target = (Vector3){playerPos.x, playerPos.y + GameSettings::Camera::TARGET_Y_OFFSET, playerPos.z};
+    camera.position = (Vector3){playerPos.x + GameSettings::Camera::OFFSET.x, playerPos.y + GameSettings::Camera::OFFSET.y, playerPos.z + GameSettings::Camera::OFFSET.z};
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
