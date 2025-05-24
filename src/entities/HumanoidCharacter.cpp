@@ -308,9 +308,33 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
         return;
     }
     
-    // When moving, use direct velocity setting for immediate response
+    // When moving, use smooth acceleration but immediate direction change
     btVector3 targetVelocity(movement.x * speed, currentVelocity.getY(), movement.z * speed);
-    characterBody->setLinearVelocity(targetVelocity);
+    
+    // Smooth acceleration only when increasing speed, instant when changing direction
+    btVector3 currentHorizontal(currentVelocity.getX(), 0, currentVelocity.getZ());
+    btVector3 targetHorizontal(targetVelocity.getX(), 0, targetVelocity.getZ());
+    
+    float currentSpeed = currentHorizontal.length();
+    float targetSpeed = targetHorizontal.length();
+    
+    // If changing direction significantly, apply immediately
+    if (currentSpeed > 0.1f && targetSpeed > 0.1f) {
+        btVector3 currentDir = currentHorizontal.normalized();
+        btVector3 targetDir = targetHorizontal.normalized();
+        float dot = currentDir.dot(targetDir);
+        
+        if (dot < 0.7f) { // Direction change > 45 degrees
+            characterBody->setLinearVelocity(targetVelocity);
+            return;
+        }
+    }
+    
+    // Otherwise use smooth acceleration
+    float lerpFactor = 0.3f; // Smooth acceleration
+    btVector3 newHorizontal = currentHorizontal.lerp(targetHorizontal, lerpFactor);
+    btVector3 newVelocity(newHorizontal.getX(), currentVelocity.getY(), newHorizontal.getZ());
+    characterBody->setLinearVelocity(newVelocity);
     
     // Smooth rotation towards movement direction
     if (Vector3Length(movement) > 0.1f) {

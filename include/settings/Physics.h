@@ -17,7 +17,7 @@ namespace GameSettings {
         static constexpr float MOVEMENT_FORCE = 1500.0f;
         static constexpr float JUMP_IMPULSE = 150.0f; // Much stronger jump power
         static constexpr float MAX_SPEED = 8.0f;
-        static constexpr float DAMPING_LINEAR = 0.98f; // VERY HIGH DAMPING - NO MORE SLIDING!
+        static constexpr float DAMPING_LINEAR = 0.95f; // Balanced damping - smooth but responsive
         static constexpr float DAMPING_ANGULAR = 0.8f;
         static constexpr float MOVEMENT_SPEED = 5.0f;
     }
@@ -66,8 +66,8 @@ namespace GameSettings {
         static constexpr float GROUND_CHECK_TOLERANCE = 0.20f;
         static constexpr float VELOCITY_Y_THRESHOLD = 2.0f;
         static constexpr float SHAPE_MARGIN = 0.1f;
-        static constexpr float FRICTION = 2.0f; // MAXIMUM FRICTION - NO SLIDING!
-        static constexpr float ROLLING_FRICTION = 1.5f; // MAXIMUM ROLLING FRICTION
+        static constexpr float FRICTION = 0.8f; // Balanced friction - no sliding but smooth
+        static constexpr float ROLLING_FRICTION = 0.3f; // Moderate rolling friction
         static constexpr float RESTITUTION = 0.0f;
     }
 }
