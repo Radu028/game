@@ -1,5 +1,5 @@
 #include "GameWorld.h"
-#include "entities/SimpleRagdoll.h"
+#include "entities/HumanoidCharacter.h"
 #include "objects/CubeObject.h"
 #include "objects/Floor.h"
 #include "systems/InputSystem.h"
@@ -19,7 +19,7 @@ int main() {
   camera.fovy = 45.0f;
   camera.projection = CAMERA_PERSPECTIVE;
 
-  auto player1 = std::make_shared<SimpleRagdoll>((Vector3){0.0f, 0.0f, 0.0f});
+  auto player1 = std::make_shared<HumanoidCharacter>((Vector3){0.0f, 0.0f, 0.0f});
   
   GameWorld* world = GameWorld::getInstance(player1.get());
   player1->setWorld(world);

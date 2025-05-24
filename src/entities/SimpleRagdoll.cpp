@@ -21,10 +21,16 @@ SimpleRagdoll::~SimpleRagdoll() {
 void SimpleRagdoll::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     physicsShape = new btCapsuleShape(GameSettings::Character::RADIUS, GameSettings::Character::HEIGHT - 2*GameSettings::Character::RADIUS);
     physicsShape->setMargin(GameSettings::Collision::SHAPE_MARGIN);
-    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
+    
+    // Calculate proper initial Y position based on actual leg dimensions
+    float torsoHalfHeight = GameSettings::BodyParts::TORSO_SIZE.y * 0.5f;
+    float legHeight = GameSettings::BodyParts::LEG_SIZE.y;
+    
     Vector3 physicsPos = this->position;
-    float calculatedY = 0.50f + halfHeight + 0.05f;
-    physicsPos.y = calculatedY;
+    // Position capsule center so that the bottom aligns with feet on ground
+    float capsuleHalfHeight = GameSettings::Character::HEIGHT * 0.5f;
+    float groundToFeetHeight = legHeight; // Distance from ground to bottom of torso
+    physicsPos.y = groundToFeetHeight + torsoHalfHeight; // Capsule center position
     btTransform transform;
     transform.setIdentity();
     transform.setOrigin(btVector3(physicsPos.x, physicsPos.y, physicsPos.z));
@@ -79,21 +85,24 @@ void SimpleRagdoll::updateVisualFromPhysics() {
     
     Vector3 centerPos = {physicsPos.x(), physicsPos.y(), physicsPos.z()};
     
-    float quarterHeight = GameSettings::Character::HEIGHT * 0.25f;
-    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
+    // Calculate positions based on actual body part sizes
+    float torsoHalfHeight = GameSettings::BodyParts::TORSO_SIZE.y * 0.5f;
+    float headHalfHeight = GameSettings::BodyParts::HEAD_SIZE.y * 0.5f;
+    float armHalfHeight = GameSettings::BodyParts::ARM_SIZE.y * 0.5f;
+    float legHalfHeight = GameSettings::BodyParts::LEG_SIZE.y * 0.5f;
     
-    // Head positioning - more prominent and blocky
+    // Head positioning - on top of torso
     Vector3 headPos = {
         centerPos.x,
-        centerPos.y + halfHeight - GameSettings::BodyParts::HEAD_OFFSET_Y,
+        centerPos.y + torsoHalfHeight + headHalfHeight + GameSettings::BodyParts::HEAD_OFFSET_Y,
         centerPos.z
     };
     
     // Torso stays at center
     Vector3 torsoPos = centerPos;
     
-    // Arms positioning - wider for more Lego-like appearance
-    float shoulderY = centerPos.y + quarterHeight;
+    // Arms positioning - at shoulder level (top part of torso)
+    float shoulderY = centerPos.y + torsoHalfHeight - armHalfHeight;
     Vector3 leftArmPos = {
         centerPos.x - GameSettings::BodyParts::ARM_OFFSET_X,
         shoulderY,
@@ -105,8 +114,8 @@ void SimpleRagdoll::updateVisualFromPhysics() {
         centerPos.z
     };
     
-    // Legs positioning - more stable stance
-    float legY = centerPos.y - quarterHeight;
+    // Legs positioning - connected to bottom of torso
+    float legY = centerPos.y - torsoHalfHeight - legHalfHeight;
     Vector3 leftLegPos = {
         centerPos.x - GameSettings::BodyParts::LEG_OFFSET_X,
         legY,
@@ -184,7 +193,13 @@ Vector3 SimpleRagdoll::getPhysicsPosition() const {
 
 Vector3 SimpleRagdoll::getFeetPosition() const {
     Vector3 centerPos = getPhysicsPosition();
-    centerPos.y -= GameSettings::Character::HEIGHT * 0.5f;
+    
+    // Calculate actual feet position based on body part dimensions
+    float torsoHalfHeight = GameSettings::BodyParts::TORSO_SIZE.y * 0.5f;
+    float legHeight = GameSettings::BodyParts::LEG_SIZE.y;
+    
+    // Feet are at: center - torso half height - leg height
+    centerPos.y = centerPos.y - torsoHalfHeight - legHeight;
     return centerPos;
 }
 
@@ -195,9 +210,12 @@ bool SimpleRagdoll::isOnGround() const {
     physicsBody->getMotionState()->getWorldTransform(transform);
     btVector3 pos = transform.getOrigin();
     
-    float halfHeight = GameSettings::Character::HEIGHT * 0.5f;
+    // Calculate actual feet position based on body part dimensions
+    float torsoHalfHeight = GameSettings::BodyParts::TORSO_SIZE.y * 0.5f;
+    float legHeight = GameSettings::BodyParts::LEG_SIZE.y;
     
-    float rayStartY = pos.y() - halfHeight + 0.1f;
+    // Ray starts slightly above feet position to avoid floating point precision issues
+    float rayStartY = pos.y() - torsoHalfHeight - legHeight + 0.05f;
     float rayEndY = rayStartY - GameSettings::Collision::GROUND_CHECK_DISTANCE;
     
     btVector3 rayStart(pos.x(), rayStartY, pos.z());
