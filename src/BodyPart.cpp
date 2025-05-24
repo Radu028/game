@@ -32,7 +32,6 @@ void BodyPart::draw() const {
 
 BoundingBox BodyPart::getBoundingBox() const {
   Vector3 currentPosition = getPosition();
-  // PERFORMANCE OPTIMIZATION: Cache half-size calculations to avoid repeated division
   float halfX = size.x * 0.5f;
   float halfY = size.y * 0.5f;
   float halfZ = size.z * 0.5f;

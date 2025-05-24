@@ -33,7 +33,6 @@ void Floor::draw() const {
 }
 
 BoundingBox Floor::getBoundingBox() const {
-  // PERFORMANCE OPTIMIZATION: Cache half-dimension calculations to avoid repeated division
   float halfX = dimensions.x * 0.5f;
   float halfY = dimensions.y * 0.5f;
   float halfZ = dimensions.z * 0.5f;

@@ -20,12 +20,11 @@ int main() {
   camera.fovy = 45.0f;
   camera.projection = CAMERA_PERSPECTIVE;
 
-  auto player1 = std::make_shared<SimpleRagdoll>((Vector3){0.0f, 0.0f, 0.0f}); // Ground level
+  auto player1 = std::make_shared<SimpleRagdoll>((Vector3){0.0f, 0.0f, 0.0f});
   
   GameWorld* world = GameWorld::getInstance(player1.get());
   player1->setWorld(world);
 
-  // Setup physics for the simple ragdoll
   player1->setupPhysics(world->getDynamicsWorld());
 
   world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f},
@@ -47,18 +46,16 @@ int main() {
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
 
-    // Use SimpleRagdoll for input and physics
     player1->handleInput(PLAYER_MOVEMENT_SPEED);
     player1->update(deltaTime);
 
     world->update(deltaTime);
 
-    Vector3 playerPos = player1->getFeetPosition(); // Get feet position for proper camera tracking
-    // PERFORMANCE OPTIMIZATION: Cache camera offset calculation - it's constant
-    static const Vector3 cameraOffset = {0.0f, 3.0f, 8.0f};  // Closer and lower for better view
-    static const float targetYOffset = 1.5f; // Cache target Y offset
+    Vector3 playerPos = player1->getFeetPosition();
+    static const Vector3 cameraOffset = {0.0f, 3.0f, 8.0f};
+    static const float targetYOffset = 1.5f;
     
-    camera.target = (Vector3){playerPos.x, playerPos.y + targetYOffset, playerPos.z}; // Target at character center
+    camera.target = (Vector3){playerPos.x, playerPos.y + targetYOffset, playerPos.z};
     camera.position = (Vector3){playerPos.x + cameraOffset.x, playerPos.y + cameraOffset.y, playerPos.z + cameraOffset.z};
 
     BeginDrawing();
@@ -69,13 +66,11 @@ int main() {
     world->draw();
     EndMode3D();
 
-    // Draw debug info and controls
     DrawFPS(10, 40);
 
     EndDrawing();
   }
 
-  // Cleanup is handled by smart pointers and destructors
   CloseWindow();
   return 0;
 }

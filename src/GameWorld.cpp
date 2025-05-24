@@ -1,7 +1,6 @@
 #include "GameWorld.h"
 
-#include <algorithm>  // For std::remove
-
+#include <algorithm>
 #include "systems/PhysicsSystem.h"
 
 GameWorld* GameWorld::instance = nullptr;
@@ -51,11 +50,6 @@ void GameWorld::removeObject(std::shared_ptr<GameObject> object) {
 }
 
 void GameWorld::update(float deltaTime) {
-  // Skip player update when using external controller (AdvancedPlayerController)
-  // if (player) {
-  //   player->update(deltaTime);
-  // }
-
   for (auto& objSharedPtr : objects) {
     if (objSharedPtr.get() != player) {
       objSharedPtr->update(deltaTime);
@@ -66,9 +60,7 @@ void GameWorld::update(float deltaTime) {
     physicsSystem->update(deltaTime);
   }
 
-  // Only do visual updates for GameObject types
   if (player) {
-    // For GameObject types (like SimpleRagdoll), their update() method handles everything
   }
 }
 

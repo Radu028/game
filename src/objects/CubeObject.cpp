@@ -30,13 +30,9 @@ CubeObject::CubeObject(const CubeObject& other)
       size(other.size),
       color(other.color),
       hasTexture(other.hasTexture) {
-  // Create new model instance
   model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
 
-  // Handle texture if present
   if (hasTexture) {
-    // Since we can't directly copy textures in raylib, we'll use the same one
-    // This assumes the texture is still available at runtime
     texture = other.texture;
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
   }
@@ -53,7 +49,6 @@ CubeObject::~CubeObject() {
 Vector3 CubeObject::getSize() const { return size; }
 
 BoundingBox CubeObject::getBoundingBox() const {
-  // PERFORMANCE OPTIMIZATION: Cache half-size calculations to avoid repeated division
   float halfX = size.x * 0.5f;
   float halfY = size.y * 0.5f; 
   float halfZ = size.z * 0.5f;
@@ -93,5 +88,4 @@ bool CubeObject::checkCollision(const CubeObject& other) const {
 }
 
 void CubeObject::interact() {
-  // TODO: Implement cube-specific interaction behavior
 }

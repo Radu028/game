@@ -26,28 +26,23 @@ PhysicsSystem::~PhysicsSystem() {
 
 void PhysicsSystem::addObject(GameObject* obj) {
     btCollisionShape* shape = nullptr;
-    // Pentru CubeObject
     if (auto* cube = dynamic_cast<CubeObject*>(obj)) {
         Vector3 sz = cube->getSize();
-        // PERFORMANCE OPTIMIZATION: Cache half-size calculations to avoid repeated division
         float halfX = sz.x * 0.5f;
         float halfY = sz.y * 0.5f;
         float halfZ = sz.z * 0.5f;
         shape = new btBoxShape(btVector3(halfX, halfY, halfZ));
     }
-    // Pentru Floor
     else if (auto* floor = dynamic_cast<Floor*>(obj)) {
         BoundingBox bbox = floor->getBoundingBox();
         Vector3 dims = {bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y, bbox.max.z - bbox.min.z};
-        // PERFORMANCE OPTIMIZATION: Cache half-dimension calculations to avoid repeated division
         float halfX = dims.x * 0.5f;
         float halfY = dims.y * 0.5f;
         float halfZ = dims.z * 0.5f;
         shape = new btBoxShape(btVector3(halfX, halfY, halfZ));
     }
-    // fallback
     else {
-        shape = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f)); // Use direct float values instead of division
+        shape = new btBoxShape(btVector3(0.5f, 0.5f, 0.5f));
     }
     btDefaultMotionState* motionState = new btDefaultMotionState(btTransform(btQuaternion(0,0,0,1), btVector3(obj->getPosition().x, obj->getPosition().y, obj->getPosition().z)));
     btScalar mass = obj->getIsStatic() ? 0.0f : 1.0f;
@@ -61,7 +56,6 @@ void PhysicsSystem::addObject(GameObject* obj) {
         body->setRollingFriction(1.5f);
         body->setSpinningFriction(1.5f);
         body->setDamping(0.0f, 0.0f);
-        // Ensure Bullet treats this as a static object
         body->setCollisionFlags(body->getCollisionFlags() | btCollisionObject::CF_STATIC_OBJECT);
     } else if (dynamic_cast<CubeObject*>(obj)) {
         body->setFriction(2.0f);
@@ -88,21 +82,17 @@ void PhysicsSystem::removeObject(GameObject* obj) {
 }
 
 void PhysicsSystem::update(float deltaTime) {
-    // PERFORMANCE OPTIMIZATION: Reduce max sub-steps for better performance
-    // 10 sub-steps -> 6 sub-steps (still maintains stability but improves performance)
     dynamicsWorld->stepSimulation(deltaTime, 6);
     syncGameObjectsFromBullet();
 }
 
 void PhysicsSystem::syncGameObjectsFromBullet() {
-    // PERFORMANCE OPTIMIZATION: Use range-based for loop for better cache performance
-    // and avoid repeated iterator dereferencing
     for (GameObject* obj : physicsObjects) {
         btRigidBody* body = obj->getBulletBody();
         if (body) {
             btTransform trans;
             body->getMotionState()->getWorldTransform(trans);
-            const btVector3& pos = trans.getOrigin(); // Use const reference to avoid copying
+            const btVector3& pos = trans.getOrigin();
             obj->setPosition({pos.x(), pos.y(), pos.z()});
         }
     }

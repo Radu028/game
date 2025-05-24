@@ -37,9 +37,6 @@ bool GameObject::checkCollisionWith(const BoundingBox& otherBox) const {
 }
 
 float GameObject::getDistance(const GameObject& other) const {
-  // PERFORMANCE OPTIMIZATION: Avoid expensive sqrtf() calculation
-  // For most use cases, squared distance comparison is sufficient
-  // If actual distance is needed, use getDistanceSquared() and sqrt only when necessary
   float dx = other.position.x - this->position.x;
   float dy = other.position.y - this->position.y; 
   float dz = other.position.z - this->position.z;
@@ -47,7 +44,6 @@ float GameObject::getDistance(const GameObject& other) const {
 }
 
 float GameObject::getDistanceSquared(const GameObject& other) const {
-  // PERFORMANCE: Use this for distance comparisons to avoid sqrt calculation
   float dx = other.position.x - this->position.x;
   float dy = other.position.y - this->position.y;
   float dz = other.position.z - this->position.z;
