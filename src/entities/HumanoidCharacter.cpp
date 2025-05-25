@@ -99,18 +99,10 @@ void HumanoidCharacter::update(float deltaTime) {
     // Animate the character parts
     animateCharacter(deltaTime);
     
-    // Update visual positions relative to physics body
+    // Update visual positions and facial features (combined for efficiency)
     updateVisualPositions();
     
-    // Update facial features
-    updateFacialFeatures();
-    
-    // Get physics body position and update game object position
-    btTransform transform;
-    characterBody->getMotionState()->getWorldTransform(transform);
-    btVector3 origin = transform.getOrigin();
-    // Position is at feet level (bottom of capsule)
-    position = {origin.getX(), origin.getY() - GameSettings::Character::HEIGHT/2, origin.getZ()};
+    // Facial features are now updated inside updateVisualPositions()
 }
 
 void HumanoidCharacter::updateCharacterState() {
@@ -194,11 +186,14 @@ void HumanoidCharacter::animateCharacter(float deltaTime) {
 void HumanoidCharacter::updateVisualPositions() {
     if (!characterBody) return;
     
-    // Get physics body transform
+    // Get physics body transform ONCE per frame - SINGLE SOURCE OF TRUTH
     btTransform transform;
     characterBody->getMotionState()->getWorldTransform(transform);
     btVector3 origin = transform.getOrigin();
     Vector3 physicsPos = {origin.getX(), origin.getY(), origin.getZ()};
+    
+    // Update main position ONCE per frame (at feet level) - SINGLE UPDATE
+    position = {origin.getX(), origin.getY() - GameSettings::Character::HEIGHT/2, origin.getZ()};
     
     // Get rotation (only Y-axis rotation is allowed)
     btQuaternion rotation = transform.getRotation();
@@ -231,25 +226,8 @@ void HumanoidCharacter::updateVisualPositions() {
     // Right Leg
     rotatedOffset = Vector3RotateByAxisAngle(rightLeg.currentOffset, {0, 1, 0}, yRotation);
     rightLeg.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
-}
-
-void HumanoidCharacter::updateFacialFeatures() {
-    if (!characterBody) return;
     
-    // Get physics body transform
-    btTransform transform;
-    characterBody->getMotionState()->getWorldTransform(transform);
-    btVector3 origin = transform.getOrigin();
-    Vector3 physicsPos = {origin.getX(), origin.getY(), origin.getZ()};
-    
-    // Get rotation (only Y-axis rotation is allowed)
-    btQuaternion rotation = transform.getRotation();
-    float yRotation = atan2(2.0f * (rotation.getW() * rotation.getY() + rotation.getX() * rotation.getZ()),
-                           1.0f - 2.0f * (rotation.getY() * rotation.getY() + rotation.getZ() * rotation.getZ()));
-    
-    // Update facial features relative to head position
-    Vector3 rotatedOffset;
-    
+    // Update facial features using the SAME transform (no redundant calls)
     // Left Eye
     rotatedOffset = Vector3RotateByAxisAngle(leftEye.currentOffset, {0, 1, 0}, yRotation);
     leftEye.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
@@ -262,6 +240,8 @@ void HumanoidCharacter::updateFacialFeatures() {
     rotatedOffset = Vector3RotateByAxisAngle(mouth.currentOffset, {0, 1, 0}, yRotation);
     mouth.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
 }
+
+// updateFacialFeatures() method removed - now integrated into updateVisualPositions() for efficiency
 
 void HumanoidCharacter::handleInput(float movementSpeed) {
     if (!characterBody) return;
@@ -308,39 +288,15 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
         return;
     }
     
-    // When moving, use smooth acceleration but immediate direction change
+    // When moving, set target velocity directly for responsive movement
     btVector3 targetVelocity(movement.x * speed, currentVelocity.getY(), movement.z * speed);
+    characterBody->setLinearVelocity(targetVelocity);
     
-    // Smooth acceleration only when increasing speed, instant when changing direction
-    btVector3 currentHorizontal(currentVelocity.getX(), 0, currentVelocity.getZ());
-    btVector3 targetHorizontal(targetVelocity.getX(), 0, targetVelocity.getZ());
-    
-    float currentSpeed = currentHorizontal.length();
-    float targetSpeed = targetHorizontal.length();
-    
-    // If changing direction significantly, apply immediately
-    if (currentSpeed > 0.1f && targetSpeed > 0.1f) {
-        btVector3 currentDir = currentHorizontal.normalized();
-        btVector3 targetDir = targetHorizontal.normalized();
-        float dot = currentDir.dot(targetDir);
-        
-        if (dot < 0.7f) { // Direction change > 45 degrees
-            characterBody->setLinearVelocity(targetVelocity);
-            return;
-        }
-    }
-    
-    // Otherwise use smooth acceleration
-    float lerpFactor = 0.3f; // Smooth acceleration
-    btVector3 newHorizontal = currentHorizontal.lerp(targetHorizontal, lerpFactor);
-    btVector3 newVelocity(newHorizontal.getX(), currentVelocity.getY(), newHorizontal.getZ());
-    characterBody->setLinearVelocity(newVelocity);
-    
-    // Smooth rotation towards movement direction
+    // Smooth rotation towards movement direction using torque for better physics integration
     if (Vector3Length(movement) > 0.1f) {
         float targetRotation = atan2(movement.x, movement.z);
         
-        // Get current rotation
+        // Get current rotation (necessary for rotation calculations - different from position sync)
         btTransform transform;
         characterBody->getMotionState()->getWorldTransform(transform);
         btQuaternion currentRotation = transform.getRotation();
@@ -349,22 +305,17 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
         float currentYRotation = atan2(2.0f * (currentRotation.getW() * currentRotation.getY() + currentRotation.getX() * currentRotation.getZ()),
                                      1.0f - 2.0f * (currentRotation.getY() * currentRotation.getY() + currentRotation.getZ() * currentRotation.getZ()));
         
-        // Smooth rotation interpolation
-        float rotationSpeed = 8.0f; // Rotation speed
+        // Calculate rotation difference and apply torque
         float angleDiff = targetRotation - currentYRotation;
         
         // Handle angle wrapping
         while (angleDiff > M_PI) angleDiff -= 2 * M_PI;
         while (angleDiff < -M_PI) angleDiff += 2 * M_PI;
         
-        float newYRotation = currentYRotation + angleDiff * rotationSpeed * 0.016f;
-        
-        // Apply smooth rotation
-        btQuaternion newRotation;
-        newRotation.setRotation(btVector3(0, 1, 0), newYRotation);
-        transform.setRotation(newRotation);
-        characterBody->getMotionState()->setWorldTransform(transform);
-        characterBody->setWorldTransform(transform);
+        // Apply rotational torque instead of directly setting rotation (better physics integration)
+        float torqueMultiplier = 80.0f; // Adjust for rotation responsiveness
+        btVector3 rotationTorque(0, angleDiff * torqueMultiplier, 0);
+        characterBody->applyTorque(rotationTorque);
     }
 }
 

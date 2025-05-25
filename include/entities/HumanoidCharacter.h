@@ -107,7 +107,6 @@ private:
     // Private methods
     void createSinglePhysicsBody();
     void updateVisualPositions();
-    void updateFacialFeatures();
     void animateCharacter(float deltaTime);
     void applyMovementForces(Vector3 movement, float speed);
     void updateCharacterState();

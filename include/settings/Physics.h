@@ -17,7 +17,7 @@ namespace GameSettings {
         static constexpr float MOVEMENT_FORCE = 1500.0f;
         static constexpr float JUMP_IMPULSE = 150.0f; // Much stronger jump power
         static constexpr float MAX_SPEED = 8.0f;
-        static constexpr float DAMPING_LINEAR = 0.95f; // Balanced damping - smooth but responsive
+        static constexpr float DAMPING_LINEAR = 0.85f; // Reduced for smoother movement
         static constexpr float DAMPING_ANGULAR = 0.8f;
         static constexpr float MOVEMENT_SPEED = 5.0f;
     }

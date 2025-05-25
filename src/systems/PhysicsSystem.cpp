@@ -4,6 +4,7 @@
 #include "objects/GameObject.h"
 #include "objects/CubeObject.h"
 #include "objects/Floor.h"
+#include "entities/HumanoidCharacter.h"
 #include "raymath.h"
 #include "settings/Physics.h"
 
@@ -82,12 +83,21 @@ void PhysicsSystem::removeObject(GameObject* obj) {
 }
 
 void PhysicsSystem::update(float deltaTime) {
-    dynamicsWorld->stepSimulation(deltaTime, 6);
+    // Use fixed timestep for more stable physics simulation
+    const float fixedTimeStep = 1.0f / 60.0f; // 60 FPS
+    const int maxSubSteps = 10;
+    
+    dynamicsWorld->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
     syncGameObjectsFromBullet();
 }
 
 void PhysicsSystem::syncGameObjectsFromBullet() {
     for (GameObject* obj : physicsObjects) {
+        // Skip HumanoidCharacter objects - they manage their own position sync
+        if (dynamic_cast<class HumanoidCharacter*>(obj)) {
+            continue;
+        }
+        
         btRigidBody* body = obj->getBulletBody();
         if (body) {
             btTransform trans;
