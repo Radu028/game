@@ -18,11 +18,13 @@ class CubeObject : public GameObject {
   bool hasTexture;
   bool textureLoaded;
   Model model;
+  bool useShaders;
 
  public:
   CubeObject(Vector3 position, Vector3 size, Color color, bool hasCollision,
              const std::string& texturePath = "",
-             bool affectedByGravity = false, bool isStatic = true);
+             bool affectedByGravity = false, bool isStatic = true,
+             bool useShaders = true);
   ~CubeObject() override;
 
   // Copy constructor
@@ -36,6 +38,8 @@ class CubeObject : public GameObject {
   bool checkCollision(const CubeObject& other) const;
 
   void interact() override;
+
+  void setUseShaders(bool use) { useShaders = use; }
 };
 
 #endif

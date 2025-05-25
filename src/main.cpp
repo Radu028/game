@@ -3,6 +3,7 @@
 #include "objects/CubeObject.h"
 #include "objects/Floor.h"
 #include "systems/InputSystem.h"
+#include "systems/ShaderSystem.h"
 #include "raylib.h"
 #include "settings/Physics.h"
 
@@ -11,6 +12,14 @@ int main() {
   SetTargetFPS(120);
 
   DisableCursor();
+
+  // Initialize shader system
+  ShaderSystem* shaderSystem = ShaderSystem::getInstance();
+  if (!shaderSystem->initialize()) {
+    TraceLog(LOG_WARNING, "Failed to initialize shader system, using default rendering");
+  } else {
+    TraceLog(LOG_INFO, "Shader system initialized successfully");
+  }
 
   Camera3D camera = {0};
   camera.position = (Vector3){0.0f, 5.0f, 10.0f};
@@ -72,12 +81,52 @@ int main() {
       (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){10.0f, 1.0f, 10.0f},
       "../resources/forrest_ground_01_diff_4k.jpg", true));
 
+  // Dynamic sun state
+  bool dynamicSun = false;
+
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
 
     // Toggle debug mode with F1 key
     if (IsKeyPressed(KEY_F1)) {
       debugMode = !debugMode;
+    }
+    
+    // Toggle dynamic sun with F2 key
+    if (IsKeyPressed(KEY_F2)) {
+      dynamicSun = !dynamicSun;
+    }
+    
+    // Control sun direction with arrow keys for manual testing (only when dynamic sun is off)
+    if (!dynamicSun) {
+      if (IsKeyDown(KEY_LEFT)) {
+        Vector3 sunDir = shaderSystem->getSunDirection();
+        sunDir.x += deltaTime;
+        shaderSystem->setSunDirection(sunDir);
+      }
+      if (IsKeyDown(KEY_RIGHT)) {
+        Vector3 sunDir = shaderSystem->getSunDirection();
+        sunDir.x -= deltaTime;
+        shaderSystem->setSunDirection(sunDir);
+      }
+      if (IsKeyDown(KEY_UP)) {
+        Vector3 sunDir = shaderSystem->getSunDirection();
+        sunDir.y += deltaTime;
+        shaderSystem->setSunDirection(sunDir);
+      }
+      if (IsKeyDown(KEY_DOWN)) {
+        Vector3 sunDir = shaderSystem->getSunDirection();
+        sunDir.y -= deltaTime;
+        shaderSystem->setSunDirection(sunDir);
+      }
+    }
+    
+    // Update shader system time
+    shaderSystem->updateTime(deltaTime);
+    
+    // Apply dynamic sun if enabled
+    if (dynamicSun) {
+      shaderSystem->enableDynamicSun(true);
     }
 
     player1->handleInput(GameSettings::Character::MOVEMENT_SPEED);
@@ -89,6 +138,9 @@ int main() {
     
     camera.target = (Vector3){playerPos.x, playerPos.y + GameSettings::Camera::TARGET_Y_OFFSET, playerPos.z};
     camera.position = (Vector3){playerPos.x + GameSettings::Camera::OFFSET.x, playerPos.y + GameSettings::Camera::OFFSET.y, playerPos.z + GameSettings::Camera::OFFSET.z};
+
+    // Update shader uniforms with camera position
+    shaderSystem->updateUniforms(camera);
 
     BeginDrawing();
     ClearBackground(RAYWHITE);
@@ -110,6 +162,14 @@ int main() {
       DrawText("DEBUG MODE: F1 to toggle", 10, 70, 20, GREEN);
       DrawText("Multi-body collision system active", 10, 95, 20, GREEN);
       DrawText("Purple=Head, Blue=Torso, Green=Arms, Orange=Legs", 10, 120, 16, WHITE);
+      DrawText("F2: Toggle dynamic sun | Arrow keys: Manual sun control", 10, 145, 16, YELLOW);
+      
+      // Display sun direction and lighting info
+      Vector3 sunDir = shaderSystem->getSunDirection();
+      DrawText(TextFormat("Sun Dir: (%.2f, %.2f, %.2f)", sunDir.x, sunDir.y, sunDir.z), 
+               10, 170, 16, ORANGE);
+      DrawText(TextFormat("Dynamic Sun: %s", dynamicSun ? "ON" : "OFF"), 
+               10, 195, 16, dynamicSun ? GREEN : RED);
     }
 
     EndDrawing();

@@ -13,10 +13,11 @@ class BodyPart : public GameObject {
   float rotationAngle;
 
   Model model;
+  bool useShaders;
 
  public:
   BodyPart(Vector3 position, Vector3 size, Color color,
-           bool hasCollision = true);
+           bool hasCollision = true, bool useShaders = true);
 
   void setRotation(const Vector3 axis, float angle);
   void setPosition(Vector3 newPos);
@@ -26,6 +27,8 @@ class BodyPart : public GameObject {
 
   float getRotationAngle() const;
   Vector3 getRotationAxis() const;
+  
+  void setUseShaders(bool use) { useShaders = use; }
 
   void draw() const override;
   BoundingBox getBoundingBox() const override;
