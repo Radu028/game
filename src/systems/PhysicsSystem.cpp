@@ -65,9 +65,9 @@ void PhysicsSystem::addObject(GameObject* obj) {
         body->setDamping(0.8f, 0.8f);
     }
     
-    // Add world objects with collision group 1, collide with everything (-1)
-    short worldGroup = 1;
-    short worldMask = -1; // World objects collide with everything
+    // Add world objects with proper collision group settings
+    short worldGroup = GameSettings::Collision::Groups::WORLD_OBJECTS;
+    short worldMask = GameSettings::Collision::Groups::WORLD_MASK; // World objects collide with all character parts
     dynamicsWorld->addRigidBody(body, worldGroup, worldMask);
     obj->setBulletBody(body);
     objectToBody[obj] = body;

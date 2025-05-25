@@ -70,6 +70,22 @@ namespace GameSettings {
         static constexpr float FRICTION = 0.4f; // Reduced friction for better sliding along walls
         static constexpr float ROLLING_FRICTION = 0.2f; // Reduced rolling friction
         static constexpr float RESTITUTION = 0.0f;
+        
+        // Collision groups for professional multi-body character physics
+        namespace Groups {
+            static constexpr short WORLD_OBJECTS = 1;      // Floor, walls, obstacles
+            static constexpr short CHARACTER_TORSO = 2;    // Main character body
+            static constexpr short CHARACTER_HEAD = 4;     // Character head
+            static constexpr short CHARACTER_ARMS = 8;     // Character arms
+            static constexpr short CHARACTER_LEGS = 16;    // Character legs
+            
+            // Collision masks - what each group can collide with
+            static constexpr short WORLD_MASK = CHARACTER_TORSO | CHARACTER_HEAD | CHARACTER_ARMS | CHARACTER_LEGS;
+            static constexpr short CHARACTER_MASK = WORLD_OBJECTS; // Character parts only collide with world
+            
+            // All character parts combined for easy reference
+            static constexpr short ALL_CHARACTER_PARTS = CHARACTER_TORSO | CHARACTER_HEAD | CHARACTER_ARMS | CHARACTER_LEGS;
+        }
     }
     
     // Professional utility functions for dynamic character positioning

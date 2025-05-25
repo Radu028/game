@@ -19,6 +19,9 @@ int main() {
   camera.fovy = 45.0f;
   camera.projection = CAMERA_PERSPECTIVE;
 
+  // Professional debug mode toggle
+  bool debugMode = false;
+
   auto player1 = std::make_shared<HumanoidCharacter>((Vector3){0.0f, 0.5f, 0.0f});
   
   GameWorld* world = GameWorld::getInstance(player1.get());
@@ -72,6 +75,11 @@ int main() {
   while (!WindowShouldClose()) {
     float deltaTime = GetFrameTime();
 
+    // Toggle debug mode with F1 key
+    if (IsKeyPressed(KEY_F1)) {
+      debugMode = !debugMode;
+    }
+
     player1->handleInput(GameSettings::Character::MOVEMENT_SPEED);
     player1->update(deltaTime);
 
@@ -88,9 +96,21 @@ int main() {
     BeginMode3D(camera);
     player1->draw();
     world->draw();
+    
+    // Professional multi-body collision visualization
+    if (debugMode) {
+      player1->drawCollisionBoxes();
+    }
     EndMode3D();
 
     DrawFPS(10, 40);
+    
+    // Debug info display
+    if (debugMode) {
+      DrawText("DEBUG MODE: F1 to toggle", 10, 70, 20, GREEN);
+      DrawText("Multi-body collision system active", 10, 95, 20, GREEN);
+      DrawText("Purple=Head, Blue=Torso, Green=Arms, Orange=Legs", 10, 120, 16, WHITE);
+    }
 
     EndDrawing();
   }

@@ -28,6 +28,32 @@ struct HumanoidVisualPart {
         : visual({0,0,0}, size, color, true), baseOffset(offset), currentOffset(offset) {}
 };
 
+// Professional physics body part with individual collision
+struct HumanoidPhysicsPart {
+    btRigidBody* body = nullptr;
+    btCollisionShape* shape = nullptr;
+    btDefaultMotionState* motionState = nullptr;
+    Vector3 baseOffset;  // Offset from character center
+    Vector3 size;        // Dimensions for physics shape
+    short collisionGroup; // Collision group identifier
+    
+    HumanoidPhysicsPart(Vector3 partSize, Vector3 offset, short group) 
+        : baseOffset(offset), size(partSize), collisionGroup(group) {}
+    
+    ~HumanoidPhysicsPart() {
+        cleanup();
+    }
+    
+    void cleanup() {
+        delete body;
+        delete shape;
+        delete motionState;
+        body = nullptr;
+        shape = nullptr;
+        motionState = nullptr;
+    }
+};
+
 // Facial feature for eyes and expressions
 struct FacialFeature {
     BodyPart visual;
@@ -61,6 +87,12 @@ public:
     Vector3 getFeetPosition() const;
     Vector3 getTorsoPosition() const;
     
+    // Professional multi-body physics methods
+    void createIndividualPhysicsBodies();
+    void updatePhysicsBodyPositions();
+    void synchronizeVisualWithPhysics();
+    void removeAllPhysicsBodies();
+    
     // Collision detection for individual body parts
     bool checkPartCollision(const HumanoidVisualPart& part, const BoundingBox& obstacle) const;
     bool checkAnyPartCollision(const BoundingBox& obstacle) const;
@@ -71,10 +103,18 @@ public:
     void setWorld(GameWorld* w) { world = w; }
 
 private:
-    // Main physics body for movement
+    // Main physics body for movement (torso-centered)
     btRigidBody* characterBody = nullptr;
     btCollisionShape* characterShape = nullptr;
     btDefaultMotionState* motionState = nullptr;
+    
+    // Individual physics bodies for professional collision detection
+    HumanoidPhysicsPart headPhysics;
+    HumanoidPhysicsPart torsoPhysics;
+    HumanoidPhysicsPart leftArmPhysics;
+    HumanoidPhysicsPart rightArmPhysics;
+    HumanoidPhysicsPart leftLegPhysics;
+    HumanoidPhysicsPart rightLegPhysics;
     
     // Physics world reference
     btDiscreteDynamicsWorld* physicsWorld = nullptr;
@@ -106,8 +146,11 @@ private:
     
     // Private methods
     void createSinglePhysicsBody();
+    void createIndividualPhysicsBody(HumanoidPhysicsPart& part, Vector3 worldPosition);
+    void updatePhysicsBodyPosition(HumanoidPhysicsPart& part, Vector3 worldPosition);
     void updateVisualPositions();
     void animateCharacter(float deltaTime);
     void applyMovementForces(Vector3 movement, float speed);
     void updateCharacterState();
+    void constrainBodyPartsToCharacter();
 };

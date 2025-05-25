@@ -21,6 +21,25 @@ HumanoidCharacter::HumanoidCharacter(Vector3 position)
               {-GameSettings::BodyParts::LEG_OFFSET_X, GameSettings::CharacterCalculations::getLegBaseYOffset(), 0}),
       rightLeg(GameSettings::BodyParts::LEG_SIZE, GameSettings::BodyParts::LEG_COLOR, 
                {GameSettings::BodyParts::LEG_OFFSET_X, GameSettings::CharacterCalculations::getLegBaseYOffset(), 0}),
+      // Initialize individual physics parts with professional collision groups
+      headPhysics(GameSettings::BodyParts::HEAD_SIZE, 
+                  {0, GameSettings::CharacterCalculations::getHeadBaseYOffset(), 0},
+                  GameSettings::Collision::Groups::CHARACTER_HEAD),
+      torsoPhysics(GameSettings::BodyParts::TORSO_SIZE,
+                   {0, GameSettings::CharacterCalculations::getTorsoBaseYOffset(), 0},
+                   GameSettings::Collision::Groups::CHARACTER_TORSO),
+      leftArmPhysics(GameSettings::BodyParts::ARM_SIZE,
+                     {-GameSettings::BodyParts::ARM_OFFSET_X, GameSettings::CharacterCalculations::getArmBaseYOffset(), 0},
+                     GameSettings::Collision::Groups::CHARACTER_ARMS),
+      rightArmPhysics(GameSettings::BodyParts::ARM_SIZE,
+                      {GameSettings::BodyParts::ARM_OFFSET_X, GameSettings::CharacterCalculations::getArmBaseYOffset(), 0},
+                      GameSettings::Collision::Groups::CHARACTER_ARMS),
+      leftLegPhysics(GameSettings::BodyParts::LEG_SIZE,
+                     {-GameSettings::BodyParts::LEG_OFFSET_X, GameSettings::CharacterCalculations::getLegBaseYOffset(), 0},
+                     GameSettings::Collision::Groups::CHARACTER_LEGS),
+      rightLegPhysics(GameSettings::BodyParts::LEG_SIZE,
+                      {GameSettings::BodyParts::LEG_OFFSET_X, GameSettings::CharacterCalculations::getLegBaseYOffset(), 0},
+                      GameSettings::Collision::Groups::CHARACTER_LEGS),
       // Facial features - positioned on front of head dynamically
       leftEye({0.1f, 0.1f, 0.1f}, BLACK, 
               {-0.15f, GameSettings::CharacterCalculations::getHeadBaseYOffset() + 0.1f, 0.3f}),
@@ -34,6 +53,9 @@ HumanoidCharacter::~HumanoidCharacter() {
     if (physicsWorld && characterBody) {
         physicsWorld->removeRigidBody(characterBody);
     }
+    
+    // Remove all individual physics bodies
+    removeAllPhysicsBodies();
     
     delete characterBody;
     delete characterShape;
@@ -88,17 +110,23 @@ void HumanoidCharacter::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     physicsWorld = bulletWorld;
     createSinglePhysicsBody();
     
-    // Add the character body to the world with collision filtering
-    // Group 2 = character, Group 1 = world objects (floor, cubes)
-    short characterGroup = 2;
-    short characterMask = 1; // Character collides with world objects only
+    // Add the main character body to the world (torso-based movement)
+    // Main character body should collide with world objects
+    short characterGroup = GameSettings::Collision::Groups::CHARACTER_TORSO;
+    short characterMask = GameSettings::Collision::Groups::WORLD_OBJECTS;  // Fix: collide with world objects
     physicsWorld->addRigidBody(characterBody, characterGroup, characterMask);
+    
+    // Create and add individual physics bodies for professional collision
+    createIndividualPhysicsBodies();
 }
 
 void HumanoidCharacter::removeFromPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     if (bulletWorld && characterBody) {
         bulletWorld->removeRigidBody(characterBody);
     }
+    
+    // Remove all individual physics bodies
+    removeAllPhysicsBodies();
 }
 
 void HumanoidCharacter::update(float deltaTime) {
@@ -117,6 +145,9 @@ void HumanoidCharacter::update(float deltaTime) {
     
     // Update visual positions and facial features (combined for efficiency)
     updateVisualPositions();
+    
+    // Synchronize individual physics bodies with visual positions for professional collision
+    synchronizeVisualWithPhysics();
     
     // Facial features are now updated inside updateVisualPositions()
 }
@@ -417,13 +448,14 @@ bool HumanoidCharacter::isOnGround() const {
     btVector3 from = origin + btVector3(0, groundContactOffset + 0.05f, 0); // Start slightly above ground contact
     btVector3 to = origin + btVector3(0, groundContactOffset - 0.25f, 0); // Check below ground contact
     
-    printf("Raycast: from(%.2f,%.2f,%.2f) to(%.2f,%.2f,%.2f)\n", 
+    printf("Character pos: (%.2f,%.2f,%.2f) | Raycast: from(%.2f,%.2f,%.2f) to(%.2f,%.2f,%.2f)\n", 
+           origin.getX(), origin.getY(), origin.getZ(),
            from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
     
     btCollisionWorld::ClosestRayResultCallback rayCallback(from, to);
-    // Raycast with group 1 (world objects), exclude group 2 (character)
-    rayCallback.m_collisionFilterGroup = 1;
-    rayCallback.m_collisionFilterMask = 1; // Only hit world objects, not the character itself
+    // Use the proper collision groups for raycast
+    rayCallback.m_collisionFilterGroup = GameSettings::Collision::Groups::CHARACTER_TORSO;
+    rayCallback.m_collisionFilterMask = GameSettings::Collision::Groups::WORLD_OBJECTS; // Only hit world objects
     
     physicsWorld->rayTest(from, to, rayCallback);
     
@@ -487,13 +519,35 @@ void HumanoidCharacter::drawCollisionBoxes() const {
     BoundingBox leftLegBox = getPartBoundingBox(leftLeg);
     BoundingBox rightLegBox = getPartBoundingBox(rightLeg);
     
-    // Draw collision boxes in red wireframe
-    DrawBoundingBox(headBox, RED);
-    DrawBoundingBox(torsoBox, RED);
-    DrawBoundingBox(leftArmBox, RED);
-    DrawBoundingBox(rightArmBox, RED);
-    DrawBoundingBox(leftLegBox, RED);
-    DrawBoundingBox(rightLegBox, RED);
+    // Draw collision boxes in different colors per collision group
+    DrawBoundingBox(headBox, PURPLE);      // Head group
+    DrawBoundingBox(torsoBox, BLUE);       // Torso group  
+    DrawBoundingBox(leftArmBox, GREEN);    // Arms group
+    DrawBoundingBox(rightArmBox, GREEN);   // Arms group
+    DrawBoundingBox(leftLegBox, ORANGE);   // Legs group
+    DrawBoundingBox(rightLegBox, ORANGE);  // Legs group
+    
+    // Draw physics body positions as small spheres if they exist
+    if (headPhysics.body) {
+        btTransform transform = headPhysics.body->getWorldTransform();
+        btVector3 origin = transform.getOrigin();
+        DrawSphere({origin.x(), origin.y(), origin.z()}, 0.05f, PURPLE);
+    }
+    if (torsoPhysics.body) {
+        btTransform transform = torsoPhysics.body->getWorldTransform();
+        btVector3 origin = transform.getOrigin();
+        DrawSphere({origin.x(), origin.y(), origin.z()}, 0.05f, BLUE);
+    }
+    if (leftLegPhysics.body) {
+        btTransform transform = leftLegPhysics.body->getWorldTransform();
+        btVector3 origin = transform.getOrigin();
+        DrawSphere({origin.x(), origin.y(), origin.z()}, 0.05f, ORANGE);
+    }
+    if (rightLegPhysics.body) {
+        btTransform transform = rightLegPhysics.body->getWorldTransform();
+        btVector3 origin = transform.getOrigin();
+        DrawSphere({origin.x(), origin.y(), origin.z()}, 0.05f, ORANGE);
+    }
 }
 
 BoundingBox HumanoidCharacter::getBoundingBox() const {
@@ -622,6 +676,138 @@ bool HumanoidCharacter::wouldCollideAfterMovement(Vector3 movement, float deltaT
     }
     
     return false;
+}
+
+// Professional multi-body physics system implementation
+void HumanoidCharacter::createIndividualPhysicsBodies() {
+    if (!physicsWorld || !characterBody) return;
+    
+    // Get character position for relative positioning
+    btTransform characterTransform = characterBody->getWorldTransform();
+    btVector3 characterPos = characterTransform.getOrigin();
+    
+    // Create physics bodies for each body part
+    createIndividualPhysicsBody(headPhysics, 
+        {characterPos.x(), characterPos.y(), characterPos.z()});
+    createIndividualPhysicsBody(torsoPhysics, 
+        {characterPos.x(), characterPos.y(), characterPos.z()});
+    createIndividualPhysicsBody(leftArmPhysics, 
+        {characterPos.x(), characterPos.y(), characterPos.z()});
+    createIndividualPhysicsBody(rightArmPhysics, 
+        {characterPos.x(), characterPos.y(), characterPos.z()});
+    createIndividualPhysicsBody(leftLegPhysics, 
+        {characterPos.x(), characterPos.y(), characterPos.z()});
+    createIndividualPhysicsBody(rightLegPhysics, 
+        {characterPos.x(), characterPos.y(), characterPos.z()});
+}
+
+void HumanoidCharacter::createIndividualPhysicsBody(HumanoidPhysicsPart& part, Vector3 worldPosition) {
+    if (!physicsWorld) return;
+    
+    // Create box shape for the body part
+    btVector3 halfExtents(part.size.x / 2.0f, part.size.y / 2.0f, part.size.z / 2.0f);
+    part.shape = new btBoxShape(halfExtents);
+    part.shape->setMargin(GameSettings::Collision::SHAPE_MARGIN);
+    
+    // Calculate world position for this part
+    Vector3 partWorldPos = Vector3Add(worldPosition, part.baseOffset);
+    
+    // Create transform
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(btVector3(partWorldPos.x, partWorldPos.y, partWorldPos.z));
+    
+    // Create motion state
+    part.motionState = new btDefaultMotionState(transform);
+    
+    // Create rigid body with very low mass (kinematic-like behavior)
+    float mass = 0.1f; // Very light so they don't interfere with main movement
+    btVector3 inertia(0, 0, 0);
+    part.shape->calculateLocalInertia(mass, inertia);
+    
+    btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, part.motionState, part.shape, inertia);
+    rbInfo.m_friction = GameSettings::Collision::FRICTION;
+    rbInfo.m_rollingFriction = GameSettings::Collision::ROLLING_FRICTION;
+    rbInfo.m_restitution = GameSettings::Collision::RESTITUTION;
+    
+    part.body = new btRigidBody(rbInfo);
+    
+    // Set as kinematic for controlled movement
+    part.body->setCollisionFlags(part.body->getCollisionFlags() | btCollisionObject::CF_KINEMATIC_OBJECT);
+    part.body->setActivationState(DISABLE_DEACTIVATION);
+    
+    // Add to physics world with proper collision filtering
+    // Individual body parts should collide with world objects only
+    physicsWorld->addRigidBody(part.body, part.collisionGroup, GameSettings::Collision::Groups::WORLD_OBJECTS);
+}
+
+void HumanoidCharacter::updatePhysicsBodyPosition(HumanoidPhysicsPart& part, Vector3 worldPosition) {
+    if (!part.body) return;
+    
+    // Calculate new world position for this part
+    Vector3 partWorldPos = Vector3Add(worldPosition, part.baseOffset);
+    
+    // Update the physics body position
+    btTransform transform;
+    transform.setIdentity();
+    transform.setOrigin(btVector3(partWorldPos.x, partWorldPos.y, partWorldPos.z));
+    
+    part.body->setWorldTransform(transform);
+    part.body->getMotionState()->setWorldTransform(transform);
+}
+
+void HumanoidCharacter::synchronizeVisualWithPhysics() {
+    if (!characterBody) return;
+    
+    // Get main character position
+    btTransform characterTransform = characterBody->getWorldTransform();
+    btVector3 characterPos = characterTransform.getOrigin();
+    Vector3 worldPos = {characterPos.x(), characterPos.y(), characterPos.z()};
+    
+    // Update each physics body to follow the visual parts
+    updatePhysicsBodyPosition(headPhysics, worldPos);
+    updatePhysicsBodyPosition(torsoPhysics, worldPos);
+    updatePhysicsBodyPosition(leftArmPhysics, worldPos);
+    updatePhysicsBodyPosition(rightArmPhysics, worldPos);
+    updatePhysicsBodyPosition(leftLegPhysics, worldPos);
+    updatePhysicsBodyPosition(rightLegPhysics, worldPos);
+}
+
+void HumanoidCharacter::removeAllPhysicsBodies() {
+    if (!physicsWorld) return;
+    
+    // Remove all individual physics bodies from the world
+    if (headPhysics.body) {
+        physicsWorld->removeRigidBody(headPhysics.body);
+        headPhysics.cleanup();
+    }
+    if (torsoPhysics.body) {
+        physicsWorld->removeRigidBody(torsoPhysics.body);
+        torsoPhysics.cleanup();
+    }
+    if (leftArmPhysics.body) {
+        physicsWorld->removeRigidBody(leftArmPhysics.body);
+        leftArmPhysics.cleanup();
+    }
+    if (rightArmPhysics.body) {
+        physicsWorld->removeRigidBody(rightArmPhysics.body);
+        rightArmPhysics.cleanup();
+    }
+    if (leftLegPhysics.body) {
+        physicsWorld->removeRigidBody(leftLegPhysics.body);
+        leftLegPhysics.cleanup();
+    }
+    if (rightLegPhysics.body) {
+        physicsWorld->removeRigidBody(rightLegPhysics.body);
+        rightLegPhysics.cleanup();
+    }
+}
+
+void HumanoidCharacter::constrainBodyPartsToCharacter() {
+    // This method can be used to add constraints between body parts
+    // For now, we use kinematic bodies that follow the main character
+    // In a more advanced implementation, you could add spring constraints
+    // or other joint types to create more realistic physics interactions
 }
 
 
