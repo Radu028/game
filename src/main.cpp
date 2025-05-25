@@ -19,7 +19,7 @@ int main() {
   camera.fovy = 45.0f;
   camera.projection = CAMERA_PERSPECTIVE;
 
-  auto player1 = std::make_shared<HumanoidCharacter>((Vector3){0.0f, 0.0f, 0.0f});
+  auto player1 = std::make_shared<HumanoidCharacter>((Vector3){0.0f, 0.5f, 0.0f});
   
   GameWorld* world = GameWorld::getInstance(player1.get());
   player1->setWorld(world);

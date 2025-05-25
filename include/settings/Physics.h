@@ -66,9 +66,67 @@ namespace GameSettings {
         static constexpr float GROUND_CHECK_DISTANCE = 0.2f;
         static constexpr float GROUND_CHECK_TOLERANCE = 0.20f;
         static constexpr float VELOCITY_Y_THRESHOLD = 2.0f;
-        static constexpr float SHAPE_MARGIN = 0.1f;
+        static constexpr float SHAPE_MARGIN = 0.01f;
         static constexpr float FRICTION = 0.4f; // Reduced friction for better sliding along walls
         static constexpr float ROLLING_FRICTION = 0.2f; // Reduced rolling friction
         static constexpr float RESTITUTION = 0.0f;
+    }
+    
+    // Professional utility functions for dynamic character positioning
+    namespace CharacterCalculations {
+        // Calculate total physics capsule height (height + 2*radius)
+        inline float getTotalCapsuleHeight() {
+            return Character::HEIGHT + 2 * Character::RADIUS;
+        }
+        
+        // Calculate half of total capsule height for positioning
+        inline float getHalfCapsuleHeight() {
+            return getTotalCapsuleHeight() / 2.0f;
+        }
+        
+        // Calculate the visual leg base Y offset dynamically based on leg size
+        inline float getLegBaseYOffset() {
+            // Legs should be positioned so their bottom aligns with physics body bottom
+            // Physics body bottom is at: physicsCenter - halfCapsuleHeight
+            // Leg visual center should be at: legBottom + legHeight/2
+            // Therefore: legCenterOffset = -halfCapsuleHeight + legHeight/2
+            return -getHalfCapsuleHeight() + BodyParts::LEG_SIZE.y / 2.0f;
+        }
+        
+        // Calculate torso base Y offset dynamically
+        inline float getTorsoBaseYOffset() {
+            // Torso should be positioned above the legs
+            float legTop = getLegBaseYOffset() + BodyParts::LEG_SIZE.y / 2.0f;
+            return legTop + BodyParts::TORSO_SIZE.y / 2.0f;
+        }
+        
+        // Calculate head base Y offset dynamically
+        inline float getHeadBaseYOffset() {
+            // Head should be positioned above the torso
+            float torsoTop = getTorsoBaseYOffset() + BodyParts::TORSO_SIZE.y / 2.0f;
+            return torsoTop + BodyParts::HEAD_SIZE.y / 2.0f + BodyParts::HEAD_OFFSET_Y;
+        }
+        
+        // Calculate arm base Y offset dynamically
+        inline float getArmBaseYOffset() {
+            // Arms should be positioned at torso level
+            return getTorsoBaseYOffset() + BodyParts::TORSO_SIZE.y * 0.3f; // Slightly above torso center
+        }
+        
+        // Calculate ground contact point Y offset from physics center
+        inline float getGroundContactOffset() {
+            return -getHalfCapsuleHeight();
+        }
+        
+        // Calculate the Y position where physics body center should be placed
+        // given a desired ground contact Y position
+        inline float getPhysicsCenterYFromGroundY(float groundY) {
+            return groundY + getHalfCapsuleHeight();
+        }
+        
+        // Calculate the ground contact Y position from physics body center Y
+        inline float getGroundYFromPhysicsCenterY(float physicsCenterY) {
+            return physicsCenterY - getHalfCapsuleHeight();
+        }
     }
 }

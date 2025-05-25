@@ -8,17 +8,26 @@
 
 HumanoidCharacter::HumanoidCharacter(Vector3 position)
     : GameObject(position, true, true, false),
-      // Roblox-style proportions - more blocky and separated
-      head({0.6f, 0.6f, 0.6f}, YELLOW, {0, 0.8f, 0}),  // Bigger cubic head
-      torso({0.8f, 1.0f, 0.5f}, BLUE, {0, 0.0f, 0}),   // Wider, taller torso  
-      leftArm({0.3f, 0.8f, 0.3f}, YELLOW, {-0.6f, 0.2f, 0}),  // Thicker arms, more separated
-      rightArm({0.3f, 0.8f, 0.3f}, YELLOW, {0.6f, 0.2f, 0}),   // Thicker arms, more separated
-      leftLeg({0.35f, 0.8f, 0.35f}, DARKBLUE, {-0.25f, -0.85f, 0}),  // Thicker legs, better separated
-      rightLeg({0.35f, 0.8f, 0.35f}, DARKBLUE, {0.25f, -0.85f, 0}),   // Thicker legs, better separated
-      // Facial features - positioned on front of head with better proportions
-      leftEye({0.1f, 0.1f, 0.1f}, BLACK, {-0.15f, 0.9f, 0.3f}),  // Bigger eyes
-      rightEye({0.1f, 0.1f, 0.1f}, BLACK, {0.15f, 0.9f, 0.3f}),   // Bigger eyes  
-      mouth({0.2f, 0.05f, 0.05f}, DARKGRAY, {0, 0.75f, 0.3f}) {   // Bigger mouth
+      // Professional dynamic positioning using settings - automatically calculates correct offsets
+      head(GameSettings::BodyParts::HEAD_SIZE, GameSettings::BodyParts::HEAD_COLOR, 
+           {0, GameSettings::CharacterCalculations::getHeadBaseYOffset(), 0}),
+      torso(GameSettings::BodyParts::TORSO_SIZE, GameSettings::BodyParts::TORSO_COLOR, 
+            {0, GameSettings::CharacterCalculations::getTorsoBaseYOffset(), 0}),
+      leftArm(GameSettings::BodyParts::ARM_SIZE, GameSettings::BodyParts::ARM_COLOR, 
+              {-GameSettings::BodyParts::ARM_OFFSET_X, GameSettings::CharacterCalculations::getArmBaseYOffset(), 0}),
+      rightArm(GameSettings::BodyParts::ARM_SIZE, GameSettings::BodyParts::ARM_COLOR, 
+               {GameSettings::BodyParts::ARM_OFFSET_X, GameSettings::CharacterCalculations::getArmBaseYOffset(), 0}),
+      leftLeg(GameSettings::BodyParts::LEG_SIZE, GameSettings::BodyParts::LEG_COLOR, 
+              {-GameSettings::BodyParts::LEG_OFFSET_X, GameSettings::CharacterCalculations::getLegBaseYOffset(), 0}),
+      rightLeg(GameSettings::BodyParts::LEG_SIZE, GameSettings::BodyParts::LEG_COLOR, 
+               {GameSettings::BodyParts::LEG_OFFSET_X, GameSettings::CharacterCalculations::getLegBaseYOffset(), 0}),
+      // Facial features - positioned on front of head dynamically
+      leftEye({0.1f, 0.1f, 0.1f}, BLACK, 
+              {-0.15f, GameSettings::CharacterCalculations::getHeadBaseYOffset() + 0.1f, 0.3f}),
+      rightEye({0.1f, 0.1f, 0.1f}, BLACK, 
+               {0.15f, GameSettings::CharacterCalculations::getHeadBaseYOffset() + 0.1f, 0.3f}),
+      mouth({0.2f, 0.05f, 0.05f}, DARKGRAY, 
+            {0, GameSettings::CharacterCalculations::getHeadBaseYOffset() - 0.05f, 0.3f}) {
 }
 
 HumanoidCharacter::~HumanoidCharacter() {
@@ -39,10 +48,13 @@ void HumanoidCharacter::createSinglePhysicsBody() {
     characterShape = new btCapsuleShape(radius, height);
     characterShape->setMargin(GameSettings::Collision::SHAPE_MARGIN);
     
-    // Set initial transform - place character so feet are on ground
+    // Professional positioning: place character so feet are on ground
+    // position.y represents where the feet should be, so physics body center is at the calculated position
     btTransform transform;
     transform.setIdentity();
-    transform.setOrigin(btVector3(position.x, position.y + height/2, position.z));
+    transform.setOrigin(btVector3(position.x, 
+                                 GameSettings::CharacterCalculations::getPhysicsCenterYFromGroundY(position.y), 
+                                 position.z));
     
     // Create motion state
     motionState = new btDefaultMotionState(transform);
@@ -76,8 +88,11 @@ void HumanoidCharacter::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
     physicsWorld = bulletWorld;
     createSinglePhysicsBody();
     
-    // Add only the main physics body to the world
-    physicsWorld->addRigidBody(characterBody);
+    // Add the character body to the world with collision filtering
+    // Group 2 = character, Group 1 = world objects (floor, cubes)
+    short characterGroup = 2;
+    short characterMask = 1; // Character collides with world objects only
+    physicsWorld->addRigidBody(characterBody, characterGroup, characterMask);
 }
 
 void HumanoidCharacter::removeFromPhysics(btDiscreteDynamicsWorld* bulletWorld) {
@@ -113,17 +128,17 @@ void HumanoidCharacter::updateCharacterState() {
         velocity = {btVel.getX(), btVel.getY(), btVel.getZ()};
     }
     
-    // Reset jumping state when landed with more lenient conditions
-    if (isJumping && isOnGround() && velocity.y < 0.2f && velocity.y > -0.2f) {
+    // Reset jumping state when definitely landed - balanced conditions
+    if (isJumping && isOnGround() && abs(velocity.y) < 0.5f) {
         isJumping = false;
     }
     
     // Determine character state
     float horizontalSpeed = sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
     
-    if (isJumping || !isOnGround() || abs(velocity.y) > 0.3f) {  // Less strict jumping detection
+    if (isJumping || !isOnGround() || abs(velocity.y) > 1.0f) {  // Balanced jumping detection
         currentState = JUMPING;
-    } else if (horizontalSpeed > 0.15f) {  // Lower threshold for walking
+    } else if (horizontalSpeed > 0.15f) {
         currentState = WALKING;
     } else {
         currentState = IDLE;
@@ -194,7 +209,10 @@ void HumanoidCharacter::updateVisualPositions() {
     Vector3 physicsPos = {origin.getX(), origin.getY(), origin.getZ()};
     
     // Update main position ONCE per frame (at feet level) - SINGLE UPDATE
-    position = {origin.getX(), origin.getY() - GameSettings::Character::HEIGHT/2, origin.getZ()};
+    // Professional calculation using dynamic height functions
+    position = {origin.getX(), 
+                GameSettings::CharacterCalculations::getGroundYFromPhysicsCenterY(origin.getY()), 
+                origin.getZ()};
     
     // Get rotation (only Y-axis rotation is allowed) - SINGLE CALCULATION
     btQuaternion rotation = transform.getRotation();
@@ -262,6 +280,7 @@ void HumanoidCharacter::handleInput(float movementSpeed) {
     
     // Jump input
     if (IsKeyPressed(KEY_SPACE)) {
+        printf("SPACE key pressed - calling jump()\n");
         jump();
     }
     
@@ -343,47 +362,82 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
 }
 
 void HumanoidCharacter::jump() {
-    if (!characterBody || jumpCooldown > 0.0f) return;  // Remove strict ground check for wall jumping
+    printf("=== JUMP ATTEMPT ===\n");
     
-    // Allow jumping if mostly on ground (more flexible)
-    if (!isOnGround()) {
-        // Check if character has some contact with ground (allow jumping against walls)
-        btVector3 velocity = characterBody->getLinearVelocity();
-        if (abs(velocity.getY()) > 3.0f) return; // Don't allow if moving too fast vertically
+    if (!characterBody) {
+        printf("Jump failed: no characterBody\n");
+        return;
     }
     
-    // Realistic jump force - reduced from 3x to 2x for more realistic jumping
-    btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 2.0f, 0);  // 2x for realistic jumping
+    if (jumpCooldown > 0.0f) {
+        printf("Jump failed: cooldown active (%.2f)\n", jumpCooldown);
+        return;
+    }
+    
+    // Check if character is on ground - balanced check
+    bool onGround = isOnGround();
+    printf("Ground check result: %s\n", onGround ? "ON GROUND" : "NOT ON GROUND");
+    
+    if (!onGround) {
+        return; // Cannot jump if not on ground
+    }
+    
+    // Additional check: Don't allow jumping if moving up too fast (already jumping)
+    btVector3 velocity = characterBody->getLinearVelocity();
+    printf("Current velocity.y: %.2f\n", velocity.getY());
+    
+    if (velocity.getY() > 2.0f) {
+        printf("Jump failed: moving up too fast\n");
+        return; // Already moving up fast, don't allow another jump
+    }
+    
+    printf("*** JUMPING NOW! ***\n");
+    
+    // Realistic jump force
+    btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 2.0f, 0);
     characterBody->applyCentralImpulse(jumpImpulse);
     
     isJumping = true;
-    jumpCooldown = 0.1f;  // Very responsive jumping
+    jumpCooldown = 0.2f;  // Moderate cooldown to prevent rapid spam but allow normal jumping
 }
 
 bool HumanoidCharacter::isOnGround() const {
-    if (!characterBody || !physicsWorld) return false;
+    if (!characterBody || !physicsWorld) {
+        printf("isOnGround: no body/world\n");
+        return false;
+    }
     
     // Raycast downward to check for ground
     btTransform transform;
     characterBody->getMotionState()->getWorldTransform(transform);
     btVector3 origin = transform.getOrigin();
     
-    // Cast from bottom of capsule down slightly - more generous detection
-    float halfHeight = GameSettings::Character::HEIGHT / 2;
-    btVector3 from = origin + btVector3(0, -halfHeight + 0.05f, 0); // Start closer to bottom
-    btVector3 to = origin + btVector3(0, -halfHeight - 0.3f, 0); // Check further down
+    // Professional ground detection using dynamic calculations
+    float groundContactOffset = GameSettings::CharacterCalculations::getGroundContactOffset();
+    btVector3 from = origin + btVector3(0, groundContactOffset + 0.05f, 0); // Start slightly above ground contact
+    btVector3 to = origin + btVector3(0, groundContactOffset - 0.25f, 0); // Check below ground contact
+    
+    printf("Raycast: from(%.2f,%.2f,%.2f) to(%.2f,%.2f,%.2f)\n", 
+           from.getX(), from.getY(), from.getZ(), to.getX(), to.getY(), to.getZ());
     
     btCollisionWorld::ClosestRayResultCallback rayCallback(from, to);
+    // Raycast with group 1 (world objects), exclude group 2 (character)
     rayCallback.m_collisionFilterGroup = 1;
-    rayCallback.m_collisionFilterMask = -1;
+    rayCallback.m_collisionFilterMask = 1; // Only hit world objects, not the character itself
     
     physicsWorld->rayTest(from, to, rayCallback);
     
-    // More lenient velocity check for jumping - allow jumping even with some vertical movement
+    // Balanced velocity check - allow for small physics fluctuations but prevent air jumps
     btVector3 velocity = characterBody->getLinearVelocity();
-    bool velocityCheck = velocity.getY() < 2.0f && velocity.getY() > -2.0f;  // More lenient
+    bool velocityCheck = velocity.getY() < 1.0f && velocity.getY() > -1.0f;  // More reasonable
     
-    return rayCallback.hasHit() && velocityCheck;
+    bool hasHit = rayCallback.hasHit();
+    bool result = hasHit && velocityCheck;
+    
+    printf("Raycast result: hit=%s, velocity.y=%.2f, velocityOK=%s, final=%s\n", 
+           hasHit ? "YES" : "NO", velocity.getY(), velocityCheck ? "YES" : "NO", result ? "ON_GROUND" : "NOT_ON_GROUND");
+    
+    return result;
 }
 
 Vector3 HumanoidCharacter::getFeetPosition() const {
@@ -393,9 +447,10 @@ Vector3 HumanoidCharacter::getFeetPosition() const {
     characterBody->getMotionState()->getWorldTransform(transform);
     btVector3 origin = transform.getOrigin();
     
-    // Return feet position (bottom of capsule)
-    float halfHeight = GameSettings::Character::HEIGHT / 2;
-    return {origin.getX(), origin.getY() - halfHeight, origin.getZ()};
+    // Return feet position (ground contact point) using professional calculations
+    return {origin.getX(), 
+            GameSettings::CharacterCalculations::getGroundYFromPhysicsCenterY(origin.getY()), 
+            origin.getZ()};
 }
 
 Vector3 HumanoidCharacter::getTorsoPosition() const {

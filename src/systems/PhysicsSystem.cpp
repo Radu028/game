@@ -64,7 +64,11 @@ void PhysicsSystem::addObject(GameObject* obj) {
         body->setSpinningFriction(2.0f);
         body->setDamping(0.8f, 0.8f);
     }
-    dynamicsWorld->addRigidBody(body);
+    
+    // Add world objects with collision group 1, collide with everything (-1)
+    short worldGroup = 1;
+    short worldMask = -1; // World objects collide with everything
+    dynamicsWorld->addRigidBody(body, worldGroup, worldMask);
     obj->setBulletBody(body);
     objectToBody[obj] = body;
     physicsObjects.push_back(obj);
