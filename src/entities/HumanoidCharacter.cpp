@@ -196,12 +196,12 @@ void HumanoidCharacter::updateVisualPositions() {
     // Update main position ONCE per frame (at feet level) - SINGLE UPDATE
     position = {origin.getX(), origin.getY() - GameSettings::Character::HEIGHT/2, origin.getZ()};
     
-    // Get rotation (only Y-axis rotation is allowed)
+    // Get rotation (only Y-axis rotation is allowed) - SINGLE CALCULATION
     btQuaternion rotation = transform.getRotation();
     float yRotation = atan2(2.0f * (rotation.getW() * rotation.getY() + rotation.getX() * rotation.getZ()),
                            1.0f - 2.0f * (rotation.getY() * rotation.getY() + rotation.getZ() * rotation.getZ()));
     
-    // Update each visual part position relative to physics body
+    // Update ALL visual parts in a SINGLE BATCH - no multiple calls per frame
     Vector3 rotatedOffset;
     
     // Head
@@ -228,16 +228,13 @@ void HumanoidCharacter::updateVisualPositions() {
     rotatedOffset = Vector3RotateByAxisAngle(rightLeg.currentOffset, {0, 1, 0}, yRotation);
     rightLeg.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
     
-    // Update facial features using the SAME transform (no redundant calls)
-    // Left Eye
+    // Facial features - update with SAME transform data
     rotatedOffset = Vector3RotateByAxisAngle(leftEye.currentOffset, {0, 1, 0}, yRotation);
     leftEye.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
     
-    // Right Eye
     rotatedOffset = Vector3RotateByAxisAngle(rightEye.currentOffset, {0, 1, 0}, yRotation);
     rightEye.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
     
-    // Mouth
     rotatedOffset = Vector3RotateByAxisAngle(mouth.currentOffset, {0, 1, 0}, yRotation);
     mouth.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
 }
@@ -289,11 +286,26 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
         return;
     }
     
-    // When moving, set target velocity directly for responsive movement
+    // Better movement with collision sliding - preserve Y velocity for jumping
     btVector3 targetVelocity(movement.x * speed, currentVelocity.getY(), movement.z * speed);
-    characterBody->setLinearVelocity(targetVelocity);
     
-    // Smooth rotation towards movement direction - NO OSCILLATION
+    // Apply movement force instead of setting velocity directly for better collision response
+    btVector3 velocityDiff = targetVelocity - currentVelocity;
+    velocityDiff.setY(0); // Don't interfere with jumping/gravity
+    
+    // Apply movement impulse for better collision handling and sliding
+    btVector3 movementImpulse = velocityDiff * GameSettings::Character::MASS * 0.1f;
+    characterBody->applyCentralImpulse(movementImpulse);
+    
+    // Limit maximum horizontal speed to prevent sliding
+    btVector3 vel = characterBody->getLinearVelocity();
+    float horizontalSpeed = sqrt(vel.getX() * vel.getX() + vel.getZ() * vel.getZ());
+    if (horizontalSpeed > speed) {
+        float scale = speed / horizontalSpeed;
+        characterBody->setLinearVelocity(btVector3(vel.getX() * scale, vel.getY(), vel.getZ() * scale));
+    }
+    
+    // Smooth rotation towards movement direction - PHYSICS-FRIENDLY approach
     if (Vector3Length(movement) > 0.1f) {
         float targetRotation = atan2(movement.x, movement.z);
         
@@ -313,28 +325,32 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
         while (angleDiff > M_PI) angleDiff -= 2 * M_PI;
         while (angleDiff < -M_PI) angleDiff += 2 * M_PI;
         
-        // Smooth interpolation to target rotation - NO OVERSHOOTING
-        float rotationSpeed = GameSettings::Character::TURN_SPEED * 0.016f; // Fixed timestep ~60fps
-        float newYRotation;
+        // Fast but gradual rotation - smooth and controlled
+        float rotationSpeed = GameSettings::Character::TURN_SPEED * 0.05f; // Smoother rotation to prevent stuttering
         
-        if (abs(angleDiff) < rotationSpeed) {
-            // Close enough - snap to target to prevent oscillation
-            newYRotation = targetRotation;
+        // Apply rotation as angular velocity instead of direct transform - smoother physics
+        if (abs(angleDiff) > 0.01f) { // Only apply if there's meaningful difference
+            float targetAngularVelocity = angleDiff * rotationSpeed * 60.0f; // Scale for smooth rotation
+            characterBody->setAngularVelocity(btVector3(0, targetAngularVelocity, 0));
         } else {
-            // Smooth rotation towards target
-            newYRotation = currentYRotation + (angleDiff > 0 ? rotationSpeed : -rotationSpeed);
+            // Close enough - stop rotation
+            characterBody->setAngularVelocity(btVector3(0, 0, 0));
         }
-        
-        // Apply the new rotation directly (no torque - prevents oscillation)
-        btQuaternion newRotation;
-        newRotation.setEulerZYX(0, newYRotation, 0);
-        transform.setRotation(newRotation);
-        characterBody->getMotionState()->setWorldTransform(transform);
+    } else {
+        // No movement - stop rotation
+        characterBody->setAngularVelocity(btVector3(0, 0, 0));
     }
 }
 
 void HumanoidCharacter::jump() {
-    if (!characterBody || jumpCooldown > 0.0f || !isOnGround()) return;  // Only jump when on ground
+    if (!characterBody || jumpCooldown > 0.0f) return;  // Remove strict ground check for wall jumping
+    
+    // Allow jumping if mostly on ground (more flexible)
+    if (!isOnGround()) {
+        // Check if character has some contact with ground (allow jumping against walls)
+        btVector3 velocity = characterBody->getLinearVelocity();
+        if (abs(velocity.getY()) > 3.0f) return; // Don't allow if moving too fast vertically
+    }
     
     // Realistic jump force - reduced from 3x to 2x for more realistic jumping
     btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 2.0f, 0);  // 2x for realistic jumping

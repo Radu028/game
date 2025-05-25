@@ -20,7 +20,7 @@ namespace GameSettings {
         static constexpr float DAMPING_LINEAR = 0.85f; // Reduced for smoother movement
         static constexpr float DAMPING_ANGULAR = 0.8f;
         static constexpr float MOVEMENT_SPEED = 5.0f;
-        static constexpr float TURN_SPEED = 8.0f; // How fast player turns toward movement direction
+        static constexpr float TURN_SPEED = 1.0f; // How fast player turns toward movement direction
     }
     
     // Camera constants
@@ -67,8 +67,8 @@ namespace GameSettings {
         static constexpr float GROUND_CHECK_TOLERANCE = 0.20f;
         static constexpr float VELOCITY_Y_THRESHOLD = 2.0f;
         static constexpr float SHAPE_MARGIN = 0.1f;
-        static constexpr float FRICTION = 0.8f; // Balanced friction - no sliding but smooth
-        static constexpr float ROLLING_FRICTION = 0.3f; // Moderate rolling friction
+        static constexpr float FRICTION = 0.4f; // Reduced friction for better sliding along walls
+        static constexpr float ROLLING_FRICTION = 0.2f; // Reduced rolling friction
         static constexpr float RESTITUTION = 0.0f;
     }
 }
