@@ -7,7 +7,7 @@
 #include "settings/Physics.h"
 
 int main() {
-  InitWindow(1280, 720, "Joc 3D");
+  InitWindow(1280, 720, "3D Game");
   SetTargetFPS(120);
 
   DisableCursor();

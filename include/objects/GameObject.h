@@ -18,7 +18,7 @@ class GameObject {
   bool affectedByGravity;
   bool isStatic;
   bool hasCollision;
-  btRigidBody* bulletBody = nullptr;  // Adaugă pointer la rigid body Bullet
+  btRigidBody* bulletBody = nullptr;  // Bullet physics rigid body pointer
 
  public:
   GameObject(Vector3 position, bool hasCollision = true,

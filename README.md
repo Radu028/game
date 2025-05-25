@@ -1,59 +1,44 @@
-# 3D Game Project with Professional Ragdoll Physics
+# 3D Game Project with Humanoid Character Physics
 
-This project implements a 3D game using the raylib library with advanced physics simulation. The game features a professional ragdoll character with individual physics bodies for each limb, providing realistic collision detection and movement.
+This project implements a 3D game using the raylib library with Bullet physics simulation. The game features a humanoid character controller with unified physics and visual animation system, providing smooth character movement and collision detection.
 
 ## Project Structure
 
 The code is organized into header (.h) and source (.cpp) files, with related classes grouped together. The main components are:
 
 - `GameObject` base class and its derivatives
-- **FullRagdoll** - Professional ragdoll with individual physics bodies
-- SimpleRagdoll - Basic single-body character (legacy)
+- **HumanoidCharacter** - Main character implementation with unified physics body and visual animation
 - Exception handling system
 - Game world management
 - Various specialized cube objects
 
 ## Key Features
 
-### Advanced Ragdoll Physics
-- **Individual Physics Bodies**: Separate collision detection for head, torso, arms, and legs
-- **Collision Filtering**: Ragdoll parts don't interfere with each other while maintaining environment collision
-- **Professional Ground Detection**: Individual leg raycasting for accurate ground contact
-- **Constraint System**: Point-to-point joints keep body parts naturally connected
-- **Realistic Mass Distribution**: Proper weight distribution across body parts
+### Humanoid Character System
+- **Unified Physics Body**: Single physics body for stable and reliable character movement
+- **Visual Animation System**: Separate visual components for head, torso, arms, legs, and facial features
+- **Professional Character Controller**: Smooth movement with walking, jumping, and idle animations
+- **Individual Part Collision Detection**: Visual parts can detect collisions with environment objects
+- **Realistic Ground Detection**: Foot-based ground contact detection for accurate jumping
+- **State-Based Animation**: Different animations for idle, walking, and jumping states
 
 ### Code Organization
 - All classes are separated into header (.h) and implementation (.cpp) files
 - Related classes are grouped in directories (entities, objects, systems, exceptions)
 - No `using namespace std` is used anywhere in the code
 
-## Ragdoll Implementations
+## Character Implementation
 
-This project features two different ragdoll implementations:
+The project uses `HumanoidCharacter` as the main character implementation:
 
-### FullRagdoll (Professional Implementation) - ✅ FULLY STABLE
-- **Individual Physics Bodies**: Each body part (head, torso, arms, legs) has its own `btRigidBody`
-- **Ultra-Strong Constraints**: Massive constraint forces prevent any limb separation or collapse
-- **Advanced Collision System**: Uses collision filtering to prevent inter-limb collision while maintaining environment interaction
-- **Precise Ground Detection**: Individual leg raycasting for accurate ground contact detection
-- **Robust Stabilization**: Powerful stabilization forces keep character upright automatically
-- **Realistic Physics**: Proper mass distribution and balanced gravity for natural movement
-- **Reliable Jumping**: Enhanced jump system that works consistently
-- **Problem Resolution**: Completely eliminates all stability issues, leg clipping, and movement problems
-
-### SimpleRagdoll (Legacy Implementation)
-- **Single Physics Body**: Uses one `btCapsuleShape` for the entire character
-- **Basic Collision**: Simple body-environment collision detection
-- **Limited Ground Detection**: Single-point ground checking
-- **Animation-Based Movement**: Visual limb animation without individual physics
-- **Known Issues**: Legs can clip through floor, arms pass through objects
-
-### Migration from SimpleRagdoll to FullRagdoll
-The project has been updated to use `FullRagdoll` by default for:
-- More realistic physics simulation
-- Better collision detection per body part
-- Improved stability and movement
-- Professional-grade character physics
+### HumanoidCharacter Features
+- **Single Physics Body**: Uses one `btCapsuleShape` for stable character physics
+- **Visual Animation System**: Separate visual parts for head, torso, arms, legs with smooth animations
+- **Facial Features**: Eyes and mouth for character expression
+- **State-Based Animation**: Idle breathing, walking cycles, and jump poses
+- **Collision Prediction**: Can predict and prevent collisions before movement
+- **Professional Controls**: WASD movement, Space for jumping, smooth camera following
+- **Bullet Physics Integration**: Proper integration with Bullet physics for realistic movement
 
 ## Inheritance Hierarchy
 - Base class: `GameObject`
@@ -135,5 +120,6 @@ make
 ```
 
 ## Controls
-- WASD: Move the player
+- WASD: Move the character
+- SPACE: Jump
 - ESC: Exit the game

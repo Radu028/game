@@ -528,9 +528,43 @@ bool HumanoidCharacter::wouldCollideAfterMovement(Vector3 movement, float deltaT
     tempLeftLeg.currentOffset = Vector3Add(tempLeftLeg.currentOffset, predictedMovement);
     tempRightLeg.currentOffset = Vector3Add(tempRightLeg.currentOffset, predictedMovement);
     
-    // TODO: Check against world obstacles
-    // This would require access to world collision objects
-    // For now, return false (no collision predicted)
+    // Check predicted positions against world obstacles
+    Vector3 predictedPosition = Vector3Add(originalPos, predictedMovement);
+    
+    // Create bounding boxes for predicted character parts
+    Vector3 headPos = Vector3Add(predictedPosition, tempHead.currentOffset);
+    Vector3 torsoPos = Vector3Add(predictedPosition, tempTorso.currentOffset);
+    Vector3 leftArmPos = Vector3Add(predictedPosition, tempLeftArm.currentOffset);
+    Vector3 rightArmPos = Vector3Add(predictedPosition, tempRightArm.currentOffset);
+    Vector3 leftLegPos = Vector3Add(predictedPosition, tempLeftLeg.currentOffset);
+    Vector3 rightLegPos = Vector3Add(predictedPosition, tempRightLeg.currentOffset);
+    
+    // Get bounding boxes for each part at predicted positions
+    BoundingBox predictedHeadBox = {
+        {headPos.x - tempHead.visual.getSize().x/2, headPos.y - tempHead.visual.getSize().y/2, headPos.z - tempHead.visual.getSize().z/2},
+        {headPos.x + tempHead.visual.getSize().x/2, headPos.y + tempHead.visual.getSize().y/2, headPos.z + tempHead.visual.getSize().z/2}
+    };
+    
+    BoundingBox predictedTorsoBox = {
+        {torsoPos.x - tempTorso.visual.getSize().x/2, torsoPos.y - tempTorso.visual.getSize().y/2, torsoPos.z - tempTorso.visual.getSize().z/2},
+        {torsoPos.x + tempTorso.visual.getSize().x/2, torsoPos.y + tempTorso.visual.getSize().y/2, torsoPos.z + tempTorso.visual.getSize().z/2}
+    };
+    
+    // Check against world objects (simple implementation)
+    // This is a basic collision prediction - in a full implementation, 
+    // you would iterate through all world objects and check collisions
+    const auto& objects = world->getObjects();
+    for (const auto& obj : objects) {
+        if (obj.get() == this) continue; // Skip self
+        
+        BoundingBox objBox = obj->getBoundingBox();
+        
+        // Check if any predicted part would collide
+        if (CheckCollisionBoxes(predictedHeadBox, objBox) ||
+            CheckCollisionBoxes(predictedTorsoBox, objBox)) {
+            return true;
+        }
+    }
     
     return false;
 }
