@@ -26,17 +26,44 @@ int main() {
 
   player1->setupPhysics(world->getDynamicsWorld());
 
-  world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 0.5f, 0.0f},
+  world->addObject(std::make_shared<CubeObject>((Vector3){2.0f, 1.0f, 0.0f},
                                                 (Vector3){1.0f, 2.0f, 1.0f},
-                                                PINK, true, "", true, false));
+                                                PINK, true, "", false, true)); // Static cube
 
   world->addObject(std::make_shared<CubeObject>(
-      (Vector3){-2.0f, 0.5f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, SKYBLUE, true,
-      "", true, false));
+      (Vector3){-2.0f, 1.0f, 0.0f}, (Vector3){1.0f, 1.0f, 1.0f}, SKYBLUE, true,
+      "", false, true)); // Static cube
 
-  world->addObject(std::make_shared<CubeObject>((Vector3){0.0f, 0.5f, 2.0f},
+  world->addObject(std::make_shared<CubeObject>((Vector3){0.0f, 1.0f, 2.0f},
                                                 (Vector3){1.0f, 1.0f, 1.0f},
-                                                ORANGE, true, "", true, false));
+                                                ORANGE, true, "", false, true)); // Static cube
+
+  // Add a tall platform for jump testing
+  world->addObject(std::make_shared<CubeObject>((Vector3){4.0f, 1.5f, 0.0f},
+                                                (Vector3){1.5f, 3.0f, 1.5f},
+                                                GREEN, true, "", false, true)); // Static cube
+
+  // Add more cubes for climbing and jumping practice
+  world->addObject(std::make_shared<CubeObject>((Vector3){-4.0f, 0.5f, 2.0f},
+                                                (Vector3){1.0f, 1.0f, 1.0f},
+                                                RED, true, "", false, true)); // Static cube
+
+  world->addObject(std::make_shared<CubeObject>((Vector3){6.0f, 1.0f, -2.0f},
+                                                (Vector3){2.0f, 2.0f, 1.0f},
+                                                PURPLE, true, "", false, true)); // Static cube
+
+  // Create a stepping stone pattern for jump testing
+  world->addObject(std::make_shared<CubeObject>((Vector3){1.0f, 0.5f, -4.0f},
+                                                (Vector3){1.0f, 1.0f, 1.0f},
+                                                YELLOW, true, "", false, true)); // Static cube
+
+  world->addObject(std::make_shared<CubeObject>((Vector3){2.5f, 1.0f, -4.0f},
+                                                (Vector3){1.0f, 2.0f, 1.0f},
+                                                MAROON, true, "", false, true)); // Static cube
+
+  world->addObject(std::make_shared<CubeObject>((Vector3){4.0f, 1.5f, -4.0f},
+                                                (Vector3){1.0f, 3.0f, 1.0f},
+                                                LIME, true, "", false, true)); // Static cube
 
   world->addObject(std::make_shared<Floor>(
       (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){10.0f, 1.0f, 10.0f},

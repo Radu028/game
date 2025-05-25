@@ -6,7 +6,7 @@
 namespace GameSettings {
     // Physics constants
     namespace Physics {
-        static constexpr float GRAVITY_ACCELERATION = -19.6f; // Reduced gravity for better stability
+        static constexpr float GRAVITY_ACCELERATION = -30.0f; // More realistic gravity for less floaty jumps
     }
     
     // Player/Character constants
@@ -15,11 +15,12 @@ namespace GameSettings {
         static constexpr float RADIUS = 0.3f;
         static constexpr float MASS = 70.0f;
         static constexpr float MOVEMENT_FORCE = 1500.0f;
-        static constexpr float JUMP_IMPULSE = 150.0f; // Much stronger jump power
+        static constexpr float JUMP_IMPULSE = 400.0f; // Realistic jump power - was too strong
         static constexpr float MAX_SPEED = 8.0f;
         static constexpr float DAMPING_LINEAR = 0.85f; // Reduced for smoother movement
         static constexpr float DAMPING_ANGULAR = 0.8f;
         static constexpr float MOVEMENT_SPEED = 5.0f;
+        static constexpr float TURN_SPEED = 8.0f; // How fast player turns toward movement direction
     }
     
     // Camera constants

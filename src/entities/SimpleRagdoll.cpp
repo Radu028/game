@@ -134,17 +134,6 @@ void SimpleRagdoll::updateVisualFromPhysics() {
     leftLeg.setPosition(leftLegPos);
     rightLeg.setPosition(rightLegPos);
     
-    float yaw = 0.0f;
-    rotation.getEulerZYX(yaw, yaw, yaw);
-    Vector3 rotAxis = {0, 1, 0};
-    
-    head.setRotation(rotAxis, yaw * RAD2DEG);
-    torso.setRotation(rotAxis, yaw * RAD2DEG);
-    leftArm.setRotation(rotAxis, yaw * RAD2DEG);
-    rightArm.setRotation(rotAxis, yaw * RAD2DEG);
-    leftLeg.setRotation(rotAxis, yaw * RAD2DEG);
-    rightLeg.setRotation(rotAxis, yaw * RAD2DEG);
-    
     this->position = centerPos;
 }
 
@@ -154,6 +143,14 @@ void SimpleRagdoll::animateLimbs(float deltaTime) {
     btVector3 velocity = physicsBody->getLinearVelocity();
     float speedSquared = velocity.x() * velocity.x() + velocity.z() * velocity.z();
     bool isMoving = speedSquared > GameSettings::Animation::SPEED_THRESHOLD;
+    
+    // Get current body rotation for applying relative animations
+    btTransform transform;
+    physicsBody->getMotionState()->getWorldTransform(transform);
+    btQuaternion rotation = transform.getRotation();
+    float yaw = 0.0f;
+    rotation.getEulerZYX(yaw, yaw, yaw);
+    Vector3 rotAxis = {0, 1, 0};
     
     if (isMoving) {
         float speed = sqrtf(speedSquared);
@@ -170,15 +167,23 @@ void SimpleRagdoll::animateLimbs(float deltaTime) {
         float armSwing = triangleWave * GameSettings::Animation::ARM_SWING_AMOUNT;
         float legSwing = triangleWave * GameSettings::Animation::LEG_SWING_AMOUNT;
         
+        // Apply body rotation + arm swing animation
         leftArm.setRotation({1, 0, 0}, armSwing);
         rightArm.setRotation({1, 0, 0}, -armSwing);
         leftLeg.setRotation({1, 0, 0}, -legSwing);
         rightLeg.setRotation({1, 0, 0}, legSwing);
+        
+        // Apply body rotation to torso and head
+        head.setRotation(rotAxis, yaw * RAD2DEG);
+        torso.setRotation(rotAxis, yaw * RAD2DEG);
     } else {
-        leftArm.setRotation({1, 0, 0}, 0.0f);
-        rightArm.setRotation({1, 0, 0}, 0.0f);
-        leftLeg.setRotation({1, 0, 0}, 0.0f);
-        rightLeg.setRotation({1, 0, 0}, 0.0f);
+        // Reset to body orientation when not moving
+        head.setRotation(rotAxis, yaw * RAD2DEG);
+        torso.setRotation(rotAxis, yaw * RAD2DEG);
+        leftArm.setRotation(rotAxis, yaw * RAD2DEG);
+        rightArm.setRotation(rotAxis, yaw * RAD2DEG);
+        leftLeg.setRotation(rotAxis, yaw * RAD2DEG);
+        rightLeg.setRotation(rotAxis, yaw * RAD2DEG);
     }
 }
 
@@ -243,8 +248,6 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
 
     Vector2 moveAxis = InputSystem::getMovementAxis();
     
-
-
     if (InputSystem::isJumpPressed()) {
         bool onGround = isOnGround();
                
@@ -263,20 +266,44 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
         }
         
         btVector3 velocity = physicsBody->getLinearVelocity();
-        
         float preservedY = velocity.y();
         
+        // Apply movement
         float targetSpeed = movementSpeed;
         velocity.setX(movement.x * targetSpeed);
         velocity.setZ(movement.z * targetSpeed);
-        
         velocity.setY(preservedY);
         physicsBody->setLinearVelocity(velocity);
         
-
-        
-
-        
+        // Rotate toward movement direction
+        if (lengthSquared > 0.01f) {
+            btTransform transform;
+            physicsBody->getMotionState()->getWorldTransform(transform);
+            
+            // Calculate target rotation
+            float targetYaw = atan2f(movement.x, movement.z);
+            
+            // Get current rotation
+            btQuaternion currentRotation = transform.getRotation();
+            float currentYaw, pitch, roll;
+            currentRotation.getEulerZYX(roll, currentYaw, pitch);
+            
+            // Smoothly interpolate to target yaw
+            float deltaTime = GetFrameTime();
+            float yawDiff = targetYaw - currentYaw;
+            
+            // Normalize angle difference to [-PI, PI]
+            while (yawDiff > PI) yawDiff -= 2.0f * PI;
+            while (yawDiff < -PI) yawDiff += 2.0f * PI;
+            
+            float newYaw = currentYaw + yawDiff * GameSettings::Character::TURN_SPEED * deltaTime;
+            
+            // Apply new rotation
+            btQuaternion newRotation;
+            newRotation.setEulerZYX(0, newYaw, 0);
+            transform.setRotation(newRotation);
+            physicsBody->setWorldTransform(transform);
+        }
     } else if (isOnGround()) {
         btVector3 velocity = physicsBody->getLinearVelocity();
         velocity.setX(0);
@@ -288,21 +315,17 @@ void SimpleRagdoll::handleInput(float movementSpeed) {
 void SimpleRagdoll::jump() {
     if (!physicsBody) return;
     
+    // Clear vertical velocity first
     btVector3 velocity = physicsBody->getLinearVelocity();
     velocity.setY(0);
     physicsBody->setLinearVelocity(velocity);
     
-    btVector3 jumpVelocity = physicsBody->getLinearVelocity();
-    jumpVelocity.setY(8.0f);
-    physicsBody->setLinearVelocity(jumpVelocity);
-    
-    float jumpForce = GameSettings::Character::JUMP_IMPULSE * 2.0f;
+    // Apply more realistic jump impulse
+    float jumpForce = GameSettings::Character::JUMP_IMPULSE;
     btVector3 jumpImpulse(0, jumpForce, 0);
     physicsBody->applyCentralImpulse(jumpImpulse);
     
     physicsBody->activate(true);
-    
-    physicsBody->setContactProcessingThreshold(1.0f);
 }
 
 void SimpleRagdoll::update(float deltaTime) {

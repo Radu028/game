@@ -2,6 +2,7 @@
 #include "entities/HumanoidCharacter.h"
 #include "GameWorld.h"
 #include "systems/InputSystem.h"
+#include "raylib.h"
 #include "raymath.h"
 #include <cmath>
 
@@ -292,11 +293,11 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
     btVector3 targetVelocity(movement.x * speed, currentVelocity.getY(), movement.z * speed);
     characterBody->setLinearVelocity(targetVelocity);
     
-    // Smooth rotation towards movement direction using torque for better physics integration
+    // Smooth rotation towards movement direction - NO OSCILLATION
     if (Vector3Length(movement) > 0.1f) {
         float targetRotation = atan2(movement.x, movement.z);
         
-        // Get current rotation (necessary for rotation calculations - different from position sync)
+        // Get current rotation
         btTransform transform;
         characterBody->getMotionState()->getWorldTransform(transform);
         btQuaternion currentRotation = transform.getRotation();
@@ -305,25 +306,38 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
         float currentYRotation = atan2(2.0f * (currentRotation.getW() * currentRotation.getY() + currentRotation.getX() * currentRotation.getZ()),
                                      1.0f - 2.0f * (currentRotation.getY() * currentRotation.getY() + currentRotation.getZ() * currentRotation.getZ()));
         
-        // Calculate rotation difference and apply torque
+        // Calculate rotation difference
         float angleDiff = targetRotation - currentYRotation;
         
         // Handle angle wrapping
         while (angleDiff > M_PI) angleDiff -= 2 * M_PI;
         while (angleDiff < -M_PI) angleDiff += 2 * M_PI;
         
-        // Apply rotational torque instead of directly setting rotation (better physics integration)
-        float torqueMultiplier = 80.0f; // Adjust for rotation responsiveness
-        btVector3 rotationTorque(0, angleDiff * torqueMultiplier, 0);
-        characterBody->applyTorque(rotationTorque);
+        // Smooth interpolation to target rotation - NO OVERSHOOTING
+        float rotationSpeed = GameSettings::Character::TURN_SPEED * 0.016f; // Fixed timestep ~60fps
+        float newYRotation;
+        
+        if (abs(angleDiff) < rotationSpeed) {
+            // Close enough - snap to target to prevent oscillation
+            newYRotation = targetRotation;
+        } else {
+            // Smooth rotation towards target
+            newYRotation = currentYRotation + (angleDiff > 0 ? rotationSpeed : -rotationSpeed);
+        }
+        
+        // Apply the new rotation directly (no torque - prevents oscillation)
+        btQuaternion newRotation;
+        newRotation.setEulerZYX(0, newYRotation, 0);
+        transform.setRotation(newRotation);
+        characterBody->getMotionState()->setWorldTransform(transform);
     }
 }
 
 void HumanoidCharacter::jump() {
-    if (!characterBody || jumpCooldown > 0.0f) return;
+    if (!characterBody || jumpCooldown > 0.0f || !isOnGround()) return;  // Only jump when on ground
     
-    // Much stronger jump - quintuple the power!
-    btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 5.0f, 0);  // 5x stronger!
+    // Realistic jump force - reduced from 3x to 2x for more realistic jumping
+    btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 2.0f, 0);  // 2x for realistic jumping
     characterBody->applyCentralImpulse(jumpImpulse);
     
     isJumping = true;
@@ -338,10 +352,10 @@ bool HumanoidCharacter::isOnGround() const {
     characterBody->getMotionState()->getWorldTransform(transform);
     btVector3 origin = transform.getOrigin();
     
-    // Cast from bottom of capsule down slightly
+    // Cast from bottom of capsule down slightly - more generous detection
     float halfHeight = GameSettings::Character::HEIGHT / 2;
-    btVector3 from = origin + btVector3(0, -halfHeight + 0.1f, 0); // Start slightly above bottom
-    btVector3 to = origin + btVector3(0, -halfHeight - GameSettings::Collision::GROUND_CHECK_DISTANCE, 0);
+    btVector3 from = origin + btVector3(0, -halfHeight + 0.05f, 0); // Start closer to bottom
+    btVector3 to = origin + btVector3(0, -halfHeight - 0.3f, 0); // Check further down
     
     btCollisionWorld::ClosestRayResultCallback rayCallback(from, to);
     rayCallback.m_collisionFilterGroup = 1;
@@ -349,9 +363,9 @@ bool HumanoidCharacter::isOnGround() const {
     
     physicsWorld->rayTest(from, to, rayCallback);
     
-    // More lenient velocity check for jumping
+    // More lenient velocity check for jumping - allow jumping even with some vertical movement
     btVector3 velocity = characterBody->getLinearVelocity();
-    bool velocityCheck = velocity.getY() < 1.0f && velocity.getY() > -1.0f;  // Less strict
+    bool velocityCheck = velocity.getY() < 2.0f && velocity.getY() > -2.0f;  // More lenient
     
     return rayCallback.hasHit() && velocityCheck;
 }
