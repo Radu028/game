@@ -131,6 +131,8 @@ private:
     FacialFeature leftEye;
     FacialFeature rightEye;
     FacialFeature mouth;
+    FacialFeature leftEyebrow;
+    FacialFeature rightEyebrow;
     
     GameWorld* world = nullptr;
     

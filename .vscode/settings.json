@@ -62,7 +62,7 @@
     "memory": "cpp"
   },
   "github.copilot.enable": {
-    "*": true,
+    "*": false,
     "plaintext": false,
     "markdown": true,
     "scminput": false

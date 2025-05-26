@@ -13,7 +13,7 @@ ShaderSystem::ShaderSystem()
     : initialized(false), 
       sunDirection({-0.3f, -1.0f, -0.4f}),
       sunColor({1.0f, 0.9f, 0.7f}),
-      ambientStrength(0.3f),
+      ambientStrength(0.5f),
       sunDirectionLoc(-1),
       sunColorLoc(-1),
       ambientStrengthLoc(-1),
