@@ -1,5 +1,7 @@
 #include "objects/GameObject.h"
+
 #include <btBulletDynamicsCommon.h>
+
 #include <cmath>
 
 #include "GameWorld.h"
@@ -17,11 +19,8 @@ GameObject::GameObject(Vector3 position, bool hasCollision,
       bulletBody(nullptr) {}
 
 GameObject::~GameObject() {
-  if (bulletBody) {
-    delete bulletBody->getMotionState();
-    delete bulletBody->getCollisionShape();
-    delete bulletBody;
-  }
+  // Don't clean up bulletBody here - PhysicsSystem manages it
+  // This prevents double deletion which could cause segmentation faults
 }
 
 bool GameObject::checkCollision(const GameObject& other) const {
@@ -38,7 +37,7 @@ bool GameObject::checkCollisionWith(const BoundingBox& otherBox) const {
 
 float GameObject::getDistance(const GameObject& other) const {
   float dx = other.position.x - this->position.x;
-  float dy = other.position.y - this->position.y; 
+  float dy = other.position.y - this->position.y;
   float dz = other.position.z - this->position.z;
   return sqrtf(dx * dx + dy * dy + dz * dz);
 }

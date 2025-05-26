@@ -1,8 +1,9 @@
 #ifndef GAMEOBJECT_H
 #define GAMEOBJECT_H
 
-#include <memory>  // For std::shared_ptr
 #include <btBulletDynamicsCommon.h>
+
+#include <memory>  // For std::shared_ptr
 
 #include "GameWorld.h"
 #include "raylib.h"
@@ -41,6 +42,7 @@ class GameObject {
 
   virtual void draw() const = 0;
   virtual BoundingBox getBoundingBox() const = 0;
+  virtual std::unique_ptr<GameObject> clone() const = 0;
 
   virtual void update(float deltaTime) {};
   virtual void interact() {};
