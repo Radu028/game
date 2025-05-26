@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "objects/GameObject.h"
 #include "raylib.h"
 
@@ -15,9 +17,34 @@ class BodyPart : public GameObject {
   Model model;
   bool useShaders;
 
+  // Health-related members for academic requirements
+  std::string name;
+  float health;
+  float maxHealth;
+  bool isInjured;
+  std::string injuryType;
+
  public:
   BodyPart(Vector3 position, Vector3 size, Color color,
            bool hasCollision = true, bool useShaders = true);
+
+  // Copy constructor
+  BodyPart(const BodyPart& other);
+
+  // Assignment operator using copy-and-swap idiom
+  BodyPart& operator=(const BodyPart& other);
+
+  // Move constructor
+  BodyPart(BodyPart&& other) noexcept;
+
+  // Move assignment operator
+  BodyPart& operator=(BodyPart&& other) noexcept;
+
+  // Destructor
+  ~BodyPart() override;
+
+  // Friend function for swap (part of copy-and-swap idiom)
+  friend void swap(BodyPart& first, BodyPart& second) noexcept;
 
   void setRotation(const Vector3 axis, float angle);
   void setPosition(Vector3 newPos);
@@ -27,11 +54,29 @@ class BodyPart : public GameObject {
 
   float getRotationAngle() const;
   Vector3 getRotationAxis() const;
-  
+
   void setUseShaders(bool use) { useShaders = use; }
 
   void draw() const override;
   BoundingBox getBoundingBox() const override;
+  std::unique_ptr<GameObject> clone() const override;
+
+  // Health-related methods for academic requirements
+  void setName(const std::string& partName) { name = partName; }
+  void setHealth(float currentHealth, float maximum) {
+    health = currentHealth;
+    maxHealth = maximum;
+  }
+  const std::string& getName() const { return name; }
+  float getHealth() const { return health; }
+  float getMaxHealth() const { return maxHealth; }
+  bool getIsInjured() const { return isInjured; }
+  const std::string& getInjuryType() const { return injuryType; }
+
+  void takeDamage(float damage);
+  void heal(float amount);
+  float getHealthPercentage() const;
+  void displayStatus() const;
 
   void setBulletBody(btRigidBody* body) { GameObject::setBulletBody(body); }
   btRigidBody* getBulletBody() const { return GameObject::getBulletBody(); }
