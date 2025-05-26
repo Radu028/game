@@ -1,0 +1,98 @@
+#pragma once
+
+#include "raylib.h"
+
+// Forward declarations
+class NPC;
+
+// State pattern for NPC behavior
+class NPCState {
+ public:
+  virtual ~NPCState() = default;
+  virtual void enter(NPC* npc) = 0;
+  virtual void update(NPC* npc, float deltaTime) = 0;
+  virtual void exit(NPC* npc) = 0;
+  virtual const char* getName() const = 0;
+};
+
+// Concrete states
+class IdleState : public NPCState {
+ public:
+  void enter(NPC* npc) override;
+  void update(NPC* npc, float deltaTime) override;
+  void exit(NPC* npc) override;
+  const char* getName() const override { return "Idle"; }
+
+ private:
+  float idleTime = 0.0f;
+  const float maxIdleTime = 0.5f;
+};
+
+class MovingToShopState : public NPCState {
+ public:
+  void enter(NPC* npc) override;
+  void update(NPC* npc, float deltaTime) override;
+  void exit(NPC* npc) override;
+  const char* getName() const override { return "MovingToShop"; }
+
+ private:
+  enum class WaypointStage {
+    SIDE_APPROACH,
+    FINAL_APPROACH,
+    DIRECT_TO_ENTRANCE
+  };
+
+  Vector3 targetPosition;
+  bool hasTarget = false;
+
+  // Pathfinding waypoints
+  Vector3 intermediateTarget;
+  bool hasIntermediateTarget = false;
+  WaypointStage currentStage = WaypointStage::SIDE_APPROACH;
+
+  // Stuck detection
+  Vector3 lastPosition = {0, 0, 0};
+  float stuckTimer = 0.0f;
+  bool hasUsedAlternateApproach = false;
+};
+
+class ShoppingState : public NPCState {
+ public:
+  void enter(NPC* npc) override;
+  void update(NPC* npc, float deltaTime) override;
+  void exit(NPC* npc) override;
+  const char* getName() const override { return "Shopping"; }
+
+ private:
+  float shoppingTime = 0.0f;
+  float maxShoppingTime = 8.0f;
+  float fruitSearchTimer = 0.0f;
+  Vector3 currentTarget = {0, 0, 0};
+  bool hasCurrentTarget = false;
+};
+
+class WanderingState : public NPCState {
+ public:
+  void enter(NPC* npc) override;
+  void update(NPC* npc, float deltaTime) override;
+  void exit(NPC* npc) override;
+  const char* getName() const override { return "Wandering"; }
+
+ private:
+  Vector3 wanderTarget;
+  float wanderTime = 0.0f;
+  float maxWanderTime = 3.0f;
+  bool hasWanderTarget = false;
+};
+
+class LeavingState : public NPCState {
+ public:
+  void enter(NPC* npc) override;
+  void update(NPC* npc, float deltaTime) override;
+  void exit(NPC* npc) override;
+  const char* getName() const override { return "Leaving"; }
+
+ private:
+  Vector3 exitTarget;
+  bool hasExitTarget = false;
+};
