@@ -1,9 +1,18 @@
 #include "GameWorld.h"
 
 #include <algorithm>
+#include <ctime>
+#include <iomanip>
+#include <sstream>
+
 #include "systems/PhysicsSystem.h"
 
+// Static member definitions
 GameWorld* GameWorld::instance = nullptr;
+size_t GameWorld::totalObjectsCreated = 0;
+size_t GameWorld::totalObjectsDestroyed = 0;
+std::unordered_map<std::string, size_t> GameWorld::objectTypeCount;
+std::string GameWorld::creationTimestamp;
 
 GameWorld* GameWorld::getInstance(GameObject* player) {
   if (instance == nullptr) {
@@ -12,7 +21,14 @@ GameWorld* GameWorld::getInstance(GameObject* player) {
   return instance;
 }
 
-GameWorld::GameWorld(GameObject* player) : player(player) {
+GameWorld::GameWorld(GameObject* player, const std::string& name)
+    : player(player), worldName(name) {
+  // Set creation timestamp
+  auto now = std::time(nullptr);
+  std::stringstream ss;
+  ss << std::put_time(std::localtime(&now), "%Y-%m-%d %H:%M:%S");
+  creationTimestamp = ss.str();
+
   physicsSystem = std::make_unique<PhysicsSystem>(this);
 
   if (this->player) {
@@ -71,5 +87,5 @@ void GameWorld::draw() const {
 }
 
 btDiscreteDynamicsWorld* GameWorld::getBulletWorld() const {
-    return physicsSystem ? physicsSystem->dynamicsWorld : nullptr;
+  return physicsSystem ? physicsSystem->dynamicsWorld : nullptr;
 }
