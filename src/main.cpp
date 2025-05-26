@@ -2,6 +2,7 @@
 #include "entities/HumanoidCharacter.h"
 #include "objects/CubeObject.h"
 #include "objects/Floor.h"
+#include "objects/Sphere.h"
 #include "raylib.h"
 #include "settings/Physics.h"
 #include "systems/InputSystem.h"
@@ -52,12 +53,10 @@ int main() {
       (Vector3){0.0f, 1.0f, 2.0f}, (Vector3){1.0f, 1.0f, 1.0f}, ORANGE, true,
       "", false, true));  // Static cube
 
-  // Add a tall platform for jump testing
   world->addObject(std::make_shared<CubeObject>(
       (Vector3){4.0f, 1.5f, 0.0f}, (Vector3){1.5f, 3.0f, 1.5f}, GREEN, true, "",
       false, true));  // Static cube
 
-  // Add more cubes for climbing and jumping practice
   world->addObject(std::make_shared<CubeObject>(
       (Vector3){-4.0f, 0.5f, 2.0f}, (Vector3){1.0f, 1.0f, 1.0f}, RED, true, "",
       false, true));  // Static cube
@@ -66,7 +65,6 @@ int main() {
       (Vector3){6.0f, 1.0f, -2.0f}, (Vector3){2.0f, 2.0f, 1.0f}, PURPLE, true,
       "", false, true));  // Static cube
 
-  // Create a stepping stone pattern for jump testing
   world->addObject(std::make_shared<CubeObject>(
       (Vector3){1.0f, 0.5f, -4.0f}, (Vector3){1.0f, 1.0f, 1.0f}, YELLOW, true,
       "", false, true));  // Static cube
@@ -79,10 +77,13 @@ int main() {
       (Vector3){4.0f, 1.5f, -4.0f}, (Vector3){1.0f, 3.0f, 1.0f}, LIME, true, "",
       false, true));  // Static cube
 
-  world->addObject(std::make_shared<Floor>(
-      (Vector3){0.0f, 0.0f, 0.0f}, (Vector3){10.0f, 1.0f, 10.0f},
-      DARKGREEN, true, true));
-      // "../resources/forrest_ground_01_diff_4k.jpg"
+  world->addObject(std::make_shared<Floor>((Vector3){0.0f, 0.0f, 0.0f},
+                                           (Vector3){10.0f, 1.0f, 10.0f},
+                                           DARKGREEN, true, true));
+  // "../resources/forrest_ground_01_diff_4k.jpg"
+
+  world->addObject(std::make_shared<Sphere>((Vector3){-1.0f, 2.0f, 1.0f}, 2.0f,
+                                            BLUE, true, true));
 
   // Dynamic sun state
   bool dynamicSun = false;

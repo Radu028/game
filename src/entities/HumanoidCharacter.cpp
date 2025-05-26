@@ -414,7 +414,6 @@ void HumanoidCharacter::handleInput(float movementSpeed) {
 
   // Jump input
   if (IsKeyPressed(KEY_SPACE)) {
-    printf("SPACE key pressed - calling jump()\n");
     jump();
   }
 
@@ -508,21 +507,16 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
 }
 
 void HumanoidCharacter::jump() {
-  printf("=== JUMP ATTEMPT ===\n");
-
   if (!characterBody) {
-    printf("Jump failed: no characterBody\n");
     return;
   }
 
   if (jumpCooldown > 0.0f) {
-    printf("Jump failed: cooldown active (%.2f)\n", jumpCooldown);
     return;
   }
 
   // Check if character is on ground - balanced check
   bool onGround = isOnGround();
-  printf("Ground check result: %s\n", onGround ? "ON GROUND" : "NOT ON GROUND");
 
   if (!onGround) {
     return;  // Cannot jump if not on ground
@@ -531,14 +525,10 @@ void HumanoidCharacter::jump() {
   // Additional check: Don't allow jumping if moving up too fast (already
   // jumping)
   btVector3 velocity = characterBody->getLinearVelocity();
-  printf("Current velocity.y: %.2f\n", velocity.getY());
 
   if (velocity.getY() > 2.0f) {
-    printf("Jump failed: moving up too fast\n");
     return;  // Already moving up fast, don't allow another jump
   }
-
-  printf("*** JUMPING NOW! ***\n");
 
   // Realistic jump force
   btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 2.0f, 0);
@@ -551,7 +541,6 @@ void HumanoidCharacter::jump() {
 
 bool HumanoidCharacter::isOnGround() const {
   if (!characterBody || !physicsWorld) {
-    printf("isOnGround: no body/world\n");
     return false;
   }
 
@@ -568,12 +557,6 @@ bool HumanoidCharacter::isOnGround() const {
                          0);  // Start slightly above ground contact
   btVector3 to = origin + btVector3(0, groundContactOffset - 0.25f,
                                     0);  // Check below ground contact
-
-  printf(
-      "Character pos: (%.2f,%.2f,%.2f) | Raycast: from(%.2f,%.2f,%.2f) "
-      "to(%.2f,%.2f,%.2f)\n",
-      origin.getX(), origin.getY(), origin.getZ(), from.getX(), from.getY(),
-      from.getZ(), to.getX(), to.getY(), to.getZ());
 
   btCollisionWorld::ClosestRayResultCallback rayCallback(from, to);
   // Use the proper collision groups for raycast
@@ -592,10 +575,6 @@ bool HumanoidCharacter::isOnGround() const {
 
   bool hasHit = rayCallback.hasHit();
   bool result = hasHit && velocityCheck;
-
-  printf("Raycast result: hit=%s, velocity.y=%.2f, velocityOK=%s, final=%s\n",
-         hasHit ? "YES" : "NO", velocity.getY(), velocityCheck ? "YES" : "NO",
-         result ? "ON_GROUND" : "NOT_ON_GROUND");
 
   return result;
 }
