@@ -21,6 +21,7 @@ class Floor : public StaticWorldObject {
   Floor(Vector3 position, Vector3 dimensions, std::string texturePath,
         bool hasCollision = true);
 
-  void draw() const;
-  BoundingBox getBoundingBox() const;
+  void draw() const override;
+  BoundingBox getBoundingBox() const override;
+  std::unique_ptr<GameObject> clone() const override;
 };

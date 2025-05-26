@@ -1,8 +1,9 @@
 #include "objects/CubeObject.h"
-#include "systems/ShaderSystem.h"
 
 #include <memory>
 #include <string>
+
+#include "systems/ShaderSystem.h"
 
 CubeObject::CubeObject(Vector3 position, Vector3 size, Color color,
                        bool hasCollision, const std::string& texturePath,
@@ -24,7 +25,7 @@ CubeObject::CubeObject(Vector3 position, Vector3 size, Color color,
       TraceLog(LOG_WARNING, "Failed to load texture: %s", texturePath.c_str());
     }
   }
-  
+
   // If using shaders, assign the lighting shader to the model material
   if (useShaders) {
     ShaderSystem* shaderSystem = ShaderSystem::getInstance();
@@ -47,7 +48,7 @@ CubeObject::CubeObject(const CubeObject& other)
     texture = other.texture;
     model.materials[0].maps[MATERIAL_MAP_DIFFUSE].texture = texture;
   }
-  
+
   // If using shaders, assign the lighting shader to the model material
   if (useShaders) {
     ShaderSystem* shaderSystem = ShaderSystem::getInstance();
@@ -69,9 +70,9 @@ Vector3 CubeObject::getSize() const { return size; }
 
 BoundingBox CubeObject::getBoundingBox() const {
   float halfX = size.x * 0.5f;
-  float halfY = size.y * 0.5f; 
+  float halfY = size.y * 0.5f;
   float halfZ = size.z * 0.5f;
-  
+
   return (BoundingBox){
       (Vector3){position.x - halfX, position.y - halfY, position.z - halfZ},
       (Vector3){position.x + halfX, position.y + halfY, position.z + halfZ},
@@ -114,5 +115,8 @@ bool CubeObject::checkCollision(const CubeObject& other) const {
   return result;
 }
 
-void CubeObject::interact() {
+void CubeObject::interact() {}
+
+std::unique_ptr<GameObject> CubeObject::clone() const {
+  return std::make_unique<CubeObject>(*this);
 }

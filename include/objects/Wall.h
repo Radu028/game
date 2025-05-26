@@ -14,6 +14,7 @@ class Wall : public StaticWorldObject {
   Wall(Vector3 position, Vector3 dimensions, Color color,
        bool hasCollisions = true, bool useShaders = true);
 
-  void draw() const;
-  BoundingBox getBoundingBox() const;
+  void draw() const override;
+  BoundingBox getBoundingBox() const override;
+  std::unique_ptr<GameObject> clone() const override;
 };

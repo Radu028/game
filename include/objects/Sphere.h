@@ -14,7 +14,8 @@ class Sphere : public StaticWorldObject {
   Sphere(Vector3 position, float radius, Color color, bool hasCollisions = true,
          bool useShaders = true);
 
-  void draw() const;
-  BoundingBox getBoundingBox() const;
+  void draw() const override;
+  BoundingBox getBoundingBox() const override;
+  std::unique_ptr<GameObject> clone() const override;
   float getRadius() const { return radius; }
 };

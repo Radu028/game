@@ -31,3 +31,7 @@ BoundingBox Sphere::getBoundingBox() const {
       (Vector3){position.x + half, position.y + half, position.z + half},
   };
 }
+
+std::unique_ptr<GameObject> Sphere::clone() const {
+  return std::make_unique<Sphere>(*this);
+}

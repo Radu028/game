@@ -57,3 +57,7 @@ BoundingBox Floor::getBoundingBox() const {
       (Vector3){position.x + halfX, position.y + halfY, position.z + halfZ},
   };
 }
+
+std::unique_ptr<GameObject> Floor::clone() const {
+  return std::make_unique<Floor>(*this);
+}

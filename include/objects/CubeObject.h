@@ -34,6 +34,7 @@ class CubeObject : public GameObject {
 
   BoundingBox getBoundingBox() const override;
   void draw() const override;
+  std::unique_ptr<GameObject> clone() const override;
 
   bool checkCollision(const CubeObject& other) const;
 
