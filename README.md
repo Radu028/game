@@ -1,125 +1,145 @@
-# 3D Game Project with Humanoid Character Physics
+# 3D Game with Humanoid Character
 
-This project implements a 3D game using the raylib library with Bullet physics simulation. The game features a humanoid character controller with unified physics and visual animation system, providing smooth character movement and collision detection.
+A 3D game in C++ that demonstrates Object-Oriented Programming concepts. Uses raylib for graphics and Bullet Physics for realistic physics simulation.
 
-## Project Structure
+## What it does
 
-The code is organized into header (.h) and source (.cpp) files, with related classes grouped together. The main components are:
+- Humanoid character that can walk and jump around the world
+- Simple NPCs that wander and interact with the player
+- Fruit shop with basic economic system for buying/selling
+- Interactive objects (moving cubes, rotating platforms, scaling objects)
+- Realistic physics for all objects and character movement
+- Complete 3D world with lighting, textures, and collision detection
 
-- `GameObject` base class and its derivatives
-- **HumanoidCharacter** - Main character implementation with unified physics body and visual animation
-- Exception handling system
-- Game world management
-- Various specialized cube objects
+The game serves as both an entertaining experience and a comprehensive demonstration of advanced OOP techniques in a real-world application.
 
-## Key Features
+## OOP Concepts Implemented
 
-### Humanoid Character System
-- **Unified Physics Body**: Single physics body for stable and reliable character movement
-- **Visual Animation System**: Separate visual components for head, torso, arms, legs, and facial features
-- **Professional Character Controller**: Smooth movement with walking, jumping, and idle animations
-- **Individual Part Collision Detection**: Visual parts can detect collisions with environment objects
-- **Realistic Ground Detection**: Foot-based ground contact detection for accurate jumping
-- **State-Based Animation**: Different animations for idle, walking, and jumping states
+### Inheritance ✓
+- `GameObject` - base class with pure virtual functions
+- `HumanoidCharacter`, `CubeObject`, `Floor` - derived classes  
+- `MovingCubeObject`, `RotatingCubeObject` - multi-level inheritance
+- **Location**: `include/objects/GameObject.h`, `include/entities/HumanoidCharacter.h`
 
-### Code Organization
-- All classes are separated into header (.h) and implementation (.cpp) files
-- Related classes are grouped in directories (entities, objects, systems, exceptions)
-- No `using namespace std` is used anywhere in the code
+### Virtual Functions ✓
+- `draw()`, `update()`, `clone()`, `getBoundingBox()` - implemented differently in each class
+- Pure virtual functions in base class enforce interface contracts
+- Polymorphism through base class pointers `std::shared_ptr<GameObject>`
+- **Location**: All classes override virtual methods from `GameObject`
 
-## Character Implementation
+### Templates ✓
+- `GameObjectManager<T>` - generic container for managing different object types
+- `Storage<ItemType>` - template-based inventory system with specializations
+- `findObjectOfType<T>()` - type-safe object searching with dynamic casting
+- **Location**: `include/utils/GameObjectManager.h`, `include/utils/Storage.h`
 
-The project uses `HumanoidCharacter` as the main character implementation:
+### Exception Handling ✓
+```
+GameException (base class)
+├── GameInitException - initialization errors
+├── ResourceException - file loading failures
+├── PhysicsException - Bullet Physics errors
+└── AIException - NPC behavior errors
+```
+- **Location**: `include/exceptions/GameExceptions.h`
+- Try/catch blocks in main() handle different exception types
 
-### HumanoidCharacter Features
-- **Single Physics Body**: Uses one `btCapsuleShape` for stable character physics
-- **Visual Animation System**: Separate visual parts for head, torso, arms, legs with smooth animations
-- **Facial Features**: Eyes and mouth for character expression
-- **State-Based Animation**: Idle breathing, walking cycles, and jump poses
-- **Collision Prediction**: Can predict and prevent collisions before movement
-- **Professional Controls**: WASD movement, Space for jumping, smooth camera following
-- **Bullet Physics Integration**: Proper integration with Bullet physics for realistic movement
+### Design Patterns ✓
+- **Singleton**: `GameWorld`, `ShaderSystem`, `NPCManager` - single global instances
+- **Observer**: NPCs observe player actions through `NPCObserver` interface
+- **State**: NPC AI uses state machines (`IdleState`, `WalkingState`, `InteractingState`)
+- **Location**: `include/ai/NPCStates.h`, `include/systems/ShaderSystem.h`
 
-## Inheritance Hierarchy
-- Base class: `GameObject`
-- Derived classes: `CubeObject`, `Player`, and various specialized cube objects
-- Second-level inheritance: `MovingCubeObject`, `RotatingCubeObject`, and `ScalingCubeObject` derive from `CubeObject`
+### Memory Management ✓
+- `std::shared_ptr` for shared ownership of game objects
+- `std::unique_ptr` for exclusive ownership of internal components
+- RAII for automatic resource management
+- Copy constructors and copy-and-swap idiom in `BodyPart` class
+- **Location**: Throughout codebase, especially `include/BodyPart.h`
 
-### Virtual Functions
-- Pure virtual functions in `GameObject`: `clone()`, `draw()`, `interact()`, `getBoundingBox()`
-- Each derived class implements these functions differently:
-  - `update()`: specialized movement in derived classes
-  - `interact()`: custom interaction behavior
-  - `draw()`: different rendering techniques
+### Static Members ✓
+- `GameWorld::instance` - singleton instance management
+- `HumanoidCharacter::totalCharacters` - global character counting
+- Static member functions for class-level operations
+- **Location**: `include/GameWorld.h`, `include/entities/HumanoidCharacter.h`
 
-### Virtual Clone (Virtual Constructor)
-- All classes implement the `clone()` method for proper copying
-- Used for object duplication while preserving polymorphic behavior
+### Dynamic Casting ✓
+- `std::dynamic_pointer_cast<T>()` for safe downcasting in template methods
+- Runtime type checking prevents invalid object access
+- **Location**: `GameWorld::findObjectOfType<T>()` method
 
-### Base Class Constructor Calls
-- Derived class constructors call their parent constructors
-- Example: `CubeObject` constructor calls `GameObject` constructor
-- Child classes like `MovingCubeObject` call `CubeObject` constructor
+### STL Usage ✓
+- `std::vector` for object collections
+- `std::shared_ptr`/`std::unique_ptr` for memory management
+- Standard algorithms for object processing
+- **Location**: Throughout the codebase, no raw pointers used
 
-### Polymorphism Through Base Class Pointers
-- `GameWorld` stores objects as `std::shared_ptr<GameObject>`
-- Virtual functions are called through these base pointers
-- Example: `world->update()` calls the appropriate derived implementation
+## Technical Details
 
-### Copy Operations and Memory Management
-- Classes with resources implement copy constructors and assignment operators
-- The copy-and-swap idiom is used for safe assignment
-- Smart pointers (`std::shared_ptr`) handle dynamic memory
+### Architecture
+- Modular design with separated systems (rendering, physics, AI, input)
+- Component-based entity system for flexible object composition
+- Event-driven communication between game systems
 
-### Dynamic Casting
-- `std::dynamic_pointer_cast` is used in `findObjectOfType<T>()` method to safely downcast objects
-- This allows retrieving specialized objects from the game world
+### Graphics
+- raylib 3D graphics engine with custom shader support
+- Third-person camera with smooth following and collision avoidance
+- Dynamic lighting and shadow rendering
+- Texture mapping and material properties
 
-### Exception Handling
-- Custom exception hierarchy based on `std::exception`:
-  - `GameException`: Base exception class
-  - `GameInitException`: For initialization errors
-  - `ResourceException`: For resource loading errors
-  - `CollisionException`: For collision handling errors
-- Try/catch blocks in main() handle different types of exceptions
+### Physics
+- Bullet Physics integration for realistic collision detection
+- Character controller with proper ground detection
+- Rigid body dynamics for all interactive objects
+- Collision callbacks for game logic integration
 
-### Static Members
-- `GameWorld` uses the Singleton pattern with static instance
-- Static methods like `getInstance()` control instance creation
+### AI System
+- State-based NPC behavior with finite state machines
+- Observer pattern for NPCs to react to player actions
+- Pathfinding and navigation through the game world
 
-### STL Usage
-- `std::vector` for object storage
-- `std::shared_ptr` for memory management
-- Smart use of standard library algorithms
-
-### Const Correctness
-- Getter methods marked as `const`
-- Parameters passed by const reference where appropriate
-- Const methods for operations that don't modify object state
-
-### High-Level Functions
-- Functions focus on behavior rather than direct data access
-- Minimal getters/setters, with emphasis on cohesive operations
-
-## Build and Run
-
-To build and run the project:
+## How to Build and Run
 
 ```bash
 ./build_run.sh
 ```
 
 Or manually:
-
 ```bash
 mkdir -p build
 cd build
 cmake ..
 make
-./game
+./GameProject
 ```
 
 ## Controls
-- WASD: Move the character
-- SPACE: Jump
-- ESC: Exit the game
+
+- **WASD** - move character
+- **SPACE** - jump
+- **Mouse** - look around
+- **E** - interact with objects/NPCs
+- **ESC** - exit game
+- **Left Click** - alternative interaction
+
+## Project Structure
+
+```
+src/           - source code implementation
+include/       - header files
+resources/     - textures and shaders
+CMakeLists.txt - build configuration
+```
+
+### Code Organization
+- Each class has separate .h and .cpp files
+- Related classes grouped in directories (entities, objects, systems, exceptions)
+- No `using namespace std` anywhere in the code
+- Consistent naming conventions and const correctness
+
+### Key Files
+- `main.cpp` - entry point with exception handling
+- `GameWorld.h/cpp` - main game logic and object management
+- `HumanoidCharacter.h/cpp` - player character implementation
+- `NPCStates.h/cpp` - AI state machine implementation
+- `GameExceptions.h` - custom exception hierarchy
