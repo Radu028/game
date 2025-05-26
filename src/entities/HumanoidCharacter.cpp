@@ -8,6 +8,30 @@
 #include "raymath.h"
 #include "systems/InputSystem.h"
 
+// Static member definitions
+int HumanoidCharacter::totalCharactersCreated = 0;
+int HumanoidCharacter::activeCharacters = 0;
+
+// Static utility function implementations
+float HumanoidCharacter::calculateDistance(const HumanoidCharacter& char1,
+                                           const HumanoidCharacter& char2) {
+  Vector3 pos1 = char1.getPosition();
+  Vector3 pos2 = char2.getPosition();
+  return Vector3Distance(pos1, pos2);
+}
+
+Vector3 HumanoidCharacter::getOptimalSpacing(int characterCount) {
+  if (characterCount <= 1) return {0.0f, 0.0f, 0.0f};
+  float spacing =
+      3.0f + (characterCount * 0.5f);  // Increase spacing with more characters
+  return {spacing, 0.0f, spacing};
+}
+
+bool HumanoidCharacter::areCharactersOverlapping(
+    const HumanoidCharacter& char1, const HumanoidCharacter& char2) {
+  return calculateDistance(char1, char2) < 2.0f;  // Less than 2 units apart
+}
+
 HumanoidCharacter::HumanoidCharacter(Vector3 position)
     : GameObject(position, true, true, false),
       // Professional dynamic positioning using settings - automatically
@@ -89,9 +113,16 @@ HumanoidCharacter::HumanoidCharacter(Vector3 position)
           {0.10f, 0.02f, 0.06f}, DARKBROWN,
           {0.12f,
            GameSettings::CharacterCalculations::getHeadBaseYOffset() + 0.15f,
-           0.26f}) {}
+           0.26f}) {
+  // Update static counters
+  totalCharactersCreated++;
+  activeCharacters++;
+}
 
 HumanoidCharacter::~HumanoidCharacter() {
+  // Update static counter
+  activeCharacters--;
+
   if (physicsWorld && characterBody) {
     physicsWorld->removeRigidBody(characterBody);
   }
@@ -117,11 +148,13 @@ void HumanoidCharacter::createSinglePhysicsBody() {
   // at the calculated position
   btTransform transform;
   transform.setIdentity();
-  transform.setOrigin(btVector3(
-      position.x,
+
+  // Ensure the physics body is properly positioned above ground
+  float physicsCenterY =
       GameSettings::CharacterCalculations::getPhysicsCenterYFromGroundY(
-          position.y),
-      position.z));
+          position.y);
+
+  transform.setOrigin(btVector3(position.x, physicsCenterY, position.z));
 
   // Create motion state
   motionState = new btDefaultMotionState(transform);
@@ -393,24 +426,50 @@ void HumanoidCharacter::updateVisualPositions() {
 // updateFacialFeatures() method removed - now integrated into
 // updateVisualPositions() for efficiency
 
-void HumanoidCharacter::handleInput(float movementSpeed) {
+void HumanoidCharacter::handleInput(float movementSpeed, float cameraAngleX) {
   if (!characterBody) return;
 
   Vector3 movement = {0, 0, 0};
 
-  // Get input
+  // Get input axes
+  float inputX = 0.0f;
+  float inputZ = 0.0f;
+
   if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) {
-    movement.z -= 1.0f;
+    inputZ += 1.0f;  // Forward
   }
   if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) {
-    movement.z += 1.0f;
+    inputZ -= 1.0f;  // Backward
   }
   if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-    movement.x -= 1.0f;
+    inputX -= 1.0f;  // Left
   }
   if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-    movement.x += 1.0f;
+    inputX += 1.0f;  // Right
   }
+
+  // Convert camera angle to radians for calculation
+  float cameraRad = cameraAngleX * DEG2RAD;
+
+  // In Roblox-style movement:
+  // - Camera is positioned at angle cameraAngleX around the player
+  // - Forward direction is FROM camera position TOWARDS player (negative of
+  // camera offset)
+  // - Camera offset is: X = sin(angle), Z = cos(angle)
+  // - So forward direction is: X = -sin(angle), Z = -cos(angle)
+
+  float forwardX = -sinf(cameraRad);  // Direction towards where camera looks
+  float forwardZ = -cosf(cameraRad);
+
+  // Right direction is perpendicular to forward (90 degrees rotation)
+  float rightX =
+      cosf(cameraRad);  // Corrected: positive for proper right direction
+  float rightZ =
+      -sinf(cameraRad);  // Corrected: negative for proper right direction
+
+  // Calculate movement relative to camera direction (Roblox-style)
+  movement.x = inputZ * forwardX + inputX * rightX;
+  movement.z = inputZ * forwardZ + inputX * rightZ;
 
   // Jump input
   if (IsKeyPressed(KEY_SPACE)) {
@@ -504,6 +563,26 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
     // No movement - stop rotation
     characterBody->setAngularVelocity(btVector3(0, 0, 0));
   }
+}
+
+void HumanoidCharacter::moveTowards(Vector3 target, float deltaTime) {
+  // Calculate direction to target
+  Vector3 direction = Vector3Subtract(target, position);
+  direction.y = 0;  // Only move on horizontal plane
+
+  float distance = Vector3Length(direction);
+
+  // If close enough to target, stop
+  if (distance < 0.5f) {
+    applyMovementForces({0, 0, 0}, 0);
+    return;
+  }
+
+  // Normalize direction and apply movement
+  direction = Vector3Normalize(direction);
+  float speed = GameSettings::Character::MOVEMENT_SPEED;
+
+  applyMovementForces(direction, speed);
 }
 
 void HumanoidCharacter::jump() {
@@ -948,4 +1027,8 @@ void HumanoidCharacter::constrainBodyPartsToCharacter() {
   // For now, we use kinematic bodies that follow the main character
   // In a more advanced implementation, you could add spring constraints
   // or other joint types to create more realistic physics interactions
+}
+
+std::unique_ptr<GameObject> HumanoidCharacter::clone() const {
+  return std::make_unique<HumanoidCharacter>(*this);
 }
