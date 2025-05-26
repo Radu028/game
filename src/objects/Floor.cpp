@@ -12,7 +12,8 @@ Floor::Floor(Vector3 position, Vector3 dimensions, Color color,
       hasTexture(false),
       useShaders(useShaders) {
   if (useShaders) {
-    model = LoadModelFromMesh(GenMeshCube(dimensions.x, dimensions.y, dimensions.z));
+    model = LoadModelFromMesh(
+        GenMeshCube(dimensions.x, dimensions.y, dimensions.z));
 
     ShaderSystem* shaderSystem = ShaderSystem::getInstance();
     if (shaderSystem->isInitialized()) {
