@@ -91,10 +91,15 @@ void PhysicsSystem::addObject(GameObject* obj) {
 void PhysicsSystem::removeObject(GameObject* obj) {
   auto it = objectToBody.find(obj);
   if (it != objectToBody.end()) {
-    dynamicsWorld->removeRigidBody(it->second);
-    delete it->second->getMotionState();
-    delete it->second->getCollisionShape();
-    delete it->second;
+    btRigidBody* body = it->second;
+    if (body) {
+      dynamicsWorld->removeRigidBody(body);
+      delete body->getMotionState();
+      delete body->getCollisionShape();
+      delete body;
+      // Clear the GameObject's reference to prevent double cleanup
+      obj->setBulletBody(nullptr);
+    }
     objectToBody.erase(it);
   }
   physicsObjects.erase(
