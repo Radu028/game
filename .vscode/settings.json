@@ -3,6 +3,7 @@
   "editor.detectIndentation": false,
   "editor.defaultFormatter": "ms-vscode.cpptools",
   "editor.formatOnSave": true,
+  "chat.tools.autoApprove": true,
   "files.associations": {
     "iostream": "cpp",
     "__bit_reference": "cpp",
@@ -63,7 +64,7 @@
     "memory": "cpp"
   },
   "github.copilot.enable": {
-    "*": false,
+    "*": true,
     "plaintext": false,
     "markdown": true,
     "scminput": false
