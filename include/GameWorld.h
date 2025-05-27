@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "ai/NavMesh.h"
 #include "exceptions/GameExceptions.h"
 #include "objects/GameObject.h"
 
@@ -26,21 +27,19 @@ class GameWorld {
   std::vector<std::shared_ptr<GameObject>> objects;
   GameObject* player;
   std::unique_ptr<PhysicsSystem> physicsSystem;
+  std::shared_ptr<NavMesh> navigationMesh;
   std::string worldName;
 
   GameWorld(GameObject* player, const std::string& name = "DefaultWorld");
 
-  // Delete copy constructor and assignment operator for singleton
   GameWorld(const GameWorld&) = delete;
   GameWorld& operator=(const GameWorld&) = delete;
   ~GameWorld();
 
  public:
-  // Singleton access
   static GameWorld* getInstance(GameObject* player = nullptr);
   static void destroyInstance();
 
-  // Static utility functions
   static size_t getTotalObjectsCreated() { return totalObjectsCreated; }
   static size_t getTotalObjectsDestroyed() { return totalObjectsDestroyed; }
   static size_t getActiveObjectCount() {
@@ -53,7 +52,6 @@ class GameWorld {
   static const std::string& getCreationTimestamp() { return creationTimestamp; }
   static void resetStatistics();
 
-  // Template method for type-safe object retrieval with dynamic casting
   template <typename T>
   std::vector<std::shared_ptr<T>> findObjectsOfType() const {
     static_assert(std::is_base_of_v<GameObject, T>,
@@ -70,7 +68,6 @@ class GameWorld {
     return result;
   }
 
-  // Template method for finding first object of specific type
   template <typename T>
   std::shared_ptr<T> findFirstObjectOfType() const {
     static_assert(std::is_base_of_v<GameObject, T>,
@@ -86,11 +83,21 @@ class GameWorld {
     return nullptr;
   }
 
-  // Object management
   void addObject(std::shared_ptr<GameObject> object);
   void removeObject(std::shared_ptr<GameObject> object);
   void removeObjectsOfType(const std::string& typeName);
   void clearAllObjects();
+
+  // Obstacle management
+  void addObjectAsObstacle(std::shared_ptr<GameObject> object,
+                           const std::string& type = "generic");
+  void removeObjectObstacle(std::shared_ptr<GameObject> object);
+  void addObstacleAt(Vector3 position, Vector3 size,
+                     const std::string& type = "generic");
+  void addObjectAsObstacleDeferred(std::shared_ptr<GameObject> object,
+                                   const std::string& type = "generic");
+  void finalizeObstacles();  // Call this to rebuild connections after adding
+                             // multiple obstacles
 
   // World operations
   void update(float deltaTime);
@@ -100,7 +107,10 @@ class GameWorld {
   btDiscreteDynamicsWorld* getBulletWorld() const;
   btDiscreteDynamicsWorld* getDynamicsWorld() const { return getBulletWorld(); }
 
-  // Getters
+  // Navigation
+  void initializeNavMesh();
+  std::shared_ptr<NavMesh> getNavMesh() const { return navigationMesh; }
+
   const std::vector<std::shared_ptr<GameObject>>& getObjects() const {
     return objects;
   }
@@ -108,7 +118,6 @@ class GameWorld {
   const std::string& getWorldName() const { return worldName; }
   GameObject* getPlayer() const { return player; }
 
-  // Setters
   void setWorldName(const std::string& name) { worldName = name; }
 
  private:
