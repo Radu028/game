@@ -2,12 +2,15 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iomanip>
 #include <iostream>
 #include <random>
 
 #include "GameWorld.h"
 #include "ai/NPCStates.h"
 #include "raymath.h"
+
+std::shared_ptr<NavMesh> NPC::navMesh = nullptr;
 
 NPC::NPC(Vector3 position, std::shared_ptr<Shop> shop)
     : HumanoidCharacter(position),
@@ -23,7 +26,6 @@ NPC::NPC(Vector3 position, std::shared_ptr<Shop> shop)
       currentWaypointIndex(0) {
   initializeNPC();
 
-  // Start with idle state
   currentState = std::make_unique<IdleState>();
   currentState->enter(this);
 }
@@ -35,15 +37,33 @@ NPC::~NPC() {
 }
 
 void NPC::initializeNPC() {
-  // Give NPC unique visual characteristics
   static std::random_device rd;
   static std::mt19937 gen(rd());
   std::uniform_real_distribution<float> speedDist(2.5f, 4.0f);
 
   movementSpeed = speedDist(gen);
 
-  // Randomize some visual aspects if needed
-  // For now, NPCs will look like the player but with different behavior
+  Vector3 torsoColorVec = calculateRandomColor();
+  Vector3 armColorVec = calculateRandomColor();
+  Vector3 legColorVec = calculateRandomColor();
+
+  Color torsoColor = {static_cast<unsigned char>(torsoColorVec.x * 255),
+                      static_cast<unsigned char>(torsoColorVec.y * 255),
+                      static_cast<unsigned char>(torsoColorVec.z * 255), 255};
+
+  Color armColor = {static_cast<unsigned char>(armColorVec.x * 255),
+                    static_cast<unsigned char>(armColorVec.y * 255),
+                    static_cast<unsigned char>(armColorVec.z * 255), 255};
+
+  Color legColor = {static_cast<unsigned char>(legColorVec.x * 255),
+                    static_cast<unsigned char>(legColorVec.y * 255),
+                    static_cast<unsigned char>(legColorVec.z * 255), 255};
+
+  getTorso().visual.setColor(torsoColor);
+  getLeftArm().visual.setColor(armColor);
+  getRightArm().visual.setColor(armColor);
+  getLeftLeg().visual.setColor(legColor);
+  getRightLeg().visual.setColor(legColor);
 }
 
 void NPC::changeState(std::unique_ptr<NPCState> newState) {
@@ -63,23 +83,18 @@ void NPC::update(float deltaTime) {
     return;
   }
 
-  // Update base humanoid character
   HumanoidCharacter::update(deltaTime);
 
-  // Update lifetime
   updateLifetime(deltaTime);
 
-  // Update current state
   if (currentState) {
     currentState->update(this, deltaTime);
   }
 
-  // Handle movement towards destination if one is set
   if (hasDestination) {
-    moveTowards(currentDestination, deltaTime);
+    followPath(deltaTime);
   }
 
-  // Check if NPC should be deactivated due to lifetime
   if (lifetimeTimer >= maxLifetime) {
     setActive(false);
     notifyExited();
@@ -91,46 +106,26 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
   Vector3 direction = Vector3Subtract(target, currentPos);
   float distanceToTarget = Vector3Length(direction);
 
-  // More generous threshold for reaching target
   if (distanceToTarget > 0.8f) {
     direction = Vector3Normalize(direction);
     Vector3 movement = Vector3Scale(direction, movementSpeed * deltaTime);
 
-    // Debug output for movement - print much less frequently to reduce console
-    // spam
-    static int movementFrameCount = 0;
-    movementFrameCount++;
-    if (movementFrameCount % 180 == 0) {
-      std::cout << "🎯 NPC moveTowards: direction(" << direction.x << ", "
-                << direction.y << ", " << direction.z
-                << ") speed: " << movementSpeed << std::endl;
-    }
-
-    // Relax obstacle detection when very close to target (within 4 units) or
-    // when approaching shop entrance
     bool isCloseToTarget = distanceToTarget < 4.0f;
     bool isApproachingShopEntrance = false;
 
-    // Check if we're approaching the shop entrance - be more permissive with
-    // collisions
     if (targetShop) {
       Vector3 entrancePos = targetShop->getEntrancePosition();
       float distanceToEntrance = Vector3Distance(currentPos, entrancePos);
       isApproachingShopEntrance = distanceToEntrance < 8.0f;
     }
 
-    // Check for obstacles ahead using collision prediction, but be more lenient
-    // when close to target or approaching shop
     if (!isCloseToTarget && !isApproachingShopEntrance &&
         wouldCollideAfterMovement(direction, deltaTime * 2.0f)) {
       static int obstacleFrameCount = 0;
       obstacleFrameCount++;
       if (obstacleFrameCount % 120 == 0) {
-        std::cout << "🚧 NPC detected obstacle, trying to navigate around"
-                  << std::endl;
       }
 
-      // Try smaller angle turns (45 degrees instead of 90)
       float angle45 = PI / 4.0f;
       Vector3 leftDirection = {
           direction.x * cos(angle45) - direction.z * sin(angle45), direction.y,
@@ -140,10 +135,8 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
       if (!wouldCollideAfterMovement(leftDirection, deltaTime * 2.0f)) {
         direction = leftDirection;
         if (obstacleFrameCount % 120 == 0) {
-          std::cout << "↩️ NPC turning left 45° to avoid obstacle" << std::endl;
         }
       } else {
-        // Try turning right 45 degrees
         Vector3 rightDirection = {
             direction.x * cos(-angle45) - direction.z * sin(-angle45),
             direction.y,
@@ -153,20 +146,10 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
         if (!wouldCollideAfterMovement(rightDirection, deltaTime * 2.0f)) {
           direction = rightDirection;
           if (obstacleFrameCount % 120 == 0) {
-            std::cout << "↪️ NPC turning right 45° to avoid obstacle"
-                      << std::endl;
           }
         } else {
-          // If still blocked, just move directly toward target when close or
-          // approaching shop
           if (isCloseToTarget || isApproachingShopEntrance) {
-            if (obstacleFrameCount % 120 == 0) {
-              std::cout << "🎯 NPC close to target or approaching shop, "
-                           "ignoring obstacles"
-                        << std::endl;
-            }
           } else {
-            // Try a more dramatic turn (135 degrees)
             float angle135 = 3.0f * PI / 4.0f;
             Vector3 escapeDirection = {
                 direction.x * cos(angle135) - direction.z * sin(angle135),
@@ -174,21 +157,17 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
                 direction.x * sin(angle135) + direction.z * cos(angle135)};
             direction = Vector3Normalize(escapeDirection);
             if (obstacleFrameCount % 120 == 0) {
-              std::cout << "🔄 NPC making escape turn to avoid obstacle"
-                        << std::endl;
             }
           }
         }
       }
     }
 
-    // Apply movement forces (similar to how HumanoidCharacter handles input)
     applyMovementForces({direction.x, 0, direction.z}, movementSpeed);
   } else {
     static int reachedTargetFrameCount = 0;
     reachedTargetFrameCount++;
     if (reachedTargetFrameCount % 240 == 0) {
-      std::cout << "✅ NPC reached target position" << std::endl;
     }
   }
 }
@@ -209,6 +188,92 @@ void NPC::setDestination(Vector3 destination) {
   hasDestination = true;
   pathWaypoints.clear();
   currentWaypointIndex = 0;
+
+  if (navMesh) {
+    std::vector<Vector3> path = navMesh->findPath(getPosition(), destination);
+    if (!path.empty()) {
+      pathWaypoints = path;
+    } else {
+    }
+  }
+}
+
+void NPC::followPath(float deltaTime) {
+  if (!hasDestination) return;
+
+  if (!pathWaypoints.empty() && currentWaypointIndex < pathWaypoints.size()) {
+    Vector3 currentWaypoint = pathWaypoints[currentWaypointIndex];
+    float distanceToWaypoint = Vector3Distance(getPosition(), currentWaypoint);
+
+    static int debugFrameCount = 0;
+    debugFrameCount++;
+
+    float waypointThreshold = 1.0f;
+
+    static int waypointAttempts = 0;
+    static int lastWaypointIndex = -1;
+    static Vector3 lastPosition = getPosition();
+    static float stuckTimer = 0.0f;
+    static bool hasTriedAlternative = false;
+
+    if (lastWaypointIndex != currentWaypointIndex) {
+      waypointAttempts = 0;
+      lastWaypointIndex = currentWaypointIndex;
+      stuckTimer = 0.0f;
+      hasTriedAlternative = false;
+    }
+    waypointAttempts++;
+
+    float movementDistance = Vector3Distance(getPosition(), lastPosition);
+    if (movementDistance < 0.05f) {
+      stuckTimer += deltaTime;
+    } else {
+      stuckTimer = 0.0f;
+    }
+    lastPosition = getPosition();
+
+    if (stuckTimer > 2.0f && !hasTriedAlternative && navMesh) {
+      std::vector<Vector3> alternativePath = navMesh->findAlternativePath(
+          getPosition(), currentDestination, currentWaypoint);
+
+      if (!alternativePath.empty() && alternativePath.size() > 2) {
+        pathWaypoints = alternativePath;
+        currentWaypointIndex = 0;
+        hasTriedAlternative = true;
+      } else {
+        currentWaypointIndex++;
+        hasTriedAlternative = true;
+      }
+      stuckTimer = 0.0f;
+    }
+
+    if (waypointAttempts > 240) {
+      waypointThreshold = 2.5f;
+    }
+
+    if (waypointAttempts > 480) {
+      currentWaypointIndex++;
+      waypointAttempts = 0;
+      hasTriedAlternative = false;
+      stuckTimer = 0.0f;
+    }
+
+    if (distanceToWaypoint < waypointThreshold) {
+      currentWaypointIndex++;
+      waypointAttempts = 0;
+
+      if (currentWaypointIndex < pathWaypoints.size()) {
+      } else {
+        hasDestination = false;
+        pathWaypoints.clear();
+        currentWaypointIndex = 0;
+      }
+    } else {
+      moveTowards(currentWaypoint, deltaTime);
+    }
+  } else {
+    moveTowards(currentDestination, deltaTime);
+  }
 }
 
 void NPC::addObserver(NPCObserver* observer) {
@@ -259,12 +324,10 @@ Vector3 NPC::getRandomPositionInShop() const {
 
 Vector3 NPC::getExitPosition() const {
   if (!targetShop) {
-    // Default exit position
     return {20.0f, 0.5f, 20.0f};
   }
 
   Vector3 entrance = targetShop->getEntrancePosition();
-  // Move away from the shop
   return {entrance.x, entrance.y, entrance.z + 5.0f};
 }
 
@@ -299,6 +362,10 @@ void NPC::sayMessage(const std::string& context) const {
 
     if (!message.empty()) {
       chatSystem->addMessage(message, getPosition());
+    }
+  } else {
+    if (!chatSystem) {
+    } else {
     }
   }
 }

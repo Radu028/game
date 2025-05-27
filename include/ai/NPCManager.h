@@ -57,16 +57,13 @@ class NPCManager : public NPCObserver {
   void removeInactiveNPCs();
   std::shared_ptr<NPC> createNPC();
 
-  // Observer pattern implementation
   void onNPCFruitPicked(NPC* npc, std::shared_ptr<Fruit> fruit) override;
   void onNPCExited(NPC* npc) override;
   void onNPCEnteredShop(NPC* npc) override;
 
-  // Configuration
   void setSpawnInterval(float min, float max);
   void setMaxActiveNPCs(int max) { maxActiveNPCs = max; }
 
-  // Getters
   const std::vector<std::shared_ptr<NPC>>& getActiveNPCs() const {
     return activeNPCs;
   }
@@ -74,8 +71,6 @@ class NPCManager : public NPCObserver {
   int getTotalNPCsSpawned() const { return totalNPCsSpawned; }
   int getTotalFruitsPicked() const { return totalFruitsPicked; }
   int getTotalNPCsExited() const { return totalNPCsExited; }
-
-  // Utility
   Vector3 getRandomSpawnPosition() const;
   bool shouldSpawnNPC() const;
 

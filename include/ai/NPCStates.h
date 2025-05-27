@@ -1,9 +1,13 @@
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include "raylib.h"
 
 // Forward declarations
 class NPC;
+class Shelf;
 
 // State pattern for NPC behavior
 class NPCState {
@@ -67,8 +71,16 @@ class ShoppingState : public NPCState {
   float shoppingTime = 0.0f;
   float maxShoppingTime = 8.0f;
   float fruitSearchTimer = 0.0f;
+  float shelfLookingTimer = 0.0f;
+  float chatTimer = 0.0f;
   Vector3 currentTarget = {0, 0, 0};
   bool hasCurrentTarget = false;
+  bool isLookingAtShelf = false;
+  bool hasPurchasedSomething = false;
+  int shelvesVisited = 0;
+  int minShelvesToVisit = 2;
+  std::shared_ptr<Shelf> currentShelf = nullptr;
+  std::vector<std::shared_ptr<Shelf>> visitedShelves;
 };
 
 class WanderingState : public NPCState {
@@ -95,4 +107,9 @@ class LeavingState : public NPCState {
  private:
   Vector3 exitTarget;
   bool hasExitTarget = false;
+
+  // Stuck detection
+  Vector3 lastPosition = {0, 0, 0};
+  float stuckTimer = 0.0f;
+  int alternativeAttempts = 0;
 };

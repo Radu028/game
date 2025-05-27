@@ -5,6 +5,7 @@
 
 #include "ai/NPCChatSystem.h"
 #include "ai/NPCStates.h"
+#include "ai/NavMesh.h"
 #include "entities/HumanoidCharacter.h"
 #include "raylib.h"
 #include "shop/Fruit.h"
@@ -42,6 +43,7 @@ class NPC : public HumanoidCharacter {
   bool hasDestination;
   std::vector<Vector3> pathWaypoints;
   int currentWaypointIndex;
+  static std::shared_ptr<NavMesh> navMesh;  // Shared navigation mesh
 
  public:
   NPC(Vector3 position, std::shared_ptr<Shop> shop);
@@ -74,6 +76,11 @@ class NPC : public HumanoidCharacter {
   void setDestination(Vector3 destination);
   Vector3 getCurrentDestination() const { return currentDestination; }
   bool hasValidDestination() const { return hasDestination; }
+  void followPath(float deltaTime);
+
+  // Navigation mesh
+  static void setNavMesh(std::shared_ptr<NavMesh> mesh) { navMesh = mesh; }
+  static std::shared_ptr<NavMesh> getNavMesh() { return navMesh; }
 
   // Observer pattern
   void addObserver(NPCObserver* observer);
@@ -88,18 +95,15 @@ class NPC : public HumanoidCharacter {
   Vector3 getExitPosition() const;
   bool isInsideShop() const;
 
-  // Getters
   float getMovementSpeed() const { return movementSpeed; }
   float getDetectionRadius() const { return detectionRadius; }
   float getInteractionRadius() const { return interactionRadius; }
   bool getIsActive() const { return isActive; }
 
-  // Setters
   void setActive(bool active) { isActive = active; }
   void setMovementSpeed(float speed) { movementSpeed = speed; }
   void setChatSystem(NPCChatSystem* chat) { chatSystem = chat; }
 
-  // Override interaction for NPC-specific behavior
   void interact() override;
 
   // Chat system helpers
