@@ -71,7 +71,6 @@ void Shelf::restockShelf(FruitType type, int quantity) {
     auto newFruit = std::make_shared<Fruit>(fruitPos, type);
     addFruit(newFruit);
 
-    // Add to game world if available
     if (GameWorld* world = GameWorld::getInstance(nullptr)) {
       world->addObject(newFruit);
     }
@@ -79,7 +78,6 @@ void Shelf::restockShelf(FruitType type, int quantity) {
 }
 
 void Shelf::restockAllFruits() {
-  // Restock with variety of fruits
   restockShelf(FruitType::APPLE, 2);
   restockShelf(FruitType::FRUIT_ORANGE, 2);
   restockShelf(FruitType::BANANA, 2);
@@ -104,16 +102,11 @@ int Shelf::getFruitCount(FruitType type) const {
 
 bool Shelf::isEmpty() const { return getFruitCount() == 0; }
 
-void Shelf::interact() {
-  // Shelf interaction could show information about available fruits
-  // For now, we'll just ensure fruits are properly arranged
-  arrangeFruits();
-}
+void Shelf::interact() { arrangeFruits(); }
 
 void Shelf::update(float deltaTime) {
   CubeObject::update(deltaTime);
 
-  // Remove picked fruits from the shelf
   fruits.erase(std::remove_if(fruits.begin(), fruits.end(),
                               [](const std::shared_ptr<Fruit>& fruit) {
                                 return fruit && fruit->getIsPicked();

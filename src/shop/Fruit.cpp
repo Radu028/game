@@ -1,6 +1,5 @@
 #include "shop/Fruit.h"
 
-// Static helper method implementations
 Color Fruit::getFruitColor(FruitType type) {
   switch (type) {
     case FruitType::APPLE:
@@ -69,7 +68,6 @@ std::string Fruit::getFruitName(FruitType type) {
   }
 }
 
-// Constructor
 Fruit::Fruit(Vector3 position, FruitType fruitType)
     : Sphere(position, getFruitRadius(fruitType), getFruitColor(fruitType),
              true, false),
@@ -79,15 +77,9 @@ Fruit::Fruit(Vector3 position, FruitType fruitType)
       name(getFruitName(fruitType)) {}
 
 // Fruit interaction methods
-void Fruit::pickFruit() {
-  isPicked = true;
-  // Could add visual effects or sounds here
-}
+void Fruit::pickFruit() { isPicked = true; }
 
-void Fruit::resetFruit() {
-  isPicked = false;
-  // Reset any visual effects
-}
+void Fruit::resetFruit() { isPicked = false; }
 
 void Fruit::interact() {
   if (!isPicked) {

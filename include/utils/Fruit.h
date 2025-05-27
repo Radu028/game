@@ -10,26 +10,20 @@ class Fruit {
   bool fresh;
 
  public:
-  // Constructors
   Fruit() : name("Unknown"), nutritionalValue(0.0), fresh(true) {}
   Fruit(const std::string& name, double nutrition, bool isFresh)
       : name(name), nutritionalValue(nutrition), fresh(isFresh) {}
 
-  // Copy constructor
   Fruit(const Fruit& other) = default;
 
-  // Assignment operator
   Fruit& operator=(const Fruit& other) = default;
 
-  // Destructor
   ~Fruit() = default;
 
-  // Getters
   const std::string& getName() const { return name; }
   double getNutritionalValue() const { return nutritionalValue; }
   bool isFresh() const { return fresh; }
 
-  // Setters
   void setName(const std::string& newName) { name = newName; }
   void setNutritionalValue(double value) { nutritionalValue = value; }
   void setFresh(bool isFresh) { fresh = isFresh; }

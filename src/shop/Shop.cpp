@@ -1,5 +1,6 @@
 #include "shop/Shop.h"
 
+#include <iostream>
 #include <random>
 
 #include "GameWorld.h"
@@ -9,14 +10,13 @@
 Shop::Shop(Vector3 position, Vector3 size)
     : CubeObject(position, size, BEIGE, false, "", false, false,
                  false),  // Make shop cube invisible
-      entranceSize({2.0f, 3.0f, 0.5f}) {
-  // Calculate entrance position (front center of shop, but closer for easier
-  // access)
+      entranceSize(
+          {4.0f, 3.0f, 1.0f}) {  // Wider entrance: 4 units wide, 1 unit deep
+  // Calculate entrance position (front center of shop - EXACT coordinates)
   entrancePosition = {
-      position.x,  // Center X of the shop
-      position.y,  // Same Y as shop center
-      position.z + size.z / 2.0f +
-          2.0f  // Moved further from shop front for easier access
+      position.x,                         // Center X of the shop
+      position.y - size.y / 2.0f + 0.5f,  // Ground level
+      position.z + size.z / 2.0f - 0.5f  // INSIDE the entrance gap, not outside
   };
 
   interiorBounds = calculateInteriorBounds();
@@ -24,6 +24,9 @@ Shop::Shop(Vector3 position, Vector3 size)
   buildWalls();
   createShelves();
   stockShelves();
+
+  // Note: NavMesh finalization moved to FruitShopGame::initialize() after
+  // NavMesh creation
 }
 
 void Shop::buildWalls() {
@@ -33,7 +36,6 @@ void Shop::buildWalls() {
   float wallThickness = 0.3f;
   float wallHeight = shopSize.y;
 
-  // Calculate entrance dimensions
   float entranceWidth = entranceSize.x;
   float frontWallWidth = (shopSize.x - entranceWidth) / 2.0f;
 
@@ -59,53 +61,42 @@ void Shop::buildWalls() {
   addWall({shopPos.x + shopSize.x / 2.0f, shopPos.y, shopPos.z},
           {wallThickness, wallHeight, shopSize.z});
 
-  // Add roof to complete the shop structure
   addWall({shopPos.x, shopPos.y + shopSize.y / 2.0f, shopPos.z},
           {shopSize.x, wallThickness, shopSize.z});
-
-  // Add all walls to the game world
-  if (GameWorld* world = GameWorld::getInstance(nullptr)) {
-    for (auto& wall : walls) {
-      world->addObject(wall);
-    }
-  }
 }
 
 void Shop::createShelves() {
   Vector3 shopPos = getPosition();
   Vector3 shopSize = getSize();
 
-  // Create shelves along the walls
   float shelfHeight = 1.0f;
+  float navigationMargin = 1.5f;
 
-  // Left side shelves
   for (int i = 0; i < 2; ++i) {
-    Vector3 shelfPos = {shopPos.x - shopSize.x / 2.0f + 1.0f,
+    Vector3 shelfPos = {shopPos.x - shopSize.x / 2.0f + navigationMargin,
                         shopPos.y - shopSize.y / 2.0f + shelfHeight,
                         shopPos.z - shopSize.z / 4.0f + i * shopSize.z / 2.0f};
     auto shelf = std::make_shared<Shelf>(shelfPos);
     shelves.push_back(shelf);
   }
 
-  // Right side shelves
+  // Right side shelves - positioned with more space from walls
   for (int i = 0; i < 2; ++i) {
-    Vector3 shelfPos = {shopPos.x + shopSize.x / 2.0f - 1.0f,
+    Vector3 shelfPos = {shopPos.x + shopSize.x / 2.0f - navigationMargin,
                         shopPos.y - shopSize.y / 2.0f + shelfHeight,
                         shopPos.z - shopSize.z / 4.0f + i * shopSize.z / 2.0f};
     auto shelf = std::make_shared<Shelf>(shelfPos);
     shelves.push_back(shelf);
   }
 
-  // Center shelf
   Vector3 centerShelfPos = {
-      shopPos.x, shopPos.y - shopSize.y / 2.0f + shelfHeight, shopPos.z - 1.0f};
+      shopPos.x, shopPos.y - shopSize.y / 2.0f + shelfHeight, shopPos.z};
   auto centerShelf = std::make_shared<Shelf>(centerShelfPos);
   shelves.push_back(centerShelf);
 
-  // Add shelves to game world
   if (GameWorld* world = GameWorld::getInstance(nullptr)) {
     for (auto& shelf : shelves) {
-      world->addObject(shelf);
+      world->addObjectAsObstacleDeferred(shelf);
     }
   }
 }
@@ -120,10 +111,13 @@ bool Shop::isInsideShop(Vector3 position) const {
   Vector3 shopPos = getPosition();
   Vector3 shopSize = getSize();
 
-  return (position.x >= shopPos.x - shopSize.x / 2.0f &&
-          position.x <= shopPos.x + shopSize.x / 2.0f &&
-          position.z >= shopPos.z - shopSize.z / 2.0f &&
-          position.z <= shopPos.z + shopSize.z / 2.0f &&
+  float wallThickness = 0.3f;
+  float interiorMargin = wallThickness + 0.1f;
+
+  return (position.x >= shopPos.x - shopSize.x / 2.0f + interiorMargin &&
+          position.x <= shopPos.x + shopSize.x / 2.0f - interiorMargin &&
+          position.z >= shopPos.z - shopSize.z / 2.0f + interiorMargin &&
+          position.z <= shopPos.z + shopSize.z / 2.0f - interiorMargin &&
           position.y >= shopPos.y - shopSize.y / 2.0f &&
           position.y <= shopPos.y + shopSize.y / 2.0f);
 }
@@ -139,8 +133,8 @@ Vector3 Shop::getRandomInteriorPosition() const {
   Vector3 shopPos = getPosition();
   Vector3 shopSize = getSize();
 
-  // Create safer bounds to avoid walls and shelves
-  float safeMargin = 2.0f;  // Increased margin to avoid walls
+  // Create smaller safe margin to allow NPCs closer to shelves
+  float safeMargin = 1.0f;  // Reduced from 2.0f to get closer to shelves
 
   std::uniform_real_distribution<float> xDist(
       shopPos.x - shopSize.x / 2.0f + safeMargin,
@@ -186,15 +180,11 @@ std::shared_ptr<Fruit> Shop::findNearestFruit(Vector3 position) {
   return nearest;
 }
 
-void Shop::interact() {
-  // Shop interaction could show status or restock
-  restockAllShelves();
-}
+void Shop::interact() { restockAllShelves(); }
 
 void Shop::update(float deltaTime) {
   CubeObject::update(deltaTime);
 
-  // Update all shelves
   for (auto& shelf : shelves) {
     shelf->update(deltaTime);
   }
@@ -208,6 +198,10 @@ void Shop::addWall(Vector3 position, Vector3 size, Color color) {
   auto wall = std::make_shared<CubeObject>(position, size, color, true, "",
                                            false, true, true);
   walls.push_back(wall);
+
+  if (GameWorld* world = GameWorld::getInstance(nullptr)) {
+    world->addObjectAsObstacleDeferred(wall);
+  }
 }
 
 Vector3 Shop::calculateInteriorBounds() const {
@@ -217,4 +211,10 @@ Vector3 Shop::calculateInteriorBounds() const {
       shopSize.y - 1.0f,  // Leave space for floor/ceiling
       shopSize.z - 2.0f   // Leave space for walls
   };
+}
+
+void Shop::finalizeNavMesh() {
+  if (GameWorld* world = GameWorld::getInstance(nullptr)) {
+    world->finalizeObstacles();
+  }
 }

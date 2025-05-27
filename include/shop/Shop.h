@@ -37,6 +37,7 @@ class Shop : public CubeObject {
   bool isInsideShop(Vector3 position) const;
   bool isNearEntrance(Vector3 position, float threshold = 1.0f) const;
   Vector3 getEntrancePosition() const { return entrancePosition; }
+  Vector3 getEntranceSize() const { return entranceSize; }
   Vector3 getRandomInteriorPosition() const;
 
   // Shop management
@@ -45,7 +46,6 @@ class Shop : public CubeObject {
   bool isEmpty() const;
   std::shared_ptr<Fruit> findNearestFruit(Vector3 position);
 
-  // Override methods
   void interact() override;
   void update(float deltaTime) override;
   std::unique_ptr<GameObject> clone() const override;
@@ -53,4 +53,5 @@ class Shop : public CubeObject {
  private:
   void addWall(Vector3 position, Vector3 size, Color color = DARKBROWN);
   Vector3 calculateInteriorBounds() const;
+  void finalizeNavMesh();
 };
