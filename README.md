@@ -189,7 +189,7 @@ src/              (Implementation code)
 
 *Linux/macOS Environment*
 ```bash
-git clone <repository-url>
+git clone https://github.com/Radu028/game.git
 cd game
 mkdir build && cd build
 cmake ..
@@ -199,7 +199,7 @@ make -j$(nproc)
 
 *Windows Environment*
 ```cmd
-git clone <repository-url>
+git clone https://github.com/Radu028/game.git
 cd game
 mkdir build && cd build
 cmake .. -G "Visual Studio 16 2019"
