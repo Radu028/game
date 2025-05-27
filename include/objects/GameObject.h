@@ -44,6 +44,17 @@ class GameObject {
   virtual BoundingBox getBoundingBox() const = 0;
   virtual std::unique_ptr<GameObject> clone() const = 0;
 
+  virtual std::string getObstacleType() const { return "generic"; }
+  virtual Vector3 getObstacleSize() const {
+    try {
+      auto bbox = getBoundingBox();
+      return {bbox.max.x - bbox.min.x, bbox.max.y - bbox.min.y,
+              bbox.max.z - bbox.min.z};
+    } catch (...) {
+      return {2.0f, 2.0f, 2.0f};  // Default size
+    }
+  }
+
   virtual void update(float deltaTime) {};
   virtual void interact() {};
   virtual bool checkCollisionWith(const BoundingBox& otherBox) const;

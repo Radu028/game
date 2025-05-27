@@ -27,7 +27,6 @@ class CubeObject : public GameObject {
              bool useShaders = true);
   ~CubeObject() override;
 
-  // Copy constructor
   CubeObject(const CubeObject& other);
 
   Vector3 getSize() const;
@@ -37,6 +36,10 @@ class CubeObject : public GameObject {
   std::unique_ptr<GameObject> clone() const override;
 
   bool checkCollision(const CubeObject& other) const;
+
+  std::string getObstacleType() const override {
+    return isStatic ? "wall" : "generic";
+  }
 
   void interact() override;
 

@@ -18,10 +18,7 @@ GameObject::GameObject(Vector3 position, bool hasCollision,
       hasCollision(hasCollision),
       bulletBody(nullptr) {}
 
-GameObject::~GameObject() {
-  // Don't clean up bulletBody here - PhysicsSystem manages it
-  // This prevents double deletion which could cause segmentation faults
-}
+GameObject::~GameObject() {}
 
 bool GameObject::checkCollision(const GameObject& other) const {
   if (!this->hasCollision || !other.getHasCollision()) {
