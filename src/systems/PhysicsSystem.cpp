@@ -77,11 +77,8 @@ void PhysicsSystem::addObject(GameObject* obj) {
     body->setDamping(0.8f, 0.8f);
   }
 
-  // Add world objects with proper collision group settings
   short worldGroup = GameSettings::Collision::Groups::WORLD_OBJECTS;
-  short worldMask =
-      GameSettings::Collision::Groups::WORLD_MASK;  // World objects collide
-                                                    // with all character parts
+  short worldMask = GameSettings::Collision::Groups::WORLD_MASK;
   dynamicsWorld->addRigidBody(body, worldGroup, worldMask);
   obj->setBulletBody(body);
   objectToBody[obj] = body;
@@ -97,7 +94,6 @@ void PhysicsSystem::removeObject(GameObject* obj) {
       delete body->getMotionState();
       delete body->getCollisionShape();
       delete body;
-      // Clear the GameObject's reference to prevent double cleanup
       obj->setBulletBody(nullptr);
     }
     objectToBody.erase(it);
@@ -108,8 +104,7 @@ void PhysicsSystem::removeObject(GameObject* obj) {
 }
 
 void PhysicsSystem::update(float deltaTime) {
-  // Use fixed timestep for more stable physics simulation
-  const float fixedTimeStep = 1.0f / 60.0f;  // 60 FPS
+  const float fixedTimeStep = 1.0f / 60.0f;
   const int maxSubSteps = 10;
 
   dynamicsWorld->stepSimulation(deltaTime, maxSubSteps, fixedTimeStep);
@@ -118,7 +113,6 @@ void PhysicsSystem::update(float deltaTime) {
 
 void PhysicsSystem::syncGameObjectsFromBullet() {
   for (GameObject* obj : physicsObjects) {
-    // Skip HumanoidCharacter objects - they manage their own position sync
     if (dynamic_cast<class HumanoidCharacter*>(obj)) {
       continue;
     }

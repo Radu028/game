@@ -2,7 +2,6 @@
 
 #include <cmath>
 
-// Static member definitions
 bool InputSystem::mouseCameraEnabled = false;
 Vector2 InputSystem::lastMousePosition = {0.0f, 0.0f};
 
@@ -29,7 +28,6 @@ Vector2 InputSystem::getMovementAxis() {
 
 bool InputSystem::isJumpPressed() { return IsKeyPressed(KEY_SPACE); }
 
-// Mouse camera controls (Roblox-style)
 bool InputSystem::isRightMousePressed() {
   return IsMouseButtonPressed(MOUSE_BUTTON_RIGHT);
 }
@@ -64,7 +62,6 @@ void InputSystem::updateMouseCamera() {
     disableMouseCamera();
   }
 
-  // Always update last mouse position to prevent jumps when enabling camera
   if (!mouseCameraEnabled) {
     lastMousePosition = GetMousePosition();
   }
@@ -72,11 +69,7 @@ void InputSystem::updateMouseCamera() {
 
 void InputSystem::enableMouseCamera() {
   mouseCameraEnabled = true;
-  // Don't disable cursor - keep it visible like in Roblox
   lastMousePosition = GetMousePosition();
 }
 
-void InputSystem::disableMouseCamera() {
-  mouseCameraEnabled = false;
-  // Cursor stays enabled
-}
+void InputSystem::disableMouseCamera() { mouseCameraEnabled = false; }
