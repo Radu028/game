@@ -127,6 +127,11 @@ class HumanoidCharacter : public GameObject {
 
   void setWorld(GameWorld* w) { world = w; }
 
+ protected:
+  // Protected method for enhanced movement forces (for NPCs)
+  void applyEnhancedMovementForces(Vector3 movement, float speed,
+                                   float forceMultiplier = 1.0f);
+
  private:
   // Main physics body for movement (torso-centered)
   btRigidBody* characterBody = nullptr;

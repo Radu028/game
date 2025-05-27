@@ -306,7 +306,6 @@ void NavMesh::debugDrawEntranceNodes(Vector3 entrancePos,
         std::abs(diff.z) <= entranceDepth) {
       Color nodeColor;
       if (node.walkable) {
-        // Check if this node was marked by our improved algorithm
         if (std::abs(diff.x) <= entranceHalfWidth - nodeSpacing * 0.4f) {
           nodeColor = GREEN;  // Safely inside entrance
         } else {
@@ -502,8 +501,6 @@ void NavMesh::markNodesInArea(Vector3 center, Vector3 size, bool walkable,
             center.y > 0.8f) {  // This is a shelf being marked as obstacle
           // Check if shelf is near shop back boundary (z < -11)
           if (center.z < -11.0f) {
-            // For back wall shelves, expand less towards the back wall but more
-            // towards the accessible areas
             Vector3 asymmetricDiff = Vector3Subtract(node.position, center);
 
             // Reduce blocking area towards the back wall (negative Z direction)

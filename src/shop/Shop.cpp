@@ -8,25 +8,16 @@
 #include "raymath.h"
 
 Shop::Shop(Vector3 position, Vector3 size)
-    : CubeObject(position, size, BEIGE, false, "", false, false,
-                 false),  // Make shop cube invisible
-      entranceSize(
-          {4.0f, 3.0f, 1.0f}) {  // Wider entrance: 4 units wide, 1 unit deep
-  // Calculate entrance position (front center of shop - EXACT coordinates)
-  entrancePosition = {
-      position.x,                         // Center X of the shop
-      position.y - size.y / 2.0f + 0.5f,  // Ground level
-      position.z + size.z / 2.0f - 0.5f  // INSIDE the entrance gap, not outside
-  };
+    : CubeObject(position, size, BEIGE, false, "", false, false, false),
+      entranceSize({4.0f, 3.0f, 1.0f}) {
+  entrancePosition = {position.x, position.y - size.y / 2.0f + 0.5f,
+                      position.z + size.z / 2.0f - 0.5f};
 
   interiorBounds = calculateInteriorBounds();
 
   buildWalls();
   createShelves();
   stockShelves();
-
-  // Note: NavMesh finalization moved to FruitShopGame::initialize() after
-  // NavMesh creation
 }
 
 void Shop::buildWalls() {
@@ -80,7 +71,6 @@ void Shop::createShelves() {
     shelves.push_back(shelf);
   }
 
-  // Right side shelves - positioned with more space from walls
   for (int i = 0; i < 2; ++i) {
     Vector3 shelfPos = {shopPos.x + shopSize.x / 2.0f - navigationMargin,
                         shopPos.y - shopSize.y / 2.0f + shelfHeight,
@@ -123,7 +113,19 @@ bool Shop::isInsideShop(Vector3 position) const {
 }
 
 bool Shop::isNearEntrance(Vector3 position, float threshold) const {
-  return Vector3Distance(position, entrancePosition) <= threshold;
+  Vector3 entrancePos = getEntrancePosition();
+  float distance = Vector3Distance(position, entrancePos);
+
+  float entranceHalfWidth = entranceSize.x / 2.0f;
+  float entranceDepth = entranceSize.z + 2.0f;
+
+  bool withinEntranceBounds =
+      (position.x >= entrancePos.x - entranceHalfWidth - 1.0f &&
+       position.x <= entrancePos.x + entranceHalfWidth + 1.0f &&
+       position.z >= entrancePos.z - entranceDepth &&
+       position.z <= entrancePos.z + entranceDepth);
+
+  return distance <= threshold || withinEntranceBounds;
 }
 
 Vector3 Shop::getRandomInteriorPosition() const {

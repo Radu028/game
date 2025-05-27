@@ -9,6 +9,7 @@
 #include "GameWorld.h"
 #include "ai/NPCStates.h"
 #include "raymath.h"
+#include "settings/Physics.h"
 
 std::shared_ptr<NavMesh> NPC::navMesh = nullptr;
 
@@ -23,7 +24,12 @@ NPC::NPC(Vector3 position, std::shared_ptr<Shop> shop)
       lifetimeTimer(0.0f),
       maxLifetime(60.0f),
       hasDestination(false),
-      currentWaypointIndex(0) {
+      currentWaypointIndex(0),
+      waypointAttempts(0),
+      lastWaypointIndex(-1),
+      lastPosition(position),
+      stuckTimer(0.0f),
+      hasTriedAlternative(false) {
   initializeNPC();
 
   currentState = std::make_unique<IdleState>();
@@ -106,9 +112,8 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
   Vector3 direction = Vector3Subtract(target, currentPos);
   float distanceToTarget = Vector3Length(direction);
 
-  if (distanceToTarget > 0.8f) {
+  if (distanceToTarget > 0.3f) {
     direction = Vector3Normalize(direction);
-    Vector3 movement = Vector3Scale(direction, movementSpeed * deltaTime);
 
     bool isCloseToTarget = distanceToTarget < 4.0f;
     bool isApproachingShopEntrance = false;
@@ -116,16 +121,11 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
     if (targetShop) {
       Vector3 entrancePos = targetShop->getEntrancePosition();
       float distanceToEntrance = Vector3Distance(currentPos, entrancePos);
-      isApproachingShopEntrance = distanceToEntrance < 8.0f;
+      isApproachingShopEntrance = distanceToEntrance < 6.0f;
     }
 
     if (!isCloseToTarget && !isApproachingShopEntrance &&
         wouldCollideAfterMovement(direction, deltaTime * 2.0f)) {
-      static int obstacleFrameCount = 0;
-      obstacleFrameCount++;
-      if (obstacleFrameCount % 120 == 0) {
-      }
-
       float angle45 = PI / 4.0f;
       Vector3 leftDirection = {
           direction.x * cos(angle45) - direction.z * sin(angle45), direction.y,
@@ -134,8 +134,6 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
 
       if (!wouldCollideAfterMovement(leftDirection, deltaTime * 2.0f)) {
         direction = leftDirection;
-        if (obstacleFrameCount % 120 == 0) {
-        }
       } else {
         Vector3 rightDirection = {
             direction.x * cos(-angle45) - direction.z * sin(-angle45),
@@ -145,42 +143,17 @@ void NPC::moveTowards(Vector3 target, float deltaTime) {
 
         if (!wouldCollideAfterMovement(rightDirection, deltaTime * 2.0f)) {
           direction = rightDirection;
-          if (obstacleFrameCount % 120 == 0) {
-          }
-        } else {
-          if (isCloseToTarget || isApproachingShopEntrance) {
-          } else {
-            float angle135 = 3.0f * PI / 4.0f;
-            Vector3 escapeDirection = {
-                direction.x * cos(angle135) - direction.z * sin(angle135),
-                direction.y,
-                direction.x * sin(angle135) + direction.z * cos(angle135)};
-            direction = Vector3Normalize(escapeDirection);
-            if (obstacleFrameCount % 120 == 0) {
-            }
-          }
         }
       }
     }
 
-    applyMovementForces({direction.x, 0, direction.z}, movementSpeed);
-  } else {
-    static int reachedTargetFrameCount = 0;
-    reachedTargetFrameCount++;
-    if (reachedTargetFrameCount % 240 == 0) {
-    }
+    applyEnhancedMovementForces({direction.x, 0, direction.z}, movementSpeed,
+                                5.0f);
   }
 }
 
 bool NPC::isNearTarget(Vector3 target, float threshold) const {
   return Vector3Distance(getPosition(), target) <= threshold;
-}
-
-void NPC::addFruitToInventory(std::shared_ptr<Fruit> fruit) {
-  if (fruit &&
-      std::find(inventory.begin(), inventory.end(), fruit) == inventory.end()) {
-    inventory.push_back(fruit);
-  }
 }
 
 void NPC::setDestination(Vector3 destination) {
@@ -205,16 +178,7 @@ void NPC::followPath(float deltaTime) {
     Vector3 currentWaypoint = pathWaypoints[currentWaypointIndex];
     float distanceToWaypoint = Vector3Distance(getPosition(), currentWaypoint);
 
-    static int debugFrameCount = 0;
-    debugFrameCount++;
-
     float waypointThreshold = 1.0f;
-
-    static int waypointAttempts = 0;
-    static int lastWaypointIndex = -1;
-    static Vector3 lastPosition = getPosition();
-    static float stuckTimer = 0.0f;
-    static bool hasTriedAlternative = false;
 
     if (lastWaypointIndex != currentWaypointIndex) {
       waypointAttempts = 0;
@@ -225,14 +189,15 @@ void NPC::followPath(float deltaTime) {
     waypointAttempts++;
 
     float movementDistance = Vector3Distance(getPosition(), lastPosition);
-    if (movementDistance < 0.05f) {
+    if (movementDistance < 0.03f) {  // Slightly less sensitive
       stuckTimer += deltaTime;
     } else {
       stuckTimer = 0.0f;
     }
     lastPosition = getPosition();
 
-    if (stuckTimer > 2.0f && !hasTriedAlternative && navMesh) {
+    if (stuckTimer > 3.0f && !hasTriedAlternative &&
+        navMesh) {  // Increased patience
       std::vector<Vector3> alternativePath = navMesh->findAlternativePath(
           getPosition(), currentDestination, currentWaypoint);
 
@@ -247,11 +212,11 @@ void NPC::followPath(float deltaTime) {
       stuckTimer = 0.0f;
     }
 
-    if (waypointAttempts > 240) {
+    if (waypointAttempts > 300) {  // Increased patience
       waypointThreshold = 2.5f;
     }
 
-    if (waypointAttempts > 480) {
+    if (waypointAttempts > 600) {  // Increased patience
       currentWaypointIndex++;
       waypointAttempts = 0;
       hasTriedAlternative = false;

@@ -29,7 +29,7 @@ class IdleState : public NPCState {
 
  private:
   float idleTime = 0.0f;
-  const float maxIdleTime = 0.5f;
+  const float maxIdleTime = 2.0f;  // Increased from 0.5f to 2.0f
 };
 
 class MovingToShopState : public NPCState {

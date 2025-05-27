@@ -12,7 +12,7 @@ NPCManager::NPCManager()
       spawnInterval(5.0f),
       minSpawnInterval(3.0f),
       maxSpawnInterval(8.0f),
-      maxActiveNPCs(10),
+      maxActiveNPCs(5),
       chatSystem(nullptr),
       totalNPCsSpawned(0),
       totalFruitsPicked(0),
@@ -143,22 +143,21 @@ void NPCManager::setSpawnInterval(float min, float max) {
 }
 
 Vector3 NPCManager::getRandomSpawnPosition() const {
-  // Debug spawn: Always spawn NPCs in front of the shop for easy testing
   Vector3 shopPos = shop ? shop->getPosition() : Vector3{0, 0, 0};
   Vector3 entrancePos = shop ? shop->getEntrancePosition() : Vector3{0, 0, 0};
 
-  // Spawn NPCs at specific debug positions in front of shop
-  Vector3 debugSpawnPos = {
-      entrancePos.x + 5.0f,  // 5 units to the right of entrance
-      0.5f,                  // Ground level
-      entrancePos.z + 8.0f   // 8 units in front of entrance
-  };
+  std::uniform_real_distribution<float> xOffset(-3.0f, 8.0f);
+  std::uniform_real_distribution<float> zOffset(6.0f, 12.0f);
 
-  return debugSpawnPos;
+  Vector3 spawnPos = {entrancePos.x + xOffset(gen), 0.5f,
+                      entrancePos.z + zOffset(gen)};
+
+  return spawnPos;
 }
 
 bool NPCManager::shouldSpawnNPC() const {
-  return spawnTimer >= spawnInterval && shop != nullptr;
+  return spawnTimer >= spawnInterval && shop != nullptr &&
+         static_cast<int>(activeNPCs.size()) < maxActiveNPCs;
 }
 
 void NPCManager::updateSpawnTimer(float deltaTime) { spawnTimer += deltaTime; }

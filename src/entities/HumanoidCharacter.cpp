@@ -547,6 +547,87 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
   }
 }
 
+void HumanoidCharacter::applyEnhancedMovementForces(Vector3 movement,
+                                                    float speed,
+                                                    float forceMultiplier) {
+  if (!characterBody) return;
+
+  btVector3 currentVelocity = characterBody->getLinearVelocity();
+
+  // INSTANT STOP when no input - NO MORE SLIDING!
+  if (Vector3Length(movement) < 0.01f) {
+    // STOP IMMEDIATELY - set horizontal velocity to zero
+    btVector3 stopVelocity(0.0f, currentVelocity.getY(), 0.0f);
+    characterBody->setLinearVelocity(stopVelocity);
+    return;
+  }
+
+  // Better movement with collision sliding - preserve Y velocity for jumping
+  btVector3 targetVelocity(movement.x * speed, currentVelocity.getY(),
+                           movement.z * speed);
+
+  // Apply movement force instead of setting velocity directly for better
+  // collision response
+  btVector3 velocityDiff = targetVelocity - currentVelocity;
+  velocityDiff.setY(0);  // Don't interfere with jumping/gravity
+
+  // Apply enhanced movement impulse using the force multiplier
+  btVector3 movementImpulse =
+      velocityDiff * GameSettings::Character::MASS * 0.1f * forceMultiplier;
+  characterBody->applyCentralImpulse(movementImpulse);
+
+  // Limit maximum horizontal speed to prevent sliding
+  btVector3 vel = characterBody->getLinearVelocity();
+  float horizontalSpeed =
+      sqrt(vel.getX() * vel.getX() + vel.getZ() * vel.getZ());
+  if (horizontalSpeed > speed) {
+    float scale = speed / horizontalSpeed;
+    characterBody->setLinearVelocity(
+        btVector3(vel.getX() * scale, vel.getY(), vel.getZ() * scale));
+  }
+
+  // Smooth rotation towards movement direction - PHYSICS-FRIENDLY approach
+  if (Vector3Length(movement) > 0.1f) {
+    float targetRotation = atan2(movement.x, movement.z);
+
+    // Get current rotation
+    btTransform transform;
+    characterBody->getMotionState()->getWorldTransform(transform);
+    btQuaternion currentRotation = transform.getRotation();
+
+    // Extract current Y rotation
+    float currentYRotation =
+        atan2(2.0f * (currentRotation.getW() * currentRotation.getY() +
+                      currentRotation.getX() * currentRotation.getZ()),
+              1.0f - 2.0f * (currentRotation.getY() * currentRotation.getY() +
+                             currentRotation.getZ() * currentRotation.getZ()));
+
+    float angleDiff = targetRotation - currentYRotation;
+
+    while (angleDiff > M_PI) angleDiff -= 2 * M_PI;
+    while (angleDiff < -M_PI) angleDiff += 2 * M_PI;
+
+    // Fast but gradual rotation - smooth and controlled
+    float rotationSpeed = GameSettings::Character::TURN_SPEED *
+                          0.05f;  // Smoother rotation to prevent stuttering
+
+    // Apply rotation as angular velocity instead of direct transform - smoother
+    // physics
+    if (abs(angleDiff) >
+        0.01f) {  // Only apply if there's meaningful difference
+      float targetAngularVelocity =
+          angleDiff * rotationSpeed * 60.0f;  // Scale for smooth rotation
+      characterBody->setAngularVelocity(btVector3(0, targetAngularVelocity, 0));
+    } else {
+      // Close enough - stop rotation
+      characterBody->setAngularVelocity(btVector3(0, 0, 0));
+    }
+  } else {
+    // No movement - stop rotation
+    characterBody->setAngularVelocity(btVector3(0, 0, 0));
+  }
+}
+
 void HumanoidCharacter::moveTowards(Vector3 target, float deltaTime) {
   // Calculate direction to target
   Vector3 direction = Vector3Subtract(target, position);

@@ -37,34 +37,12 @@ void MovingToShopState::enter(NPC* npc) {
   Vector3 currentPos = npc->getPosition();
   Vector3 entrancePos = shop->getEntrancePosition();
 
-  if (auto navMesh = NPC::getNavMesh()) {
-    npc->setDestination(entrancePos);
-    hasTarget = true;
-    targetPosition = entrancePos;
-  } else {
-    Vector3 shopPos = shop->getPosition();
-    Vector3 shopSize = shop->getSize();
+  npc->setDestination(entrancePos);
+  hasTarget = true;
+  targetPosition = entrancePos;
 
-    Vector3 sideApproachPoint;
-
-    bool approachFromLeft = currentPos.x < shopPos.x;
-
-    if (approachFromLeft) {
-      sideApproachPoint = {shopPos.x - shopSize.x / 2 - 3.0f, currentPos.y,
-                           entrancePos.z};
-    } else {
-      sideApproachPoint = {shopPos.x + shopSize.x / 2 + 3.0f, currentPos.y,
-                           entrancePos.z};
-    }
-
-    intermediateTarget = sideApproachPoint;
-    hasIntermediateTarget = true;
-    currentStage = WaypointStage::SIDE_APPROACH;
-    npc->setDestination(intermediateTarget);
-
-    hasTarget = true;
-    targetPosition = entrancePos;
-  }
+  hasIntermediateTarget = false;
+  currentStage = WaypointStage::DIRECT_TO_ENTRANCE;
 
   lastPosition = currentPos;
   stuckTimer = 0.0f;
@@ -84,89 +62,22 @@ void MovingToShopState::update(NPC* npc, float deltaTime) {
   float distanceToEntrance = Vector3Distance(currentPos, entrancePos);
 
   bool isInsideShop = shop->isInsideShop(currentPos);
+  bool isInEntranceArea = shop->isNearEntrance(currentPos, 5.0f);
 
-  bool isInEntranceArea = shop->isNearEntrance(currentPos, 3.0f);
-
-  // More intelligent entrance detection
-  if (distanceToEntrance < 1.5f || isInsideShop ||
-      (isInEntranceArea &&
-       currentPos.z >
-           entrancePos.z -
-               2.0f)) {  // If near entrance and past the entrance threshold
+  if (distanceToEntrance < 5.0f || isInsideShop || isInEntranceArea) {
     npc->changeState(std::make_unique<ShoppingState>());
     return;
   }
 
-  if (auto navMesh = NPC::getNavMesh()) {
-    npc->setDestination(entrancePos);
-    hasTarget = true;
-    targetPosition = entrancePos;
-  } else {
-    if (hasIntermediateTarget) {
-      Vector3 targetPos = intermediateTarget;
-      float distanceToWaypoint = Vector3Distance(currentPos, targetPos);
-
-      if (distanceToWaypoint < 2.0f) {
-        if (currentStage == WaypointStage::SIDE_APPROACH) {
-          Vector3 finalApproachPoint = {entrancePos.x, currentPos.y,
-                                        entrancePos.z + 6.0f};
-          intermediateTarget = finalApproachPoint;
-          currentStage = WaypointStage::FINAL_APPROACH;
-          npc->setDestination(intermediateTarget);
-        } else if (currentStage == WaypointStage::FINAL_APPROACH) {
-          hasIntermediateTarget = false;
-          currentStage = WaypointStage::DIRECT_TO_ENTRANCE;
-          npc->setDestination(entrancePos);
-        }
-      } else {
-        npc->moveTowards(targetPos, deltaTime);
-      }
-    } else {
-      npc->moveTowards(entrancePos, deltaTime);
-    }
-  }
+  npc->moveTowards(entrancePos, deltaTime);
 
   float moveDistance = Vector3Distance(currentPos, lastPosition);
-  if (moveDistance < 0.05f) {
+  if (moveDistance < 0.02f) {
     stuckTimer += deltaTime;
 
-    // Debug output every second when stuck
-    static float debugTimer = 0.0f;
-    debugTimer += deltaTime;
-    if (debugTimer > 1.0f) {
-      debugTimer = 0.0f;
-    }
-
-    if (stuckTimer > 6.0f) {  // Increased patience from 3.0f to 6.0f seconds
-
-      if (!hasUsedAlternateApproach) {
-        // Try approaching from the opposite side
-        Vector3 shopPos = shop->getPosition();
-        Vector3 shopSize = shop->getSize();
-        Vector3 entrancePos = shop->getEntrancePosition();
-        Vector3 alternateApproach;
-
-        // Switch to opposite side, but stay in front of shop where entrance is
-        if (intermediateTarget.x < shopPos.x) {
-          alternateApproach = {shopPos.x + shopSize.x / 2 + 3.0f, currentPos.y,
-                               entrancePos.z};
-        } else {
-          alternateApproach = {shopPos.x - shopSize.x / 2 - 3.0f, currentPos.y,
-                               entrancePos.z};
-        }
-
-        intermediateTarget = alternateApproach;
-        hasIntermediateTarget = true;
-        currentStage = WaypointStage::SIDE_APPROACH;
-        hasUsedAlternateApproach = true;
-        npc->setDestination(intermediateTarget);
-      } else {
-        // If alternate approach also failed, try wandering
-        npc->changeState(std::make_unique<WanderingState>());
-        return;
-      }
-
-      stuckTimer = 0.0f;
+    if (stuckTimer > 5.0f) {
+      npc->changeState(std::make_unique<WanderingState>());
+      return;
     }
   } else {
     stuckTimer = 0.0f;
@@ -194,11 +105,9 @@ void ShoppingState::enter(NPC* npc) {
   std::uniform_real_distribution<float> timeDist(20.0f, 35.0f);
   maxShoppingTime = timeDist(gen);
 
-  // Random minimum shelves to visit (2-4)
   std::uniform_int_distribution<int> shelfDist(2, 4);
   minShelvesToVisit = shelfDist(gen);
 
-  // First, navigate inside the shop to start browsing shelves
   auto shop = npc->getTargetShop();
   if (shop) {
     Vector3 interiorPosition = shop->getRandomInteriorPosition();
@@ -221,13 +130,12 @@ void ShoppingState::update(NPC* npc, float deltaTime) {
     return;
   }
 
-  // More frequent chat messages (every 4-8 seconds)
   if (chatTimer >= 4.0f) {
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<float> chatChance(0.0f, 1.0f);
 
-    if (chatChance(gen) < 0.7f) {  // 70% chance to say something
+    if (chatChance(gen) < 0.7f) {
       if (isLookingAtShelf) {
         npc->sayMessage("fruit");
       } else {
@@ -237,31 +145,25 @@ void ShoppingState::update(NPC* npc, float deltaTime) {
     chatTimer = 0.0f;
   }
 
-  // Handle shelf looking behavior
   if (isLookingAtShelf) {
     shelfLookingTimer += deltaTime;
 
-    // Look at shelf for 3-6 seconds
     if (shelfLookingTimer >= 3.0f) {
       std::random_device rd;
       std::mt19937 gen(rd());
       std::uniform_real_distribution<float> actionChance(0.0f, 1.0f);
 
-      // Decide what to do at this shelf
       bool shouldPurchase = false;
 
-      // If haven't purchased anything yet and visited enough shelves
       if (!hasPurchasedSomething && shelvesVisited >= minShelvesToVisit) {
-        shouldPurchase =
-            actionChance(gen) < 0.8f;  // 80% chance to buy something
+        shouldPurchase = actionChance(gen) < 0.8f;
       } else if (hasPurchasedSomething) {
-        shouldPurchase = actionChance(gen) < 0.3f;  // 30% chance to buy more
+        shouldPurchase = actionChance(gen) < 0.3f;
       } else {
-        shouldPurchase = actionChance(gen) < 0.2f;  // 20% chance to buy early
+        shouldPurchase = actionChance(gen) < 0.2f;
       }
 
       if (shouldPurchase && currentShelf) {
-        // Try to purchase a fruit from this shelf
         auto availableFruits = currentShelf->getFruits();
         if (!availableFruits.empty()) {
           for (auto fruit : availableFruits) {
@@ -270,23 +172,21 @@ void ShoppingState::update(NPC* npc, float deltaTime) {
               hasPurchasedSomething = true;
 
               npc->sayMessage("fruit");
-              break;  // Only pick one fruit
+              break;
             }
           }
         }
       }
 
-      // Finished looking at this shelf
       isLookingAtShelf = false;
       shelfLookingTimer = 0.0f;
       shelvesVisited++;
       currentShelf = nullptr;
       hasCurrentTarget = false;
     }
-    return;  // Don't move while looking at shelf
+    return;
   }
 
-  // Continue following path to current target
   if (hasCurrentTarget) {
     if (auto navMesh = NPC::getNavMesh()) {
       npc->followPath(deltaTime);
@@ -407,19 +307,49 @@ void WanderingState::enter(NPC* npc) {
 void WanderingState::update(NPC* npc, float deltaTime) {
   wanderTime += deltaTime;
 
+  auto shop = npc->getTargetShop();
+  if (!shop) {
+    npc->setActive(false);
+    return;
+  }
+
+  Vector3 currentPos = npc->getPosition();
+  Vector3 entrancePos = shop->getEntrancePosition();
+
+  float distanceToEntrance = Vector3Distance(currentPos, entrancePos);
+  if (distanceToEntrance < 8.0f) {
+    npc->changeState(std::make_unique<MovingToShopState>());
+    return;
+  }
+
   if (!hasWanderTarget || wanderTime >= maxWanderTime) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    std::uniform_real_distribution<float> xDist(-25.0f, 25.0f);
-    std::uniform_real_distribution<float> zDist(-25.0f, 25.0f);
 
-    wanderTarget = {xDist(gen), npc->getPosition().y, zDist(gen)};
+    Vector3 toEntrance = Vector3Subtract(entrancePos, currentPos);
+    toEntrance = Vector3Normalize(toEntrance);
+
+    std::uniform_real_distribution<float> angleDist(-PI / 3, PI / 3);
+    float angle = angleDist(gen);
+
+    Vector3 wanderDirection = {
+        toEntrance.x * cos(angle) - toEntrance.z * sin(angle), 0,
+        toEntrance.x * sin(angle) + toEntrance.z * cos(angle)};
+    wanderDirection = Vector3Normalize(wanderDirection);
+
+    std::uniform_real_distribution<float> distDist(5.0f, 12.0f);
+    float wanderDistance = distDist(gen);
+
+    wanderTarget =
+        Vector3Add(currentPos, Vector3Scale(wanderDirection, wanderDistance));
+    wanderTarget.y = currentPos.y;
+
     hasWanderTarget = true;
     wanderTime = 0.0f;
     npc->setDestination(wanderTarget);
   }
 
-  if (wanderTime > 10.0f) {
+  if (wanderTime > 8.0f) {
     npc->changeState(std::make_unique<MovingToShopState>());
   }
 }
@@ -454,7 +384,7 @@ void LeavingState::update(NPC* npc, float deltaTime) {
   float distanceToExit = Vector3Distance(currentPos, exitTarget);
 
   float movementDistance = Vector3Distance(currentPos, lastPosition);
-  if (movementDistance < 0.05f) {
+  if (movementDistance < 0.02f) {  // Made less sensitive
     stuckTimer += deltaTime;
   } else {
     stuckTimer = 0.0f;
@@ -467,7 +397,7 @@ void LeavingState::update(NPC* npc, float deltaTime) {
     npc->moveTowards(exitTarget, deltaTime);
   }
 
-  if (stuckTimer > 5.0f) {
+  if (stuckTimer > 7.0f) {  // Increased patience from 5.0f to 7.0f
     alternativeAttempts++;
 
     if (alternativeAttempts <= 3) {

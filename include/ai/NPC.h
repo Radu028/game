@@ -26,7 +26,6 @@ class NPC : public HumanoidCharacter {
  private:
   std::unique_ptr<NPCState> currentState;
   std::shared_ptr<Shop> targetShop;
-  std::vector<std::shared_ptr<Fruit>> inventory;
   std::vector<NPCObserver*> observers;
   NPCChatSystem* chatSystem;
 
@@ -44,6 +43,12 @@ class NPC : public HumanoidCharacter {
   std::vector<Vector3> pathWaypoints;
   int currentWaypointIndex;
   static std::shared_ptr<NavMesh> navMesh;  // Shared navigation mesh
+
+  int waypointAttempts;
+  int lastWaypointIndex;
+  Vector3 lastPosition;
+  float stuckTimer;
+  bool hasTriedAlternative;
 
  public:
   NPC(Vector3 position, std::shared_ptr<Shop> shop);
@@ -64,13 +69,6 @@ class NPC : public HumanoidCharacter {
   // Shop interaction
   void setTargetShop(std::shared_ptr<Shop> shop) { targetShop = shop; }
   std::shared_ptr<Shop> getTargetShop() const { return targetShop; }
-
-  // Inventory management
-  void addFruitToInventory(std::shared_ptr<Fruit> fruit);
-  const std::vector<std::shared_ptr<Fruit>>& getInventory() const {
-    return inventory;
-  }
-  int getInventoryCount() const { return inventory.size(); }
 
   // Pathfinding
   void setDestination(Vector3 destination);

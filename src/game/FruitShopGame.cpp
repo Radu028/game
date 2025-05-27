@@ -45,7 +45,7 @@ void FruitShopGame::initialize() {
     npcManager->setShop(shop);
     npcManager->setChatSystem(chatSystem.get());
     npcManager->setSpawnInterval(2.0f, 4.0f);
-    npcManager->setMaxActiveNPCs(1);
+    npcManager->setMaxActiveNPCs(5);
   }
 
   currentState = GameState::RUNNING;
