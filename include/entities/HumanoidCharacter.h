@@ -27,7 +27,7 @@ struct HumanoidVisualPart {
         currentOffset(offset) {}
 };
 
-// Professional physics body part with individual collision
+// Physics body part with individual collision
 struct HumanoidPhysicsPart {
   btRigidBody* body = nullptr;
   btCollisionShape* shape = nullptr;
@@ -65,16 +65,14 @@ struct FacialFeature {
 
 class HumanoidCharacter : public GameObject {
  public:
-  // Static members for academic requirements
   static int totalCharactersCreated;
   static int activeCharacters;
   static constexpr float DEFAULT_MOVEMENT_SPEED = 5.0f;
   static constexpr float DEFAULT_JUMP_FORCE = 15.0f;
 
-  // Static utility functions
   static float calculateDistance(const HumanoidCharacter& char1,
                                  const HumanoidCharacter& char2);
-  static Vector3 getOptimalSpacing(int characterCount);
+  static Vector3 getCharacterSpacing(int characterCount);
   static bool areCharactersOverlapping(const HumanoidCharacter& char1,
                                        const HumanoidCharacter& char2);
   static int getTotalCharactersCreated() { return totalCharactersCreated; }
@@ -106,7 +104,14 @@ class HumanoidCharacter : public GameObject {
   Vector3 getFeetPosition() const;
   Vector3 getTorsoPosition() const;
 
-  // Professional multi-body physics methods
+  // Body part accessors for customization
+  HumanoidVisualPart& getTorso() { return torso; }
+  HumanoidVisualPart& getLeftArm() { return leftArm; }
+  HumanoidVisualPart& getRightArm() { return rightArm; }
+  HumanoidVisualPart& getLeftLeg() { return leftLeg; }
+  HumanoidVisualPart& getRightLeg() { return rightLeg; }
+
+  // Multi-body physics methods
   void createIndividualPhysicsBodies();
   void updatePhysicsBodyPositions();
   void synchronizeVisualWithPhysics();
@@ -128,7 +133,7 @@ class HumanoidCharacter : public GameObject {
   btCollisionShape* characterShape = nullptr;
   btDefaultMotionState* motionState = nullptr;
 
-  // Individual physics bodies for professional collision detection
+  // Individual physics bodies for collision detection
   HumanoidPhysicsPart headPhysics;
   HumanoidPhysicsPart torsoPhysics;
   HumanoidPhysicsPart leftArmPhysics;
@@ -162,11 +167,9 @@ class HumanoidCharacter : public GameObject {
   bool isJumping = false;
   float jumpCooldown = 0.0f;
 
-  // Movement state
   Vector3 targetMovementDirection = {0, 0, 0};
   float currentMovementSpeed = 0.0f;
 
-  // Private methods
   void createSinglePhysicsBody();
   void createIndividualPhysicsBody(HumanoidPhysicsPart& part,
                                    Vector3 worldPosition);

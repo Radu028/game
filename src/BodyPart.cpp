@@ -21,7 +21,6 @@ BodyPart::BodyPart(Vector3 position, Vector3 size, Color color,
       injuryType("") {
   model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
 
-  // If using shaders, assign the lighting shader to the model material
   if (useShaders) {
     ShaderSystem* shaderSystem = ShaderSystem::getInstance();
     if (shaderSystem->isInitialized()) {
@@ -30,7 +29,6 @@ BodyPart::BodyPart(Vector3 position, Vector3 size, Color color,
   }
 }
 
-// Copy constructor implementation
 BodyPart::BodyPart(const BodyPart& other)
     : GameObject(other),
       size(other.size),
@@ -44,7 +42,6 @@ BodyPart::BodyPart(const BodyPart& other)
       isInjured(other.isInjured),
       injuryType(other.injuryType) {
   std::cout << "BodyPart copy constructor called for: " << name << std::endl;
-  // Reload the model for the copy
   model = LoadModelFromMesh(GenMeshCube(size.x, size.y, size.z));
   if (useShaders) {
     ShaderSystem* shaderSystem = ShaderSystem::getInstance();
@@ -54,17 +51,15 @@ BodyPart::BodyPart(const BodyPart& other)
   }
 }
 
-// Copy assignment operator using copy-and-swap idiom
 BodyPart& BodyPart::operator=(const BodyPart& other) {
   std::cout << "BodyPart copy assignment operator called" << std::endl;
   if (this != &other) {
-    BodyPart temp(other);  // Create temporary copy
-    swap(*this, temp);     // Swap with temporary
+    BodyPart temp(other);
+    swap(*this, temp);
   }
   return *this;
 }
 
-// Move constructor
 BodyPart::BodyPart(BodyPart&& other) noexcept
     : GameObject(std::move(other)),
       size(other.size),
@@ -79,22 +74,18 @@ BodyPart::BodyPart(BodyPart&& other) noexcept
       injuryType(std::move(other.injuryType)) {
   std::cout << "BodyPart move constructor called" << std::endl;
 
-  // Move the model
   model = other.model;
-  other.model = {};  // Reset moved-from object's model
+  other.model = {};
 
-  // Reset moved-from object to valid state
+  other.health = 0.0f;
   other.health = 0.0f;
   other.maxHealth = 0.0f;
   other.isInjured = false;
 }
 
-// Move assignment operator
 BodyPart& BodyPart::operator=(BodyPart&& other) noexcept {
   std::cout << "BodyPart move assignment operator called" << std::endl;
   if (this != &other) {
-    // Move individual members (GameObject base class handling omitted for
-    // simplicity)
     size = other.size;
     color = other.color;
     rotationAxis = other.rotationAxis;
@@ -106,12 +97,10 @@ BodyPart& BodyPart::operator=(BodyPart&& other) noexcept {
     isInjured = other.isInjured;
     injuryType = std::move(other.injuryType);
 
-    // Move the model
     if (model.meshCount > 0) UnloadModel(model);
     model = other.model;
     other.model = {};
 
-    // Reset moved-from object
     other.health = 0.0f;
     other.maxHealth = 0.0f;
     other.isInjured = false;
@@ -119,18 +108,14 @@ BodyPart& BodyPart::operator=(BodyPart&& other) noexcept {
   return *this;
 }
 
-// Destructor implementation
 BodyPart::~BodyPart() {
   if (model.meshCount > 0) {
     UnloadModel(model);
   }
 }
 
-// Friend swap function for copy-and-swap idiom
 void swap(BodyPart& first, BodyPart& second) noexcept {
   using std::swap;
-  // Note: GameObject base class doesn't have swap, so we swap individual
-  // members
   swap(first.size, second.size);
   swap(first.color, second.color);
   swap(first.rotationAxis, second.rotationAxis);
@@ -151,6 +136,8 @@ void BodyPart::setRotation(const Vector3 axis, float angle) {
 
 void BodyPart::setPosition(Vector3 newPos) { GameObject::setPosition(newPos); }
 
+void BodyPart::setColor(Color newColor) { color = newColor; }
+
 Vector3 BodyPart::getSize() const { return size; }
 Color BodyPart::getColor() const { return color; }
 
@@ -159,11 +146,9 @@ Vector3 BodyPart::getRotationAxis() const { return rotationAxis; }
 
 void BodyPart::draw() const {
   if (useShaders) {
-    // With shaders, the material already has the shader assigned
     DrawModelEx(model, position, rotationAxis, rotationAngle,
                 {1.0f, 1.0f, 1.0f}, color);
   } else {
-    // Fallback to normal rendering
     DrawModelEx(model, position, rotationAxis, rotationAngle,
                 {1.0f, 1.0f, 1.0f}, color);
   }
@@ -187,7 +172,6 @@ std::unique_ptr<GameObject> BodyPart::clone() const {
   return std::make_unique<BodyPart>(*this);
 }
 
-// Health-related methods implementation
 void BodyPart::takeDamage(float damage) {
   health = std::max(0.0f, health - damage);
   if (health <= maxHealth * 0.3f) {
@@ -229,12 +213,10 @@ void demonstrateBodyPartCopyOperations() {
   std::cout << "Original: ";
   original.displayStatus();
 
-  // Test copy constructor
   BodyPart copied(original);
   std::cout << "Copied: ";
   copied.displayStatus();
 
-  // Test copy assignment
   BodyPart assigned({1, 1, 1}, {1, 1, 1}, BLUE, false, false);
   assigned.setName("Right Leg");
   assigned.setHealth(100.0f, 100.0f);

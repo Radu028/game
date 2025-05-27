@@ -8,11 +8,9 @@
 #include "raymath.h"
 #include "systems/InputSystem.h"
 
-// Static member definitions
 int HumanoidCharacter::totalCharactersCreated = 0;
 int HumanoidCharacter::activeCharacters = 0;
 
-// Static utility function implementations
 float HumanoidCharacter::calculateDistance(const HumanoidCharacter& char1,
                                            const HumanoidCharacter& char2) {
   Vector3 pos1 = char1.getPosition();
@@ -20,7 +18,7 @@ float HumanoidCharacter::calculateDistance(const HumanoidCharacter& char1,
   return Vector3Distance(pos1, pos2);
 }
 
-Vector3 HumanoidCharacter::getOptimalSpacing(int characterCount) {
+Vector3 HumanoidCharacter::getCharacterSpacing(int characterCount) {
   if (characterCount <= 1) return {0.0f, 0.0f, 0.0f};
   float spacing =
       3.0f + (characterCount * 0.5f);  // Increase spacing with more characters
@@ -34,8 +32,7 @@ bool HumanoidCharacter::areCharactersOverlapping(
 
 HumanoidCharacter::HumanoidCharacter(Vector3 position)
     : GameObject(position, true, true, false),
-      // Professional dynamic positioning using settings - automatically
-      // calculates correct offsets
+      // Initialize body parts with calculated offsets
       head(GameSettings::BodyParts::HEAD_SIZE,
            GameSettings::BodyParts::HEAD_COLOR,
            {0, GameSettings::CharacterCalculations::getHeadBaseYOffset(), 0}),
@@ -58,7 +55,7 @@ HumanoidCharacter::HumanoidCharacter(Vector3 position)
                GameSettings::BodyParts::LEG_COLOR,
                {GameSettings::BodyParts::LEG_OFFSET_X,
                 GameSettings::CharacterCalculations::getLegBaseYOffset(), 0}),
-      // Initialize individual physics parts with professional collision groups
+      // Initialize physics components for body parts
       headPhysics(
           GameSettings::BodyParts::HEAD_SIZE,
           {0, GameSettings::CharacterCalculations::getHeadBaseYOffset(), 0},
@@ -87,8 +84,7 @@ HumanoidCharacter::HumanoidCharacter(Vector3 position)
           {GameSettings::BodyParts::LEG_OFFSET_X,
            GameSettings::CharacterCalculations::getLegBaseYOffset(), 0},
           GameSettings::Collision::Groups::CHARACTER_LEGS),
-      // Enhanced facial features - positioned on front of head with better
-      // details
+      // Eye features positioned on front of head
       leftEye(
           {0.08f, 0.08f, 0.12f}, BLACK,
           {-0.12f,
@@ -103,7 +99,7 @@ HumanoidCharacter::HumanoidCharacter(Vector3 position)
           {0.15f, 0.04f, 0.08f}, MAROON,
           {0, GameSettings::CharacterCalculations::getHeadBaseYOffset() - 0.08f,
            0.25f}),
-      // Additional facial features for better expression
+      // Facial features for character expression
       leftEyebrow(
           {0.10f, 0.02f, 0.06f}, DARKBROWN,
           {-0.12f,
@@ -114,13 +110,11 @@ HumanoidCharacter::HumanoidCharacter(Vector3 position)
           {0.12f,
            GameSettings::CharacterCalculations::getHeadBaseYOffset() + 0.15f,
            0.26f}) {
-  // Update static counters
   totalCharactersCreated++;
   activeCharacters++;
 }
 
 HumanoidCharacter::~HumanoidCharacter() {
-  // Update static counter
   activeCharacters--;
 
   if (physicsWorld && characterBody) {
@@ -136,16 +130,15 @@ HumanoidCharacter::~HumanoidCharacter() {
 }
 
 void HumanoidCharacter::createSinglePhysicsBody() {
-  // Use realistic dimensions from settings
+  // Use dimensions from settings
   float radius = GameSettings::Character::RADIUS;
   float height = GameSettings::Character::HEIGHT;
 
   characterShape = new btCapsuleShape(radius, height);
   characterShape->setMargin(GameSettings::Collision::SHAPE_MARGIN);
 
-  // Professional positioning: place character so feet are on ground
-  // position.y represents where the feet should be, so physics body center is
-  // at the calculated position
+  // Position character body so feet touch the ground
+  // position.y represents foot level, physics center is offset accordingly
   btTransform transform;
   transform.setIdentity();
 
@@ -156,15 +149,13 @@ void HumanoidCharacter::createSinglePhysicsBody() {
 
   transform.setOrigin(btVector3(position.x, physicsCenterY, position.z));
 
-  // Create motion state
   motionState = new btDefaultMotionState(transform);
 
-  // Use realistic mass from settings
   float mass = GameSettings::Character::MASS;
   btVector3 inertia(0, 0, 0);
   characterShape->calculateLocalInertia(mass, inertia);
 
-  // Create rigid body with optimized settings
+  // Create rigid body with physics settings
   btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, motionState,
                                                   characterShape, inertia);
   rbInfo.m_friction = GameSettings::Collision::FRICTION;
@@ -199,7 +190,7 @@ void HumanoidCharacter::setupPhysics(btDiscreteDynamicsWorld* bulletWorld) {
                                                        // world objects
   physicsWorld->addRigidBody(characterBody, characterGroup, characterMask);
 
-  // Create and add individual physics bodies for professional collision
+  // Create individual physics bodies for each body part
   createIndividualPhysicsBodies();
 }
 
@@ -216,22 +207,18 @@ void HumanoidCharacter::removeFromPhysics(
 void HumanoidCharacter::update(float deltaTime) {
   if (!characterBody) return;
 
-  // Update jump cooldown
   if (jumpCooldown > 0.0f) {
     jumpCooldown -= deltaTime;
   }
 
-  // Update character state based on movement
   updateCharacterState();
 
-  // Animate the character parts
   animateCharacter(deltaTime);
 
   // Update visual positions and facial features (combined for efficiency)
   updateVisualPositions();
 
-  // Synchronize individual physics bodies with visual positions for
-  // professional collision
+  // Synchronize physics bodies with visual positions for collision detection
   synchronizeVisualWithPhysics();
 
   // Facial features are now updated inside updateVisualPositions()
@@ -249,7 +236,6 @@ void HumanoidCharacter::updateCharacterState() {
     isJumping = false;
   }
 
-  // Determine character state
   float horizontalSpeed =
       sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
 
@@ -279,7 +265,7 @@ void HumanoidCharacter::animateCharacter(float deltaTime) {
       break;
 
     case WALKING: {
-      // Much more pronounced walking animation with realistic limb movement
+      // Walking animation with limb movement
       float walkCycle = animationTime * 8.0f;   // Walking cycle frequency
       float armSwingL = sin(walkCycle) * 0.4f;  // Left arm swing
       float armSwingR =
@@ -288,16 +274,16 @@ void HumanoidCharacter::animateCharacter(float deltaTime) {
       float legSwingR =
           sin(walkCycle + M_PI) * 0.3f;  // Right leg swing (opposite)
 
-      // Head bobbing - subtle but visible
+      // Head bobbing
       head.currentOffset =
           Vector3Add(head.baseOffset, {0, sin(walkCycle * 2.0f) * 0.05f, 0});
 
-      // Torso slight movement for natural walking
+      // Torso movement for walking
       torso.currentOffset = Vector3Add(
           torso.baseOffset,
           {sin(walkCycle) * 0.02f, sin(walkCycle * 2.0f) * 0.03f, 0});
 
-      // Arms swing naturally - forward/back movement with slight vertical
+      // Arms swing naturally
       leftArm.currentOffset = Vector3Add(
           leftArm.baseOffset, {0, armSwingL * 0.3f, armSwingL * 0.6f});
       rightArm.currentOffset = Vector3Add(
@@ -339,14 +325,14 @@ void HumanoidCharacter::updateVisualPositions() {
   btVector3 origin = transform.getOrigin();
   Vector3 physicsPos = {origin.getX(), origin.getY(), origin.getZ()};
 
-  // Update main position ONCE per frame (at feet level) - SINGLE UPDATE
-  // Professional calculation using dynamic height functions
+  // Update main position once per frame (at feet level)
+  // Calculate ground position from physics body center
   position = {origin.getX(),
               GameSettings::CharacterCalculations::getGroundYFromPhysicsCenterY(
                   origin.getY()),
               origin.getZ()};
 
-  // Get rotation (only Y-axis rotation is allowed) - SINGLE CALCULATION
+  // Get rotation (only Y-axis rotation allowed)
   btQuaternion rotation = transform.getRotation();
   float yRotation = atan2(2.0f * (rotation.getW() * rotation.getY() +
                                   rotation.getX() * rotation.getZ()),
@@ -356,46 +342,46 @@ void HumanoidCharacter::updateVisualPositions() {
   // Convert rotation to degrees for BodyPart's setRotation method
   float yRotationDegrees = yRotation * RAD2DEG;
 
-  // Update ALL visual parts in a SINGLE BATCH - no multiple calls per frame
+  // Update visual parts positions and rotations
   Vector3 rotatedOffset;
 
-  // Head - position AND rotation like a LEGO brick
+  // Head position and rotation
   rotatedOffset =
       Vector3RotateByAxisAngle(head.currentOffset, {0, 1, 0}, yRotation);
   head.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   head.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Torso - position AND rotation like a LEGO brick
+  // Torso position and rotation
   rotatedOffset =
       Vector3RotateByAxisAngle(torso.currentOffset, {0, 1, 0}, yRotation);
   torso.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   torso.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Left Arm - position AND rotation like a LEGO brick
+  // Left Arm position and rotation
   rotatedOffset =
       Vector3RotateByAxisAngle(leftArm.currentOffset, {0, 1, 0}, yRotation);
   leftArm.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   leftArm.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Right Arm - position AND rotation like a LEGO brick
+  // Right Arm position and rotation
   rotatedOffset =
       Vector3RotateByAxisAngle(rightArm.currentOffset, {0, 1, 0}, yRotation);
   rightArm.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   rightArm.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Left Leg - position AND rotation like a LEGO brick
+  // Left Leg position and rotation
   rotatedOffset =
       Vector3RotateByAxisAngle(leftLeg.currentOffset, {0, 1, 0}, yRotation);
   leftLeg.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   leftLeg.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Right Leg - position AND rotation like a LEGO brick
+  // Right Leg position and rotation
   rotatedOffset =
       Vector3RotateByAxisAngle(rightLeg.currentOffset, {0, 1, 0}, yRotation);
   rightLeg.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   rightLeg.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Facial features - update with SAME transform data AND rotation
+  // Facial features transform
   rotatedOffset =
       Vector3RotateByAxisAngle(leftEye.currentOffset, {0, 1, 0}, yRotation);
   leftEye.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
@@ -411,7 +397,7 @@ void HumanoidCharacter::updateVisualPositions() {
   mouth.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
   mouth.visual.setRotation({0, 1, 0}, yRotationDegrees);
 
-  // Additional facial features for enhanced expression
+  // Eyebrow positioning
   rotatedOffset =
       Vector3RotateByAxisAngle(leftEyebrow.currentOffset, {0, 1, 0}, yRotation);
   leftEyebrow.visual.setPosition(Vector3Add(physicsPos, rotatedOffset));
@@ -436,19 +422,18 @@ void HumanoidCharacter::handleInput(float movementSpeed, float cameraAngleX) {
   float inputZ = 0.0f;
 
   if (IsKeyDown(KEY_W) || IsKeyDown(KEY_UP)) {
-    inputZ += 1.0f;  // Forward
+    inputZ += 1.0f;
   }
   if (IsKeyDown(KEY_S) || IsKeyDown(KEY_DOWN)) {
-    inputZ -= 1.0f;  // Backward
+    inputZ -= 1.0f;
   }
   if (IsKeyDown(KEY_A) || IsKeyDown(KEY_LEFT)) {
-    inputX -= 1.0f;  // Left
+    inputX -= 1.0f;
   }
   if (IsKeyDown(KEY_D) || IsKeyDown(KEY_RIGHT)) {
-    inputX += 1.0f;  // Right
+    inputX += 1.0f;
   }
 
-  // Convert camera angle to radians for calculation
   float cameraRad = cameraAngleX * DEG2RAD;
 
   // In Roblox-style movement:
@@ -486,7 +471,6 @@ void HumanoidCharacter::handleInput(float movementSpeed, float cameraAngleX) {
 void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
   if (!characterBody) return;
 
-  // Get current velocity
   btVector3 currentVelocity = characterBody->getLinearVelocity();
 
   // INSTANT STOP when no input - NO MORE SLIDING!
@@ -537,10 +521,8 @@ void HumanoidCharacter::applyMovementForces(Vector3 movement, float speed) {
               1.0f - 2.0f * (currentRotation.getY() * currentRotation.getY() +
                              currentRotation.getZ() * currentRotation.getZ()));
 
-    // Calculate rotation difference
     float angleDiff = targetRotation - currentYRotation;
 
-    // Handle angle wrapping
     while (angleDiff > M_PI) angleDiff -= 2 * M_PI;
     while (angleDiff < -M_PI) angleDiff += 2 * M_PI;
 
@@ -572,7 +554,6 @@ void HumanoidCharacter::moveTowards(Vector3 target, float deltaTime) {
 
   float distance = Vector3Length(direction);
 
-  // If close enough to target, stop
   if (distance < 0.5f) {
     applyMovementForces({0, 0, 0}, 0);
     return;
@@ -609,7 +590,7 @@ void HumanoidCharacter::jump() {
     return;  // Already moving up fast, don't allow another jump
   }
 
-  // Realistic jump force
+  // Jump force
   btVector3 jumpImpulse(0, GameSettings::Character::JUMP_IMPULSE * 2.0f, 0);
   characterBody->applyCentralImpulse(jumpImpulse);
 
@@ -628,7 +609,7 @@ bool HumanoidCharacter::isOnGround() const {
   characterBody->getMotionState()->getWorldTransform(transform);
   btVector3 origin = transform.getOrigin();
 
-  // Professional ground detection using dynamic calculations
+  // Ground detection using raycast
   float groundContactOffset =
       GameSettings::CharacterCalculations::getGroundContactOffset();
   btVector3 from =
@@ -665,7 +646,7 @@ Vector3 HumanoidCharacter::getFeetPosition() const {
   characterBody->getMotionState()->getWorldTransform(transform);
   btVector3 origin = transform.getOrigin();
 
-  // Return feet position (ground contact point) using professional calculations
+  // Return feet position (ground contact point)
   return {origin.getX(),
           GameSettings::CharacterCalculations::getGroundYFromPhysicsCenterY(
               origin.getY()),
@@ -691,7 +672,7 @@ void HumanoidCharacter::draw() const {
   leftLeg.visual.draw();
   rightLeg.visual.draw();
 
-  // Draw enhanced facial features for better character expression
+  // Draw facial features for character expression
   leftEye.visual.draw();
   rightEye.visual.draw();
   mouth.visual.draw();
@@ -883,7 +864,7 @@ bool HumanoidCharacter::wouldCollideAfterMovement(Vector3 movement,
   return false;
 }
 
-// Professional multi-body physics system implementation
+// Multi-body physics system implementation
 void HumanoidCharacter::createIndividualPhysicsBodies() {
   if (!physicsWorld || !characterBody) return;
 
@@ -1025,8 +1006,8 @@ void HumanoidCharacter::removeAllPhysicsBodies() {
 void HumanoidCharacter::constrainBodyPartsToCharacter() {
   // This method can be used to add constraints between body parts
   // For now, we use kinematic bodies that follow the main character
-  // In a more advanced implementation, you could add spring constraints
-  // or other joint types to create more realistic physics interactions
+  // In future implementations, you could add spring constraints
+  // or other joint types to create more physics interactions
 }
 
 std::unique_ptr<GameObject> HumanoidCharacter::clone() const {

@@ -28,26 +28,21 @@ class BodyPart : public GameObject {
   BodyPart(Vector3 position, Vector3 size, Color color,
            bool hasCollision = true, bool useShaders = true);
 
-  // Copy constructor
   BodyPart(const BodyPart& other);
 
-  // Assignment operator using copy-and-swap idiom
   BodyPart& operator=(const BodyPart& other);
 
-  // Move constructor
   BodyPart(BodyPart&& other) noexcept;
 
-  // Move assignment operator
   BodyPart& operator=(BodyPart&& other) noexcept;
 
-  // Destructor
   ~BodyPart() override;
 
-  // Friend function for swap (part of copy-and-swap idiom)
   friend void swap(BodyPart& first, BodyPart& second) noexcept;
 
   void setRotation(const Vector3 axis, float angle);
   void setPosition(Vector3 newPos);
+  void setColor(Color newColor);
 
   Vector3 getSize() const;
   Color getColor() const;
