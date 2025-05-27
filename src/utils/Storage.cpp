@@ -4,7 +4,6 @@
 
 #include "shop/Fruit.h"
 
-// Template specialization implementation for Fruit storage
 template <>
 void Storage<Fruit>::displaySpecialInfo() const {
   std::cout << "=== Fruit Storage Special Information ===" << std::endl;
@@ -64,13 +63,11 @@ double Storage<Fruit>::calculateTotalNutrition() const {
 // Explicit template instantiation for GameObject-derived types only
 template class Storage<Fruit>;
 
-// Example usage function
 void demonstrateStorage() {
   std::cout << "Storage template demonstration:" << std::endl;
 
   Storage<Fruit> fruitStorage({0, 0, 0}, "Fruit Storage");
 
-  // Create fruits as shared_ptr objects
   auto apple = std::make_shared<Fruit>(Vector3{0, 0, 0}, FruitType::APPLE);
   auto banana = std::make_shared<Fruit>(Vector3{1, 1, 1}, FruitType::BANANA);
 

@@ -28,11 +28,9 @@ class Storage : public CubeObject {
   float itemSpacing;
   std::string storageType;
 
-  // Static member to track total storage units created
   static int totalStorageUnits;
 
  public:
-  // Default constructor
   Storage() : Storage({0, 0, 0}, "Default") {}
 
   Storage(Vector3 position, const std::string& type = "Generic",
@@ -49,7 +47,6 @@ class Storage : public CubeObject {
 
   ~Storage() override = default;
 
-  // Copy constructor with deep copying
   Storage(const Storage& other)
       : CubeObject(other),
         storagePosition(other.storagePosition),
@@ -69,13 +66,11 @@ class Storage : public CubeObject {
     ++totalStorageUnits;
   }
 
-  // Assignment operator using copy-and-swap idiom
   Storage& operator=(Storage other) {
     swap(*this, other);
     return *this;
   }
 
-  // Move constructor
   Storage(Storage&& other) noexcept
       : CubeObject(std::move(other)),
         items(std::move(other.items)),
@@ -87,7 +82,6 @@ class Storage : public CubeObject {
     other.itemSpacing = 0.0f;
   }
 
-  // Friend function for swap (part of copy-and-swap idiom)
   friend void swap(Storage& first, Storage& second) noexcept {
     using std::swap;
     // Swap base class
@@ -100,7 +94,6 @@ class Storage : public CubeObject {
     swap(first.storageType, second.storageType);
   }
 
-  // Template-dependent item management
   void addItem(std::shared_ptr<ItemType> item) {
     if (!item) {
       throw GameException("Cannot add null item to " + storageType +
@@ -221,7 +214,6 @@ class Storage : public CubeObject {
     return std::make_unique<Storage<ItemType>>(*this);
   }
 
-  // Getters
   const std::vector<std::shared_ptr<ItemType>>& getItems() const {
     return items;
   }
@@ -243,10 +235,8 @@ class Storage : public CubeObject {
     return 0.0;  // Default implementation
   }
 
-  // Static method
   static int getTotalStorageUnits() { return totalStorageUnits; }
 
-  // Setters
   void setItemSpacing(float spacing) {
     itemSpacing = spacing;
     arrangeItems();
@@ -303,7 +293,6 @@ int Storage<ItemType>::totalStorageUnits = 0;
 class Fruit;  // Forward declaration
 using FruitShelf = Storage<Fruit>;
 
-// Template specialization for creating default fruits
 template <>
 template <>
 inline std::shared_ptr<Fruit> Storage<Fruit>::createDefaultItem<Fruit>() {

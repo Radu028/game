@@ -20,7 +20,6 @@ class GameObjectManager {
   std::string managerName;
   size_t maxCapacity;
 
-  // Static member for tracking total managers created
   static size_t totalManagersCreated;
 
  public:
@@ -32,7 +31,6 @@ class GameObjectManager {
 
   ~GameObjectManager() = default;
 
-  // Copy constructor
   GameObjectManager(const GameObjectManager& other)
       : managerName(other.managerName + "_copy"),
         maxCapacity(other.maxCapacity) {
@@ -52,13 +50,11 @@ class GameObjectManager {
     ++totalManagersCreated;
   }
 
-  // Assignment operator using copy-and-swap idiom
   GameObjectManager& operator=(GameObjectManager other) {
     swap(*this, other);
     return *this;
   }
 
-  // Move constructor
   GameObjectManager(GameObjectManager&& other) noexcept
       : objects(std::move(other.objects)),
         managerName(std::move(other.managerName)),
@@ -66,7 +62,6 @@ class GameObjectManager {
     other.maxCapacity = 0;
   }
 
-  // Friend function for swap (part of copy-and-swap idiom)
   friend void swap(GameObjectManager& first,
                    GameObjectManager& second) noexcept {
     using std::swap;
@@ -75,7 +70,6 @@ class GameObjectManager {
     swap(first.maxCapacity, second.maxCapacity);
   }
 
-  // Add object with capacity checking
   void addObject(std::shared_ptr<T> object) {
     if (!object) {
       throw GameException("Cannot add null object to " + managerName);
@@ -90,7 +84,6 @@ class GameObjectManager {
     objects.push_back(object);
   }
 
-  // Remove object
   bool removeObject(std::shared_ptr<T> object) {
     auto it = std::find(objects.begin(), objects.end(), object);
     if (it != objects.end()) {
@@ -100,7 +93,6 @@ class GameObjectManager {
     return false;
   }
 
-  // Template method to find objects by predicate
   template <typename Predicate>
   std::vector<std::shared_ptr<T>> findObjects(Predicate pred) const {
     std::vector<std::shared_ptr<T>> result;
@@ -109,13 +101,11 @@ class GameObjectManager {
     return result;
   }
 
-  // Template method to apply function to all objects
   template <typename Function>
   void forEachObject(Function func) {
     std::for_each(objects.begin(), objects.end(), func);
   }
 
-  // Get object by index with bounds checking
   std::shared_ptr<T> getObject(size_t index) const {
     if (index >= objects.size()) {
       throw GameException("Index " + std::to_string(index) +
@@ -124,7 +114,6 @@ class GameObjectManager {
     return objects[index];
   }
 
-  // Template method for type-safe dynamic casting and retrieval
   template <typename DerivedT>
   std::vector<std::shared_ptr<DerivedT>> getObjectsOfType() const {
     static_assert(std::is_base_of_v<T, DerivedT>,
@@ -139,16 +128,13 @@ class GameObjectManager {
     return result;
   }
 
-  // Getters
   size_t size() const { return objects.size(); }
   size_t capacity() const { return maxCapacity; }
   bool empty() const { return objects.empty(); }
   const std::string& getName() const { return managerName; }
 
-  // Static method
   static size_t getTotalManagersCreated() { return totalManagersCreated; }
 
-  // Iterator support
   typename std::vector<std::shared_ptr<T>>::iterator begin() {
     return objects.begin();
   }

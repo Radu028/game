@@ -4,10 +4,8 @@
 
 #include "objects/GameObject.h"
 
-// Template instantiation examples for common types
 template class GameObjectManager<GameObject>;
 
-// Example usage function to demonstrate template functionality
 void demonstrateGameObjectManager() {
   GameObjectManager<GameObject> manager("Test Manager");
 
