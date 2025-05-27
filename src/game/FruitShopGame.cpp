@@ -33,26 +33,23 @@ void FruitShopGame::destroyInstance() {
 }
 
 void FruitShopGame::initialize() {
-  std::cout << "🍎 Initializing Fruit Shop Game..." << std::endl;
-
   initializeShop();
 
-  // Initialize NPC Manager
+  if (GameWorld* world = GameWorld::getInstance()) {
+    world->initializeNavMesh();
+    world->finalizeObstacles();
+  }
+
   npcManager = NPCManager::getInstance();
   if (npcManager && shop) {
     npcManager->setShop(shop);
     npcManager->setChatSystem(chatSystem.get());
-    npcManager->setSpawnInterval(3.0f, 7.0f);
-    // Test with 3 NPCs to verify pathfinding improvements
-    npcManager->setMaxActiveNPCs(3);
+    npcManager->setSpawnInterval(2.0f, 4.0f);
+    npcManager->setMaxActiveNPCs(1);
   }
 
   currentState = GameState::RUNNING;
   gameStarted = true;
-
-  std::cout << "✅ Fruit Shop Game initialized successfully!" << std::endl;
-  std::cout << "🎮 Game Started - NPCs will begin spawning and shopping!"
-            << std::endl;
 }
 
 void FruitShopGame::update(float deltaTime) {
@@ -62,17 +59,14 @@ void FruitShopGame::update(float deltaTime) {
 
   gameTimer += deltaTime;
 
-  // Update NPC manager
   if (npcManager) {
     npcManager->update(deltaTime);
   }
 
-  // Update chat system
   if (chatSystem) {
     chatSystem->update(deltaTime);
   }
 
-  // Update shop
   if (shop) {
     shop->update(deltaTime);
   }
@@ -86,9 +80,18 @@ void FruitShopGame::render(Camera3D camera) {
     return;
   }
 
-  // Render chat system (3D chat bubbles)
   if (chatSystem) {
     chatSystem->drawAllMessages(camera);
+  }
+
+  if (GameWorld* world = GameWorld::getInstance()) {
+    if (auto navMesh = world->getNavMesh()) {
+      navMesh->debugDraw();
+      if (shop) {
+        navMesh->debugDrawEntranceNodes(shop->getEntrancePosition(),
+                                        shop->getEntranceSize());
+      }
+    }
   }
 }
 
@@ -108,16 +111,7 @@ void FruitShopGame::startGame() {
   }
 }
 
-void FruitShopGame::endGame() {
-  currentState = GameState::ENDING;
-  std::cout << "🏁 Game Ending..." << std::endl;
-  std::cout << "📊 Final Stats:" << std::endl;
-  std::cout << "   - Total fruits picked by NPCs: " << fruitsPickedByNPCs
-            << std::endl;
-  std::cout << "   - Total NPCs spawned: " << npcsSoFar << std::endl;
-  std::cout << "   - Game duration: " << gameTimer << "s" << std::endl;
-  std::cout << "   - Remaining fruits: " << getRemainingFruits() << std::endl;
-}
+void FruitShopGame::endGame() { currentState = GameState::ENDING; }
 
 void FruitShopGame::resetGame() {
   shutdown();
@@ -256,7 +250,4 @@ void FruitShopGame::initializeShop() {
 
   // Count initial fruits
   totalFruitsInStock = shop->getTotalFruitCount();
-
-  std::cout << "🏪 Shop created with " << totalFruitsInStock << " fruits"
-            << std::endl;
 }

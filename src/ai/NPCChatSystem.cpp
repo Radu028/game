@@ -82,12 +82,10 @@ void NPCChatSystem::addMessage(const std::string& message, Vector3 position,
 }
 
 void NPCChatSystem::update(float deltaTime) {
-  // Update chat cooldown
   if (chatCooldown > 0.0f) {
     chatCooldown -= deltaTime;
   }
 
-  // Update active messages
   for (auto& message : activeMessages) {
     if (message.isActive) {
       message.displayTime += deltaTime;
@@ -97,7 +95,6 @@ void NPCChatSystem::update(float deltaTime) {
     }
   }
 
-  // Remove inactive messages
   activeMessages.erase(
       std::remove_if(activeMessages.begin(), activeMessages.end(),
                      [](const ChatMessage& msg) { return !msg.isActive; }),
@@ -128,16 +125,13 @@ void NPCChatSystem::drawChatBubble(const std::string& text,
                                    Vector2 screenPos) const {
   if (text.empty()) return;
 
-  // Measure text size
   int fontSize = 16;
   Vector2 textSize = MeasureTextEx(GetFontDefault(), text.c_str(), fontSize, 1);
 
-  // Chat bubble dimensions
   float padding = 8.0f;
   float bubbleWidth = textSize.x + padding * 2;
   float bubbleHeight = textSize.y + padding * 2;
 
-  // Position bubble above NPC
   Vector2 bubblePos = {screenPos.x - bubbleWidth / 2,
                        screenPos.y - bubbleHeight - 10};
 

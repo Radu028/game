@@ -40,20 +40,17 @@ class NPCChatSystem {
   NPCChatSystem();
   ~NPCChatSystem() = default;
 
-  // Message management
   void addMessage(const std::string& message, Vector3 position,
                   float duration = 3.0f);
   void update(float deltaTime);
   void drawAllMessages(Camera3D camera) const;
 
-  // Random message generation
   std::string getRandomGreeting();
   std::string getRandomShoppingComment();
   std::string getRandomFruitComment();
   std::string getRandomLeavingComment();
   std::string getRandomGeneralComment();
 
-  // Utility
   bool canSpeak() const { return chatCooldown <= 0.0f; }
   void resetChatCooldown() { chatCooldown = maxChatCooldown; }
 
