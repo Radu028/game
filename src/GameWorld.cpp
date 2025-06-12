@@ -166,10 +166,12 @@ void GameWorld::addObjectAsObstacleDeferred(std::shared_ptr<GameObject> object,
     std::string obstacleType = type.empty() ? object->getObstacleType() : type;
 
     // Add obstacle but don't rebuild connections yet
-    navigationMesh->markNodesInArea(pos, size, false,
-                                    obstacleType == "shelf"  ? 0.7f
-                                    : obstacleType == "wall" ? 0.3f
-                                                             : 0.5f);
+    navigationMesh->markNodesInArea(
+        pos, size, false,
+        obstacleType == "shelf"  ? 0.7f
+        : obstacleType == "wall" ? 0.3f
+                                  : 0.5f,
+        obstacleType == "shelf");
 
   } else {
   }

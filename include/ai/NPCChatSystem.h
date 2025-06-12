@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "raylib.h"
+#include "objects/GameObject.h"
 
 // NPC Chat System for Romanian comments without diacritics
 class NPCChatSystem {
@@ -14,6 +15,7 @@ class NPCChatSystem {
     float displayTime;
     float maxDisplayTime;
     Vector3 worldPosition;
+    const GameObject* follow;
     bool isActive;
 
     ChatMessage()
@@ -21,6 +23,7 @@ class NPCChatSystem {
           displayTime(0.0f),
           maxDisplayTime(3.0f),
           worldPosition({0, 0, 0}),
+          follow(nullptr),
           isActive(false) {}
   };
 
@@ -41,7 +44,8 @@ class NPCChatSystem {
   ~NPCChatSystem() = default;
 
   void addMessage(const std::string& message, Vector3 position,
-                  float duration = 3.0f);
+                  float duration = 3.0f,
+                  const GameObject* follow = nullptr);
   void update(float deltaTime);
   void drawAllMessages(Camera3D camera) const;
 

@@ -4,6 +4,16 @@ project(GameProject)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(RAYLIB_DIR "${CMAKE_SOURCE_DIR}/external/raylib")
+set(BULLET_DIR "${CMAKE_SOURCE_DIR}/external/bullet")
+
+if(EXISTS "${RAYLIB_DIR}")
+    set(raylib_DIR "${RAYLIB_DIR}")
+endif()
+if(EXISTS "${BULLET_DIR}")
+    set(BULLET_ROOT_DIR "${BULLET_DIR}")
+endif()
+
 find_package(raylib REQUIRED)
 find_package(Bullet REQUIRED)
 

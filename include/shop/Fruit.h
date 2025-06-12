@@ -35,6 +35,7 @@ class Fruit : public Sphere {
   void resetFruit();
 
   void interact() override;
+  void draw() const override;
 
   static Color getFruitColor(FruitType type);
   static float getFruitRadius(FruitType type);
