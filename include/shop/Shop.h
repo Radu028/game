@@ -47,6 +47,7 @@ class Shop : public CubeObject {
   std::shared_ptr<Fruit> findNearestFruit(Vector3 position);
 
   void interact() override;
+  void draw() const override;
   void update(float deltaTime) override;
   std::unique_ptr<GameObject> clone() const override;
 

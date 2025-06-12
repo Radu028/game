@@ -9,6 +9,7 @@
 #include "raymath.h"
 #include "shop/Shelf.h"
 #include "shop/Shop.h"
+#include "GameWorld.h"
 
 void IdleState::enter(NPC* npc) {
   idleTime = 0.0f;
@@ -169,8 +170,15 @@ void ShoppingState::update(NPC* npc, float deltaTime) {
           for (auto fruit : availableFruits) {
             if (fruit && !fruit->getIsPicked()) {
               fruit->pickFruit();
-              hasPurchasedSomething = true;
 
+              if (GameWorld* world = GameWorld::getInstance(nullptr)) {
+                world->removeObject(fruit);
+              }
+
+              currentShelf->removeFruit(fruit);
+              npc->notifyFruitPicked(fruit);
+
+              hasPurchasedSomething = true;
               npc->sayMessage("fruit");
               break;
             }

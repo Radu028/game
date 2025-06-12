@@ -8,8 +8,8 @@
 #include "raymath.h"
 
 Shop::Shop(Vector3 position, Vector3 size)
-    : CubeObject(position, size, BEIGE, false, "", false, false, false),
-      entranceSize({4.0f, 3.0f, 1.0f}) {
+    : CubeObject(position, size, BEIGE, false, "", false, true, false),
+        entranceSize({4.0f, 3.0f, 1.0f}) {
   entrancePosition = {position.x, position.y - size.y / 2.0f + 0.5f,
                       position.z + size.z / 2.0f - 0.5f};
 
@@ -183,6 +183,10 @@ std::shared_ptr<Fruit> Shop::findNearestFruit(Vector3 position) {
 }
 
 void Shop::interact() { restockAllShelves(); }
+
+void Shop::draw() const {
+  // Shop cube is hidden; only shelves and walls are drawn separately
+}
 
 void Shop::update(float deltaTime) {
   CubeObject::update(deltaTime);

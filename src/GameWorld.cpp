@@ -133,7 +133,8 @@ void GameWorld::addObjectAsObstacle(std::shared_ptr<GameObject> object,
     Vector3 size = object->getObstacleSize();
     std::string obstacleType = type.empty() ? object->getObstacleType() : type;
 
-    navigationMesh->addObstacle(pos, size, obstacleType);
+      bool ignoreY = obstacleType == "shelf";
+      navigationMesh->addObstacle(pos, size, obstacleType, ignoreY);
   }
 }
 
@@ -150,7 +151,8 @@ void GameWorld::removeObjectObstacle(std::shared_ptr<GameObject> object) {
 void GameWorld::addObstacleAt(Vector3 position, Vector3 size,
                               const std::string& type) {
   if (navigationMesh) {
-    navigationMesh->addObstacle(position, size, type);
+    bool ignoreY = type == "shelf";
+    navigationMesh->addObstacle(position, size, type, ignoreY);
   }
 }
 
@@ -166,10 +168,13 @@ void GameWorld::addObjectAsObstacleDeferred(std::shared_ptr<GameObject> object,
     std::string obstacleType = type.empty() ? object->getObstacleType() : type;
 
     // Add obstacle but don't rebuild connections yet
-    navigationMesh->markNodesInArea(pos, size, false,
-                                    obstacleType == "shelf"  ? 0.7f
-                                    : obstacleType == "wall" ? 0.3f
-                                                             : 0.5f);
+      bool ignoreY = obstacleType == "shelf";
+      navigationMesh->markNodesInArea(
+          pos, size, false,
+          obstacleType == "shelf"  ? 0.7f
+          : obstacleType == "wall" ? 0.3f
+                                   : 0.5f,
+          ignoreY);
 
   } else {
   }

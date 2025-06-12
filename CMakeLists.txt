@@ -4,6 +4,10 @@ project(GameProject)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# Look for locally installed dependencies first
+list(APPEND CMAKE_PREFIX_PATH "${CMAKE_SOURCE_DIR}/external/raylib_install"
+                             "${CMAKE_SOURCE_DIR}/external/bullet_install")
+
 find_package(raylib REQUIRED)
 find_package(Bullet REQUIRED)
 

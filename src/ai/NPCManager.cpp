@@ -119,8 +119,6 @@ std::shared_ptr<NPC> NPCManager::createNPC() {
 }
 
 void NPCManager::onNPCFruitPicked(NPC* npc, std::shared_ptr<Fruit> fruit) {
-  totalFruitsPicked++;
-
   if (fruit) {
     totalFruitsPicked++;
   }

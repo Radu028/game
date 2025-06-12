@@ -35,12 +35,14 @@ class NavMesh {
 
   // Obstacle management system
   void addObstacle(Vector3 position, Vector3 size,
-                   const std::string& type = "generic");
+                   const std::string& type = "generic",
+                   bool ignoreYAxis = false);
   void addShelfObstacle(Vector3 shelfPos, Vector3 shelfSize);
   void addWallObstacle(Vector3 wallPos, Vector3 wallSize);
   void removeObstacle(Vector3 position, Vector3 size);
   void markNodesInArea(Vector3 center, Vector3 size, bool walkable,
-                       float expansionFactor = 0.5f);
+                       float expansionFactor = 0.5f,
+                       bool ignoreYAxis = false);
   bool isPositionBlocked(Vector3 position) const;
 
   void defineShopEntrance(Vector3 entrancePos, Vector3 entranceSize);

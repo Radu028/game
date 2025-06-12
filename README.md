@@ -209,21 +209,14 @@ Release\GameProject.exe
 
 **Dependency Management**
 
-*Ubuntu/Debian*
+For a fully self-contained setup run:
+
 ```bash
-sudo apt update && sudo apt install cmake build-essential
-sudo apt install libraylib-dev libbullet-dev
+./scripts/setup_dependencies.sh
 ```
 
-*macOS*
-```bash
-brew install cmake raylib bullet
-```
-
-*Windows*
-```cmd
-vcpkg install raylib bullet3
-```
+This script downloads and builds raylib and Bullet locally into the
+`external/` directory so no system-wide packages are required.
 
 ## Application Usage
 
