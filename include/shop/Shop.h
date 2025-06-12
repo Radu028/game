@@ -48,10 +48,12 @@ class Shop : public CubeObject {
 
   void interact() override;
   void update(float deltaTime) override;
+  void draw() const override;
   std::unique_ptr<GameObject> clone() const override;
 
  private:
-  void addWall(Vector3 position, Vector3 size, Color color = DARKBROWN);
+  void addWall(Vector3 position, Vector3 size, Color color = DARKBROWN,
+               bool blockNavMesh = true);
   Vector3 calculateInteriorBounds() const;
   void finalizeNavMesh();
 };

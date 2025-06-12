@@ -326,7 +326,7 @@ void NPC::sayMessage(const std::string& context) const {
     }
 
     if (!message.empty()) {
-      chatSystem->addMessage(message, getPosition());
+      chatSystem->addMessage(message, getPosition(), 3.0f, this);
     }
   } else {
     if (!chatSystem) {

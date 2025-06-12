@@ -54,7 +54,8 @@ void NavMesh::addObstacle(Vector3 position, Vector3 size,
     expansionFactor = 0.3f;
   }
 
-  markNodesInArea(position, size, false, expansionFactor);
+  markNodesInArea(position, size, false, expansionFactor,
+                  type == "shelf");
 
   rebuildConnections();
 }
@@ -461,7 +462,7 @@ bool NavMesh::isNodeTooCloseToWall(Vector3 nodePos, Vector3 entrancePos,
 }
 
 void NavMesh::markNodesInArea(Vector3 center, Vector3 size, bool walkable,
-                              float expansionFactor) {
+                              float expansionFactor, bool projectToGround) {
   // Calculate expanded area with margin
   float margin = nodeSpacing * expansionFactor;
   Vector3 expandedSize = {size.x + margin * 2.0f, size.y,
@@ -476,20 +477,14 @@ void NavMesh::markNodesInArea(Vector3 center, Vector3 size, bool walkable,
     // For floating obstacles, we project them down to ground level
     if (std::abs(diff.x) <= expandedSize.x / 2.0f &&
         std::abs(diff.z) <= expandedSize.z / 2.0f) {
-      // Special handling for floating shelves - project obstacle influence to
-      // ground level
       bool shouldMark = false;
 
-      if (center.y > 0.8f) {
-        // This is likely a floating shelf - project down to ground level nodes
-        if (node.position.y <=
-            0.6f) {  // Ground level nodes (NavMesh generates at Y=0.5f)
+      if (projectToGround) {
+        if (node.position.y <= 0.6f) {
           shouldMark = true;
         }
       } else {
-        // Regular ground-level obstacle
-        if (std::abs(diff.y) <=
-            expandedSize.y / 2.0f + 1.0f) {  // Allow some Y tolerance
+        if (std::abs(diff.y) <= expandedSize.y / 2.0f + 1.0f) {
           shouldMark = true;
         }
       }
@@ -497,8 +492,7 @@ void NavMesh::markNodesInArea(Vector3 center, Vector3 size, bool walkable,
       if (shouldMark) {
         // Special handling for shelves near boundaries - use asymmetric
         // expansion
-        if (!walkable &&
-            center.y > 0.8f) {  // This is a shelf being marked as obstacle
+        if (!walkable && projectToGround) {
           // Check if shelf is near shop back boundary (z < -11)
           if (center.z < -11.0f) {
             Vector3 asymmetricDiff = Vector3Subtract(node.position, center);
@@ -544,7 +538,7 @@ void NavMesh::addWallObstacle(Vector3 wallPos, Vector3 wallSize) {
 }
 
 void NavMesh::removeObstacle(Vector3 position, Vector3 size) {
-  markNodesInArea(position, size, true, 0.5f);
+  markNodesInArea(position, size, true, 0.5f, false);
   rebuildConnections();
 }
 

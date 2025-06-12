@@ -69,10 +69,11 @@ void NPCChatSystem::initializeMessages() {
 }
 
 void NPCChatSystem::addMessage(const std::string& message, Vector3 position,
-                               float duration) {
+                               float duration, const GameObject* follow) {
   ChatMessage newMessage;
   newMessage.text = message;
   newMessage.worldPosition = position;
+  newMessage.follow = follow;
   newMessage.maxDisplayTime = duration;
   newMessage.displayTime = 0.0f;
   newMessage.isActive = true;
@@ -88,6 +89,9 @@ void NPCChatSystem::update(float deltaTime) {
 
   for (auto& message : activeMessages) {
     if (message.isActive) {
+      if (message.follow) {
+        message.worldPosition = message.follow->getPosition();
+      }
       message.displayTime += deltaTime;
       if (message.displayTime >= message.maxDisplayTime) {
         message.isActive = false;

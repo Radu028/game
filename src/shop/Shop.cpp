@@ -53,7 +53,7 @@ void Shop::buildWalls() {
           {wallThickness, wallHeight, shopSize.z});
 
   addWall({shopPos.x, shopPos.y + shopSize.y / 2.0f, shopPos.z},
-          {shopSize.x, wallThickness, shopSize.z});
+          {shopSize.x, wallThickness, shopSize.z}, DARKBROWN, false);
 }
 
 void Shop::createShelves() {
@@ -196,13 +196,22 @@ std::unique_ptr<GameObject> Shop::clone() const {
   return std::make_unique<Shop>(*this);
 }
 
-void Shop::addWall(Vector3 position, Vector3 size, Color color) {
+void Shop::draw() const {
+  // Do not draw the base cube to avoid the falling beige body
+}
+
+void Shop::addWall(Vector3 position, Vector3 size, Color color,
+                   bool blockNavMesh) {
   auto wall = std::make_shared<CubeObject>(position, size, color, true, "",
                                            false, true, true);
   walls.push_back(wall);
 
   if (GameWorld* world = GameWorld::getInstance(nullptr)) {
-    world->addObjectAsObstacleDeferred(wall);
+    if (blockNavMesh) {
+      world->addObjectAsObstacleDeferred(wall);
+    } else {
+      world->addObject(wall);
+    }
   }
 }
 

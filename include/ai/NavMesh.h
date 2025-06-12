@@ -40,7 +40,8 @@ class NavMesh {
   void addWallObstacle(Vector3 wallPos, Vector3 wallSize);
   void removeObstacle(Vector3 position, Vector3 size);
   void markNodesInArea(Vector3 center, Vector3 size, bool walkable,
-                       float expansionFactor = 0.5f);
+                       float expansionFactor = 0.5f,
+                       bool projectToGround = false);
   bool isPositionBlocked(Vector3 position) const;
 
   void defineShopEntrance(Vector3 entrancePos, Vector3 entranceSize);
