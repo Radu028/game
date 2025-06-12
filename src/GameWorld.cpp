@@ -99,23 +99,37 @@ void GameWorld::initializeNavMesh() {
 
   navigationMesh->generateNavMesh();
 
+  // First add shop buildings as obstacles
   auto shops = findObjectsOfType<Shop>();
   for (const auto& shop : shops) {
     Vector3 shopPos = shop->getPosition();
     Vector3 shopSize = shop->getSize();
 
     navigationMesh->addObstacle(shopPos, shopSize);
+  }
 
-    // Define shop interior as walkable (overrides obstacle for interior)
+  // Mark interiors and entrances inside the shops as walkable
+  for (const auto& shop : shops) {
+    Vector3 shopPos = shop->getPosition();
+    Vector3 shopSize = shop->getSize();
+
     navigationMesh->defineShopInterior(shopPos, shopSize);
 
-    // Define shop entrance area as walkable
     Vector3 entrancePos = shop->getEntrancePosition();
-    Vector3 entranceSize = {3.0f, 2.0f, 3.0f};  // Generous entrance area
+    Vector3 entranceSize = {3.0f, 2.0f, 3.0f};
     navigationMesh->defineShopEntrance(entrancePos, entranceSize);
   }
 
-  // Rebuild connections now that obstacles are properly defined
+  // Add all other static objects (e.g. shelves) as obstacles
+  for (const auto& obj : objects) {
+    if (!obj || !obj->getIsStatic()) continue;
+    if (std::dynamic_pointer_cast<Shop>(obj)) continue;
+
+    Vector3 pos = obj->getPosition();
+    Vector3 size = obj->getObstacleSize();
+    navigationMesh->addObstacle(pos, size, obj->getObstacleType());
+  }
+
   navigationMesh->rebuildConnections();
 
   NPC::setNavMesh(navigationMesh);
