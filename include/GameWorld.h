@@ -28,6 +28,11 @@ class GameWorld {
   GameObject* player;
   std::unique_ptr<PhysicsSystem> physicsSystem;
   std::shared_ptr<NavMesh> navigationMesh;
+  struct PendingObstacle {
+    std::shared_ptr<GameObject> object;
+    std::string type;
+  };
+  std::vector<PendingObstacle> pendingObstacles;
   std::string worldName;
 
   GameWorld(GameObject* player, const std::string& name = "DefaultWorld");

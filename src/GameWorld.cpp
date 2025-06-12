@@ -118,6 +118,26 @@ void GameWorld::initializeNavMesh() {
   // Rebuild connections now that obstacles are properly defined
   navigationMesh->rebuildConnections();
 
+  // Apply any obstacles that were queued before the navmesh existed
+  for (const auto& pending : pendingObstacles) {
+    if (auto obj = pending.object) {
+      Vector3 pos = obj->getPosition();
+      Vector3 size = obj->getObstacleSize();
+      std::string obstacleType =
+          pending.type.empty() ? obj->getObstacleType() : pending.type;
+      bool ignoreY = obstacleType == "shelf";
+      navigationMesh->markNodesInArea(
+          pos, size, false,
+          obstacleType == "shelf"  ? 0.7f
+          : obstacleType == "wall" ? 0.3f
+                                   : 0.5f,
+          ignoreY);
+    }
+  }
+  pendingObstacles.clear();
+
+  navigationMesh->rebuildConnections();
+
   NPC::setNavMesh(navigationMesh);
 }
 
@@ -133,8 +153,10 @@ void GameWorld::addObjectAsObstacle(std::shared_ptr<GameObject> object,
     Vector3 size = object->getObstacleSize();
     std::string obstacleType = type.empty() ? object->getObstacleType() : type;
 
-      bool ignoreY = obstacleType == "shelf";
-      navigationMesh->addObstacle(pos, size, obstacleType, ignoreY);
+    bool ignoreY = obstacleType == "shelf";
+    navigationMesh->addObstacle(pos, size, obstacleType, ignoreY);
+  } else {
+    pendingObstacles.push_back({object, type});
   }
 }
 
@@ -168,15 +190,16 @@ void GameWorld::addObjectAsObstacleDeferred(std::shared_ptr<GameObject> object,
     std::string obstacleType = type.empty() ? object->getObstacleType() : type;
 
     // Add obstacle but don't rebuild connections yet
-      bool ignoreY = obstacleType == "shelf";
-      navigationMesh->markNodesInArea(
-          pos, size, false,
-          obstacleType == "shelf"  ? 0.7f
-          : obstacleType == "wall" ? 0.3f
-                                   : 0.5f,
-          ignoreY);
+    bool ignoreY = obstacleType == "shelf";
+    navigationMesh->markNodesInArea(
+        pos, size, false,
+        obstacleType == "shelf"  ? 0.7f
+        : obstacleType == "wall" ? 0.3f
+                                 : 0.5f,
+        ignoreY);
 
   } else {
+    pendingObstacles.push_back({object, type});
   }
 }
 
