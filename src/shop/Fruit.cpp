@@ -87,6 +87,12 @@ void Fruit::interact() {
   }
 }
 
+void Fruit::draw() const {
+  if (!isPicked) {
+    Sphere::draw();
+  }
+}
+
 // Clone method for polymorphism
 std::unique_ptr<GameObject> Fruit::clone() const {
   return std::make_unique<Fruit>(position, type);
